@@ -519,13 +519,7 @@ display:
           validate:
             type: 'entity:user'
             fail: 'not found'
-          validate_options:
-            access: true
-            operation: view
-            multiple: 0
-            restrict_roles: '1'
-            roles:
-              authenticated: authenticated
+          validate_options: { }
           break_phrase: false
           not: false
           entity_type: commerce_order
