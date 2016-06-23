@@ -10,6 +10,11 @@ language: php
 
 sudo: false
 
+cache:
+  apt: true
+  directories:
+  - "$HOME/.composer/cache"
+
 php:
   - 5.5
   - 5.6
