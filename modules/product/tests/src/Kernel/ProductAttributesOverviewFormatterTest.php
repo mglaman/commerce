@@ -2,6 +2,8 @@
 
 namespace Drupal\Tests\commerce_product\Kernel;
 
+use Blackfire\Bridge\PhpUnit\TestCaseTrait as BlackfireTrait;
+use Blackfire\Profile\Configuration;
 use Drupal\commerce_product\Entity\Product;
 use Drupal\commerce_product\Entity\ProductAttribute;
 use Drupal\commerce_product\Entity\ProductAttributeValue;
@@ -15,6 +17,8 @@ use Drupal\KernelTests\KernelTestBase;
  * @group commerce
  */
 class ProductAttributesOverviewFormatterTest extends KernelTestBase {
+
+  use BlackfireTrait;
 
   /**
    * @var \Drupal\commerce_product\Entity\ProductInterface
@@ -191,6 +195,33 @@ class ProductAttributesOverviewFormatterTest extends KernelTestBase {
     $this->assertFieldByXPath('//ul/li[1]/a/div/div/div[text()=\'Cyan\']');
     $this->assertFieldByXPath('//ul/li[2]/a/div/div/div[text()=\'Name\']');
     $this->assertFieldByXPath('//ul/li[2]/a/div/div/div[text()=\'Yellow\']');
+  }
+
+  /**
+   * Tests performance of the formatter.
+   *
+   * @group blackfire
+   */
+  public function testFormatterDisplayPerformance() {
+    $this->productDefaultDisplay->setComponent('variations', [
+      'type' => 'commerce_product_attributes_overview',
+      'settings' => [
+        'attributes' => ['color' => 'color'],
+        'view_mode' => 'default',
+      ],
+    ]);
+    $this->productDefaultDisplay->save();
+
+    $config = new Configuration();
+    $config->assert('metrics.sql.queries.count < 600', 'SQL queries');
+
+    $this->assertBlackfire($config, function () {
+      $build = $this->productViewBuilder->view($this->product);
+      $renderer = $this->container->get('renderer');
+      $renderer->renderRoot($build);
+      // Render second time to ensure caching keeps within bounds.
+      $renderer->renderRoot($build);
+    });
   }
 
 }

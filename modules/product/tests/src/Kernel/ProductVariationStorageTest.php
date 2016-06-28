@@ -2,6 +2,8 @@
 
 namespace Drupal\Tests\commerce_product\Kernel;
 
+use Blackfire\Bridge\PhpUnit\TestCaseTrait as BlackfireTrait;
+use Blackfire\Profile\Configuration;
 use Drupal\commerce_product\Entity\Product;
 use Drupal\commerce_product\Entity\ProductVariation;
 use Drupal\KernelTests\Core\Entity\EntityKernelTestBase;
@@ -12,6 +14,8 @@ use Drupal\KernelTests\Core\Entity\EntityKernelTestBase;
  * @group commerce
  */
 class ProductVariationStorageTest extends EntityKernelTestBase {
+
+  use BlackfireTrait;
 
   /**
    * The product variation storage.
@@ -70,6 +74,40 @@ class ProductVariationStorageTest extends EntityKernelTestBase {
     $variationsFiltered = $this->variationStorage->loadEnabled($product);
     $this->assertEquals(2, count($variationsFiltered), '2 out of 3 variations are enabled');
     $this->assertEquals(reset($variations)->getSku(), reset($variationsFiltered)->getSku(), 'The sort order of the variations remains the same');
+  }
+
+  /**
+   * Tests performance of ::loadEnabled.
+   *
+   * @todo: Add testing module which listens
+   *
+   * @group blackfire
+   */
+  public function testLoadedEnabledPerformance() {
+    $variations = [];
+    for ($i = 1; $i <= 3; $i++) {
+      $variation = ProductVariation::create([
+        'type' => 'default',
+        'sku' => strtolower($this->randomMachineName()),
+        'title' => $this->randomString(),
+        'status' => $i % 2,
+      ]);
+      $variation->save();
+      $variations[] = $variation;
+    }
+    $variations = array_reverse($variations);
+    $product = Product::create([
+      'type' => 'default',
+      'variations' => $variations,
+    ]);
+    $product->save();
+
+    $config = new Configuration();
+    $config->assert('metrics.sql.queries.count < 5', 'SQL queries');
+
+    $this->assertBlackfire($config, function () use ($product) {
+      $this->variationStorage->loadEnabled($product);
+    });
   }
 
 }

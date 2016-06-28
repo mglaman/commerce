@@ -2,6 +2,8 @@
 
 namespace Drupal\Tests\commerce_product\Kernel;
 
+use Blackfire\Bridge\PhpUnit\TestCaseTrait as BlackfireTrait;
+use Blackfire\Profile\Configuration;
 use Drupal\commerce_product\Entity\ProductAttribute;
 use Drupal\commerce_product\Entity\ProductVariationType;
 use Drupal\KernelTests\KernelTestBase;
@@ -14,6 +16,8 @@ use Drupal\KernelTests\KernelTestBase;
  * @group commerce
  */
 class ProductAttributeFieldManagerTest extends KernelTestBase {
+
+  use BlackfireTrait;
 
   /**
    * The attribute field manager.
@@ -59,6 +63,34 @@ class ProductAttributeFieldManagerTest extends KernelTestBase {
       'label' => 'Mug',
     ]);
     $second_variation_type->save();
+  }
+
+  /**
+   * @covers ::getFieldMap
+   * @group blackfire
+   */
+  public function testFieldMapCache() {
+    $color_attribute = ProductAttribute::create([
+      'id' => 'color',
+      'label' => 'Color',
+    ]);
+    $color_attribute->save();
+    $size_attribute = ProductAttribute::create([
+      'id' => 'size',
+      'label' => 'Size',
+    ]);
+    $size_attribute->save();
+    $this->attributeFieldManager->createField($color_attribute, 'shirt');
+    $this->attributeFieldManager->createField($size_attribute, 'shirt');
+
+    $config = new Configuration();
+    $config->assert('metrics.sql.queries.count == 3', 'SQL queries');
+
+    // Test that the cache is re-used.
+    $this->assertBlackfire($config, function () {
+      $this->attributeFieldManager->getFieldMap('shirt');
+      $this->attributeFieldManager->getFieldMap('shirt');
+    });
   }
 
   /**

@@ -2,6 +2,8 @@
 
 namespace Drupal\Tests\commerce_cart\Functional;
 
+use Blackfire\Bridge\PhpUnit\TestCaseTrait as BlackfireTrait;
+use Blackfire\Profile\Configuration;
 use Drupal\commerce_order\Entity\Order;
 use Drupal\commerce_product\Entity\ProductAttribute;
 use Drupal\commerce_product\Entity\ProductVariation;
@@ -14,6 +16,8 @@ use Drupal\Core\Entity\Entity\EntityFormDisplay;
  * @group commerce
  */
 class AddToCartFormTest extends CartBrowserTestBase {
+
+  use BlackfireTrait;
 
   /**
    * Test adding a product to the cart.
@@ -34,6 +38,21 @@ class AddToCartFormTest extends CartBrowserTestBase {
     $line_items = $this->cart->getLineItems();
     $this->assertTrue(count($line_items) == 1, 'No additional line items were created');
     $this->assertLineItemInOrder($this->variation, $line_items[0], 2);
+  }
+
+  /**
+   * Tests add to cart performance.
+   *
+   * @group blackfire
+   */
+  public function testAddToCartPerformance() {
+    $config = new Configuration();
+    $config->assert('main.wall_time < 1s', 'Wall time');
+
+    $this->drupalGet('product/' . $this->variation->getProduct()->id());
+    $this->assertBlackfire($config, function () {
+      $this->submitForm([], 'Add to cart');
+    });
   }
 
   /**

@@ -14,5 +14,8 @@
         "commerceguys/intl": "dev-master",
         "commerceguys/tax": "dev-master"
     },
+    "require-dev": {
+        "blackfire/php-sdk": "^1.5"
+    },
     "minimum-stability": "dev"
 }

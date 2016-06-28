@@ -2,6 +2,8 @@
 
 namespace Drupal\Tests\commerce_product\Kernel;
 
+use Blackfire\Bridge\PhpUnit\TestCaseTrait as BlackfireTrait;
+use Blackfire\Profile\Configuration;
 use Drupal\commerce_product\Entity\Product;
 use Drupal\commerce_product\Entity\ProductAttribute;
 use Drupal\commerce_product\Entity\ProductVariation;
@@ -18,6 +20,8 @@ use Drupal\KernelTests\KernelTestBase;
  * @group commerce
  */
 class ProductVariationFieldRendererTest extends KernelTestBase {
+
+  use BlackfireTrait;
 
   /**
    * The variation field injection.
@@ -163,6 +167,43 @@ class ProductVariationFieldRendererTest extends KernelTestBase {
 
     $this->assertEmpty($this->cssSelect('.product--variation-field--variation_attribute_color__' . $variation->getProductId()));
     $this->assertNotEmpty($this->cssSelect('.product--variation-field--variation_sku__' . $variation->getProductId()));
+  }
+
+  /**
+   * Tests render fields performance.
+   *
+   * @group blackfire
+   */
+  public function testRenderFieldsPerformance() {
+    $variation = ProductVariation::create([
+      'type' => $this->secondVariationType->id(),
+      'sku' => strtolower($this->randomMachineName()),
+      'title' => $this->randomString(),
+      'status' => 1,
+    ]);
+    $variation->save();
+    $product = Product::create([
+      'type' => 'default',
+      'variations' => [$variation],
+    ]);
+    $product->save();
+
+    $product_display = commerce_get_entity_display('commerce_product_variation', $variation->bundle(), 'view');
+    $product_display->setComponent('attribute_color', [
+      'label' => 'above',
+      'type' => 'entity_reference_label',
+    ]);
+    $product_display->save();
+    $product_view_builder = $this->container->get('entity_type.manager')->getViewBuilder('commerce_product');
+
+    $config = new Configuration();
+    $config->assert('metrics.sql.queries.count < 650', 'SQL queries');
+
+    $this->assertBlackfire($config, function () use ($product, $product_view_builder) {
+      $product_build = $product_view_builder->view($product);
+      $this->render($product_build);
+      $this->render($product_build);
+    });
   }
 
   /**
