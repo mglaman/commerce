@@ -39,24 +39,49 @@ class CreditCard extends PaymentMethodTypeBase {
       ->setLabel(t('Card type'))
       ->setDescription(t('The credit card type.'))
       ->setRequired(TRUE)
-      ->setSetting('allowed_values_function', ['\Drupal\commerce_payment\CreditCard', 'getTypeLabels']);
+      ->setSetting('allowed_values_function', ['\Drupal\commerce_payment\CreditCard', 'getTypeLabels'])
+      ->setDisplayOptions('form', [
+        'type' => 'options_select',
+        'weight' => 4,
+      ])
+      ->setDisplayConfigurable('view', TRUE)
+      ->setDisplayConfigurable('form', TRUE);
 
     $fields['card_number'] = BundleFieldDefinition::create('string')
       ->setLabel(t('Card number'))
       ->setDescription(t('The last 4 digits of the credit card number'))
-      ->setRequired(TRUE);
+      ->setRequired(TRUE)
+      ->setDisplayOptions('view', [
+        'label' => 'hidden',
+        'type' => 'string',
+        'weight' => -4,
+      ])
+      ->setDisplayOptions('form', [
+        'type' => 'string_textfield',
+        'weight' => -4,
+      ])
+      ->setDisplayConfigurable('form', TRUE)
+      ->setDisplayConfigurable('view', TRUE);
 
     $fields['card_exp_month'] = BundleFieldDefinition::create('integer')
       ->setLabel(t('Card expiration month'))
       ->setDescription(t('The credit card expiration month.'))
       ->setRequired(TRUE)
-      ->setSetting('size', 'tiny');
+      ->setSetting('size', 'tiny')
+      ->setDisplayOptions('form', [
+        'type' => 'number',
+        'weight' => 20,
+      ]);
 
     $fields['card_exp_year'] = BundleFieldDefinition::create('integer')
       ->setLabel(t('Card expiration year'))
       ->setDescription(t('The credit card expiration year.'))
       ->setRequired(TRUE)
-      ->setSetting('size', 'tiny');
+      ->setSetting('size', 'tiny')
+      ->setDisplayOptions('form', [
+        'type' => 'number',
+        'weight' => 20,
+      ]);
 
     return $fields;
   }

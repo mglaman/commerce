@@ -48,7 +48,7 @@ use Drupal\profile\Entity\ProfileInterface;
  *   links = {
  *     "canonical" = "/payment-method/{commerce_payment_method}",
  *     "add-page" = "/payment-method/add",
- *     "add-form" = "/payment-method/add/{commerce_payment_method_type}",
+ *     "add-form" = "/payment-method/add/{type}",
  *     "edit-form" = "/payment-method/{commerce_payment_method}/edit",
  *     "delete-form" = "/payment-method/{commerce_payment_method}/delete",
  *   },
@@ -260,9 +260,12 @@ class PaymentMethod extends ContentEntityBase implements PaymentMethodInterface 
       ->setSetting('handler', 'default')
       ->setSetting('handler_settings', ['target_bundles' => ['billing']])
       ->setDisplayOptions('form', [
-        'type' => 'options_select',
+        'type' => 'inline_entity_form_complex',
         'weight' => 0,
-        'settings' => [],
+        'settings' => [
+          'allow_new' => TRUE,
+          'allow_existing' => FALSE,
+        ],
       ])
       ->setDisplayConfigurable('view', TRUE);
 

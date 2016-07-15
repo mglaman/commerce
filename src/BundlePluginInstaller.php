@@ -61,13 +61,14 @@ class BundlePluginInstaller implements BundlePluginInstallerInterface {
    * {@inheritdoc}
    */
   public function installBundles(EntityTypeInterface $entity_type, array $modules) {
+    /** @var \Drupal\commerce\BundlePluginHandler $bundle_handler */
     $bundle_handler = $this->entityTypeManager->getHandler($entity_type->id(), 'bundle_plugin');
     $bundles = array_filter($bundle_handler->getBundleInfo(), function ($bundle_info) use ($modules) {
       return in_array($bundle_info['provider'], $modules);
     });
     foreach (array_keys($bundles) as $bundle) {
       $this->entityBundleListener->onBundleCreate($bundle, $entity_type->id());
-      foreach ($bundle_handler->getFieldDefinitions($bundle) as $definition) {
+      foreach ($bundle_handler->getFieldDefinitions($entity_type, $bundle) as $definition) {
         $this->fieldStorageDefinitionListener->onFieldStorageDefinitionCreate($definition);
         $this->fieldDefinitionListener->onFieldDefinitionCreate($definition);
       }
@@ -78,13 +79,14 @@ class BundlePluginInstaller implements BundlePluginInstallerInterface {
    * {@inheritdoc}
    */
   public function uninstallBundles(EntityTypeInterface $entity_type, array $modules) {
+    /** @var \Drupal\commerce\BundlePluginHandler $bundle_handler */
     $bundle_handler = $this->entityTypeManager->getHandler($entity_type->id(), 'bundle_plugin');
     $bundles = array_filter($bundle_handler->getBundleInfo(), function ($bundle_info) use ($modules) {
       return in_array($bundle_info['provider'], $modules);
     });
     foreach (array_keys($bundles) as $bundle) {
       $this->entityBundleListener->onBundleDelete($bundle, $entity_type->id());
-      foreach ($bundle_handler->getFieldDefinitions($bundle) as $definition) {
+      foreach ($bundle_handler->getFieldDefinitions($entity_type, $bundle) as $definition) {
         $this->fieldStorageDefinitionListener->onFieldStorageDefinitionDelete($definition);
         $this->fieldDefinitionListener->onFieldDefinitionDelete($definition);
       }

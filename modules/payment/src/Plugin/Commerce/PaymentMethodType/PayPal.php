@@ -21,7 +21,7 @@ class PayPal extends PaymentMethodTypeBase {
    */
   public function buildLabel(PaymentMethodInterface $payment_method) {
     $args = [
-      '@paypal_mail' => $payment_method->paypal_mail->value
+      '@paypal_mail' => $payment_method->paypal_mail->value,
     ];
     return $this->t('PayPal account (@paypal_mail)', $args);
   }
@@ -35,7 +35,18 @@ class PayPal extends PaymentMethodTypeBase {
     $fields['paypal_mail'] = BundleFieldDefinition::create('email')
       ->setLabel(t('PayPal Email'))
       ->setDescription(t('The email address associated with the PayPal account.'))
-      ->setRequired(TRUE);
+      ->setRequired(TRUE)
+      ->setDisplayOptions('view', [
+        'label' => 'hidden',
+        'type' => 'string',
+        'weight' => -4,
+      ])
+      ->setDisplayOptions('form', [
+        'type' => 'string_textfield',
+        'weight' => -4,
+      ])
+      ->setDisplayConfigurable('form', TRUE)
+      ->setDisplayConfigurable('view', TRUE);
 
     return $fields;
   }
