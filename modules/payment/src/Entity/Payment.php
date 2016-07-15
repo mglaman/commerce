@@ -196,11 +196,12 @@ class Payment extends ContentEntityBase implements PaymentInterface {
       ->setSetting('target_type', 'commerce_payment_method')
       ->setReadOnly(TRUE);
 
-    $fields['order_id'] = BaseFieldDefinition::create('entity_reference')
-      ->setLabel(t('Order'))
-      ->setDescription(t('The parent order.'))
-      ->setSetting('target_type', 'commerce_order')
-      ->setReadOnly(TRUE);
+    // @todo Order should modify and add this?
+//    $fields['order_id'] = BaseFieldDefinition::create('entity_reference')
+//      ->setLabel(t('Order'))
+//      ->setDescription(t('The parent order.'))
+//      ->setSetting('target_type', 'commerce_order')
+//      ->setReadOnly(TRUE);
 
     $fields['remote_id'] = BaseFieldDefinition::create('string')
       ->setLabel(t('Remote ID'))

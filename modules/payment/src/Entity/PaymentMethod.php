@@ -24,7 +24,18 @@ use Drupal\profile\Entity\ProfileInterface;
  *   bundle_label = @Translation("Payment method type"),
  *   bundle_plugin_type = "commerce_payment_method_type",
  *   handlers = {
+ *     "list_builder" = "Drupal\commerce_payment\PaymentMethodListBuilder",
  *     "storage" = "Drupal\commerce\CommerceContentEntityStorage",
+ *     "form" = {
+ *       "default" = "Drupal\Core\Entity\ContentEntityForm",
+ *       "add" = "Drupal\Core\Entity\ContentEntityForm",
+ *       "edit" = "Drupal\Core\Entity\ContentEntityForm",
+ *       "delete" = "Drupal\Core\Entity\ContentEntityDeleteForm"
+ *     },
+ *     "route_provider" = {
+ *       "default" = "Drupal\Core\Entity\Routing\DefaultHtmlRouteProvider",
+ *     },
+
  *   },
  *   base_table = "commerce_payment_method",
  *   admin_permission = "administer payments",
@@ -33,6 +44,13 @@ use Drupal\profile\Entity\ProfileInterface;
  *     "id" = "method_id",
  *     "uuid" = "uuid",
  *     "bundle" = "type"
+ *   },
+ *   links = {
+ *     "canonical" = "/payment-method/{commerce_payment_method}",
+ *     "add-page" = "/payment-method/add",
+ *     "add-form" = "/payment-method/add/{commerce_payment_method_type}",
+ *     "edit-form" = "/payment-method/{commerce_payment_method}/edit",
+ *     "delete-form" = "/payment-method/{commerce_payment_method}/delete",
  *   },
  * )
  */

@@ -110,16 +110,16 @@ class PaymentInformation extends CheckoutPaneBase implements ContainerFactoryPlu
     $payment_method_storage = $this->entityTypeManager->getStorage('commerce_payment_method');
 
     $payment_gateways = $payment_gateway_storage->loadMultiple();
+    $options = [];
+    $default_option = NULL;
     foreach ($payment_gateways as $payment_gateway) {
-      $options = [];
-      $default_option = NULL;
       $payment_method_types = $payment_gateway->getPlugin()->getPaymentMethodTypes();
       foreach ($payment_method_types as $payment_method_type) {
         /** @var \Drupal\commerce_payment\Plugin\Commerce\PaymentMethodType\PaymentMethodTypeInterface $payment_method_type */
         $payment_methods = $payment_method_storage->loadByProperties([
           'type' => $payment_method_type->getPluginId(),
           'payment_gateway' => $payment_gateway->id(),
-          'uid' => $this->order->getOwnerId()
+          'uid' => $this->order->getOwnerId(),
         ]);
         $options = [];
         foreach ($payment_methods as $payment_method) {
