@@ -41,7 +41,7 @@ class BundlePluginHandler implements BundlePluginHandlerInterface {
   public static function createInstance(ContainerInterface $container, EntityTypeInterface $entity_type) {
     return new static(
       $entity_type,
-      $container->get('plugin.manager.' . $entity_type->bundle_plugin_type)
+      $container->get('plugin.manager.' . $entity_type->get('bundle_plugin_type'))
     );
   }
 
