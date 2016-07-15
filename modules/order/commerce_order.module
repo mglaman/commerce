@@ -6,6 +6,8 @@
  */
 
 use Drupal\commerce_order\Entity\OrderInterface;
+use Drupal\Core\Entity\EntityTypeInterface;
+use Drupal\Core\Field\BaseFieldDefinition;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Render\Element;
 use Drupal\field\Entity\FieldConfig;
@@ -162,4 +164,18 @@ function commerce_order_add_line_items_field($order_type) {
 function commerce_order_views_data_alter(array &$data) {
   $data['commerce_order']['store_id']['field']['id'] = 'commerce_store';
   $data['commerce_order']['state']['filter']['id'] = 'state_machine_state';
+}
+
+/**
+ * Implements hook_entity_base_field_info().
+ */
+function commerce_order_entity_base_field_info(EntityTypeInterface $entity_type) {
+  if ($entity_type == 'commerce_payment') {
+    $fields['order_id'] = BaseFieldDefinition::create('entity_reference')
+      ->setLabel(t('Order'))
+      ->setDescription(t('The parent order.'))
+      ->setSetting('target_type', 'commerce_order')
+      ->setReadOnly(TRUE);
+    return $fields;
+  }
 }
