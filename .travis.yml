@@ -102,8 +102,9 @@ before_install:
   # Add the oauth token to prevent GitHub timeouts.
   - git config --global github.accesstoken $GITHUB_OAUTH_TOKEN
   - composer self-update
+  - composer global config repositories.drupal_ti vcs https://github.com/mglaman/drupal_ti -v
   - composer global require "hirak/prestissimo:^0.3"
-  - composer global require "lionsad/drupal_ti:dev-master"
+  - composer global require "lionsad/drupal_ti:dev-d8-composer"
   - composer global require "squizlabs/php_codesniffer:2.*"
   - composer global require "drupal/coder:8.2.*"
   - phpcs --config-set installed_paths $HOME/.composer/vendor/drupal/coder/coder_sniffer
@@ -118,8 +119,8 @@ install:
   - phantomjs --version
 
 before_script:
-  - drupal-ti --include ".travis-before-script.sh"
   - drupal-ti before_script
+  - drupal-ti --include ".travis-before-script.sh"
 
 script:
   - phpcs --standard=phpcs.xml src -s
