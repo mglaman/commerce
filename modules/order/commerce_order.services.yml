@@ -25,3 +25,7 @@ services:
     arguments: ['@commerce.availability_manager']
     tags:
       - { name: commerce_order.order_refresh_processor, priority: 100 }
+
+  plugin.manager.commerce_adjustment_type:
+    class: Drupal\commerce_order\AdjustmentTypeManager
+    arguments: ['@cache.discovery', '@module_handler']
