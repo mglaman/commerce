@@ -14,6 +14,7 @@ use Drupal\Core\Render\Element\RenderElement;
  * $form['adjustments'] = [
  *   '#type' => 'commerce_order_adjustment_type_form',
  *   '#operation' => 'default',
+ *   '#adjustment_type' => 'custom'
  *   // An adjustment object or NULL.
  *   '#default_value' => $adjustment,
  * ];
@@ -31,6 +32,7 @@ class AdjustmentTypeForm extends RenderElement {
     return [
       '#operation' => 'default',
       '#default_value' => NULL,
+      '#adjustment_type' => NULL,
       '#process' => [
         [$class, 'processForm'],
       ],
@@ -118,7 +120,13 @@ class AdjustmentTypeForm extends RenderElement {
     $plugin_form_factory = \Drupal::service('plugin_form.factory');
     /** @var \Drupal\commerce_order\Adjustment $adjustment */
     $adjustment = $element['#default_value'];
-    $plugin = \Drupal::service('plugin.manager.commerce_adjustment_type')->createInstance($adjustment->getType());
+    if ($adjustment) {
+      $adjustment_type = $adjustment->getType();
+    }
+    else {
+      $adjustment_type = $element['#adjustment_type'];
+    }
+    $plugin = \Drupal::service('plugin.manager.commerce_adjustment_type')->createInstance($adjustment_type);
     /** @var \Drupal\commerce_order\PluginForm\AdjustmentTypeFormInterface $plugin_form */
     $plugin_form = $plugin_form_factory->createInstance($plugin, $element['#operation']);
     $plugin_form->setAdjustment($adjustment);
