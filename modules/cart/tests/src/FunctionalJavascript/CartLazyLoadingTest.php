@@ -9,6 +9,9 @@ use Drupal\Tests\commerce_cart\Functional\CartBrowserTestBase;
 
 /**
  * Tests the add to cart form with Big Pipe and caching enabled.
+ *
+ * @group commerce
+ * @group commerce_cart
  */
 class CartLazyLoadingTest extends CartBrowserTestBase {
 
@@ -71,11 +74,9 @@ class CartLazyLoadingTest extends CartBrowserTestBase {
 
   /**
    * Tests that the form IDs are unique.
-   *
-   * @group debug
    */
   public function testUniqueAddToCartFormIds() {
-    $this->drupalGet('/test-multiple-cart-forms?trigger_session=1');
+    $this->drupalGet('/test-multiple-cart-forms', ['query' => ['trigger_session' => 1]]);
     $seen_ids = [];
     /** @var \Behat\Mink\Element\NodeElement[] $forms */
     $forms = $this->getSession()->getPage()->findAll('css', '.commerce-order-item-add-to-cart-form');
@@ -103,7 +104,7 @@ class CartLazyLoadingTest extends CartBrowserTestBase {
    */
   public function testMultipleCartsOnPage() {
     // View of rendered products, each containing an add to cart form.
-    $this->drupalGet('/test-multiple-cart-forms?trigger_session=1');
+    $this->drupalGet('/test-multiple-cart-forms', ['query' => ['trigger_session' => 1]]);
     /** @var \Behat\Mink\Element\NodeElement[] $forms */
     $forms = $this->getSession()->getPage()->findAll('css', '.commerce-order-item-add-to-cart-form');
     $this->assertEquals(5, count($forms));
