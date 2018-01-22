@@ -306,6 +306,7 @@ class PaymentCheckoutTest extends CommerceBrowserTestBase {
       'payment_information[add_payment_method][payment_details][expiration][month]' => '02',
       'payment_information[add_payment_method][payment_details][expiration][year]' => '2020',
       'payment_information[add_payment_method][payment_details][security_code]' => '123',
+      'payment_information[add_payment_method][payment_details][reusable]' => TRUE,
       'payment_information[add_payment_method][billing_information][address][0][address][given_name]' => 'Johnny',
       'payment_information[add_payment_method][billing_information][address][0][address][family_name]' => 'Appleseed',
       'payment_information[add_payment_method][billing_information][address][0][address][address_line1]' => '123 New York Drive',

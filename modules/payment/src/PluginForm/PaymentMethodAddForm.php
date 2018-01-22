@@ -52,7 +52,22 @@ class PaymentMethodAddForm extends PaymentGatewayFormBase {
       $form['payment_details'] = $this->buildPayPalForm($form['payment_details'], $form_state);
     }
 
-
+    $form['reusable'] = [
+      '#type' => 'value',
+      '#value' => $payment_method->isReusable(),
+    ];
+    if ($form['#allow_reusable']) {
+      if ($form['#always_save']) {
+        $form['reusable']['#value'] = TRUE;
+      }
+      else {
+        $form['reusable'] = [
+          '#type' => 'checkbox',
+          '#title' => t('Save this payment method for later use'),
+          '#default_value' => FALSE,
+        ];
+      }
+    }
 
     /** @var \Drupal\commerce_payment\Entity\PaymentMethodInterface $payment_method */
     $payment_method = $this->entity;
@@ -109,18 +124,18 @@ class PaymentMethodAddForm extends PaymentGatewayFormBase {
     elseif ($payment_method->bundle() == 'paypal') {
       $this->submitPayPalForm($form['payment_details'], $form_state);
     }
+    $values = $form_state->getValue($form['#parents']);
+
     /** @var \Drupal\commerce_payment\Entity\PaymentMethodInterface $payment_method */
     $payment_method = $this->entity;
     $payment_method->setBillingProfile($form['billing_information']['#profile']);
+    $payment_method->setReusable(!empty($values['reusable']));
 
-    $values = $form_state->getValue($form['#parents']);
     /** @var \Drupal\commerce_payment\Plugin\Commerce\PaymentGateway\SupportsStoredPaymentMethodsInterface $payment_gateway_plugin */
     $payment_gateway_plugin = $this->plugin;
     // The payment method form is customer facing. For security reasons
     // the returned errors need to be more generic.
     try {
-      // @todo If not reusable, make sure entity flagged properly before sending here.
-      // @todo how do we get that in there.
       $payment_gateway_plugin->createPaymentMethod($payment_method, $values['payment_details']);
     }
     catch (DeclineException $e) {

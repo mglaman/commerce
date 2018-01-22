@@ -108,7 +108,6 @@ class PaymentInformation extends CheckoutPaneBase {
       $this->configuration['payment_methods_reusable'] = !empty($values['payment_methods_reusable']);
       $this->configuration['payment_methods_always_save'] = !empty($values['payment_methods_settings']['payment_methods_always_save']) && $this->configuration['payment_methods_reusable'];
       $this->configuration['payment_methods_free_orders'] = !empty($values['payment_methods_settings']['payment_methods_free_orders']) && $this->configuration['payment_methods_always_save'];
-      $stop = null;
     }
   }
 
@@ -236,7 +235,7 @@ class PaymentInformation extends CheckoutPaneBase {
         $pane_form['add_payment_method'] = [
           '#type' => 'commerce_payment_gateway_form',
           '#operation' => 'add-payment-method',
-          '#allow_reusable' => $this->configuration['payment_methods_always_save'],
+          '#allow_reusable' => $this->configuration['payment_methods_reusable'],
           '#always_save' => $this->configuration['payment_methods_always_save'],
           '#free_orders' => $this->configuration['payment_methods_free_orders'],
           '#default_value' => $payment_method,
