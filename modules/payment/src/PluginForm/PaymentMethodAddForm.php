@@ -52,6 +52,8 @@ class PaymentMethodAddForm extends PaymentGatewayFormBase {
       $form['payment_details'] = $this->buildPayPalForm($form['payment_details'], $form_state);
     }
 
+
+
     /** @var \Drupal\commerce_payment\Entity\PaymentMethodInterface $payment_method */
     $payment_method = $this->entity;
     /** @var \Drupal\profile\Entity\ProfileInterface $billing_profile */
@@ -117,6 +119,8 @@ class PaymentMethodAddForm extends PaymentGatewayFormBase {
     // The payment method form is customer facing. For security reasons
     // the returned errors need to be more generic.
     try {
+      // @todo If not reusable, make sure entity flagged properly before sending here.
+      // @todo how do we get that in there.
       $payment_gateway_plugin->createPaymentMethod($payment_method, $values['payment_details']);
     }
     catch (DeclineException $e) {

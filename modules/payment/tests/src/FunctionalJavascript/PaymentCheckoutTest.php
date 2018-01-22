@@ -565,5 +565,55 @@ class PaymentCheckoutTest extends CommerceBrowserTestBase {
     $this->submitForm([], 'Pay and complete purchase');
     $this->assertSession()->pageTextContains('Your order number is 1. You can view your order on your account page when logged in.');
   }
+  /**
+   * Tests a free order with payment collection.
+   *
+   * @group debug
+   */
+  public function testFreeOrderWithPaymentMethod() {
+    /** @var \Drupal\commerce_checkout\Entity\CheckoutFlow $checkout_flow */
+    $checkout_flow = CheckoutFlow::load('default');
+    $plugin = $checkout_flow->getPlugin();
+    $configuration = $plugin->getConfiguration();
+    $configuration['panes']['payment_information']['payment_methods_always_save'] = TRUE;
+    $configuration['panes']['payment_information']['payment_methods_free_orders'] = TRUE;
+    $plugin->setConfiguration($configuration);
+    $checkout_flow->save();
+
+    $this->drupalGet($this->product->toUrl()->toString());
+    $this->submitForm([], 'Add to cart');
+
+    // Add an adjustment to zero out the order total.
+    $order = Order::load(1);
+    $order->addAdjustment(new Adjustment([
+      'type' => 'custom',
+      'label' => 'Surprise, it is free!',
+      'amount' => $order->getTotalPrice()->multiply('-1'),
+      'locked' => TRUE,
+    ]));
+    $order->save();
+
+    $this->drupalGet('checkout/1');
+    $this->submitForm([
+      'payment_information[add_payment_method][payment_details][number]' => '4012888888881881',
+      'payment_information[add_payment_method][payment_details][expiration][month]' => '02',
+      'payment_information[add_payment_method][payment_details][expiration][year]' => '2020',
+      'payment_information[add_payment_method][payment_details][security_code]' => '123',
+      'payment_information[billing_information][address][0][address][given_name]' => 'Johnny',
+      'payment_information[billing_information][address][0][address][family_name]' => 'Appleseed',
+      'payment_information[billing_information][address][0][address][address_line1]' => '123 New York Drive',
+      'payment_information[billing_information][address][0][address][locality]' => 'New York City',
+      'payment_information[billing_information][address][0][address][administrative_area]' => 'NY',
+      'payment_information[billing_information][address][0][address][postal_code]' => '10001',
+    ], 'Continue to review');
+    $this->assertSession()->pageTextContains('Payment information');
+    $this->assertSession()->pageTextContains('Visa ending in 1881');
+    $this->assertSession()->pageTextContains('Expires 2/2020');
+    $this->assertSession()->pageTextContains('Johnny Appleseed');
+    $this->assertSession()->pageTextContains('123 New York Drive');
+    // @todo this is weird if a free order, "Pay" but no payment.
+    $this->submitForm([], 'Pay and complete purchase');
+    $this->assertSession()->pageTextContains('Your order number is 1. You can view your order on your account page when logged in.');
+  }
 
 }

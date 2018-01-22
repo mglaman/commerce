@@ -23,6 +23,98 @@ class PaymentInformation extends CheckoutPaneBase {
   /**
    * {@inheritdoc}
    */
+  public function defaultConfiguration() {
+    return [
+        'payment_methods_reusable' => TRUE,
+        'payment_methods_always_save' => FALSE,
+        'payment_methods_free_orders' => FALSE,
+      ] + parent::defaultConfiguration();
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function buildConfigurationSummary() {
+    if (!empty($this->configuration['payment_methods_reusable'])) {
+      if (!empty($this->configuration['payment_methods_always_save'])) {
+        if (empty($this->configuration['payment_methods_free_orders'])) {
+          $summary = $this->t('Customer payment methods will always be stored');
+        }
+        else {
+          $summary = $this->t('Customer payment methods will always be stored, even if order balance is zero.');
+        }
+      }
+      else {
+        $summary = $this->t('Customers can opt-in to store payment methods.');
+      }
+    }
+    else {
+      $summary = $this->t('Customers cannot reuse payment methods');
+    }
+
+    return $summary;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function buildConfigurationForm(array $form, FormStateInterface $form_state) {
+    $form = parent::buildConfigurationForm($form, $form_state);
+    $form['payment_methods_reusable'] = [
+      '#type' => 'checkbox',
+      '#title' => $this->t('Allow customers to reuse payment methods'),
+      '#default_value' => (int) $this->configuration['payment_methods_reusable'],
+    ];
+    $form['payment_methods_settings'] = [
+      '#type' => 'container',
+      '#states' => [
+        'visible' => [
+          ':input[name="configuration[panes][payment_information][configuration][payment_methods_reusable]"]' => ['checked' => TRUE],
+        ],
+      ],
+    ];
+    $form['payment_methods_settings']['payment_methods_always_save'] = [
+      '#type' => 'radios',
+      '#title' => $this->t('Payment method storage setting'),
+      '#title_display' => 'invisible',
+      '#default_value' => (int) $this->configuration['payment_methods_always_save'],
+      '#options' => [
+        FALSE => $this->t('Customers must opt-in'),
+        TRUE => $this->t('Always store'),
+      ],
+    ];
+    $form['payment_methods_settings']['payment_methods_free_orders'] = [
+      '#type' => 'checkbox',
+      '#title' => $this->t('Collect payment methods on free orders'),
+      '#default_value' => (int) $this->configuration['payment_methods_free_orders'],
+      '#states' => [
+        'visible' => [
+          ':input[name="configuration[panes][payment_information][configuration][payment_methods_settings][payment_methods_always_save]"]' => ['value' => 1],
+        ],
+      ],
+    ];
+
+    return $form;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function submitConfigurationForm(array &$form, FormStateInterface $form_state) {
+    parent::submitConfigurationForm($form, $form_state);
+
+    if (!$form_state->getErrors()) {
+      $values = $form_state->getValue($form['#parents']);
+      $this->configuration['payment_methods_reusable'] = !empty($values['payment_methods_reusable']);
+      $this->configuration['payment_methods_always_save'] = !empty($values['payment_methods_settings']['payment_methods_always_save']) && $this->configuration['payment_methods_reusable'];
+      $this->configuration['payment_methods_free_orders'] = !empty($values['payment_methods_settings']['payment_methods_free_orders']) && $this->configuration['payment_methods_always_save'];
+      $stop = null;
+    }
+  }
+
+  /**
+   * {@inheritdoc}
+   */
   public function buildPaneSummary() {
     $summary = [];
     /** @var \Drupal\commerce_payment\Entity\PaymentGatewayInterface $payment_gateway */
@@ -138,11 +230,15 @@ class PaymentInformation extends CheckoutPaneBase {
           'type' => $selected_option['#payment_method_type'],
           'payment_gateway' => $selected_option['#payment_gateway'],
           'uid' => $this->order->getCustomerId(),
+          'reusable' => $this->configuration['payment_methods_always_save'],
         ]);
 
         $pane_form['add_payment_method'] = [
           '#type' => 'commerce_payment_gateway_form',
           '#operation' => 'add-payment-method',
+          '#allow_reusable' => $this->configuration['payment_methods_always_save'],
+          '#always_save' => $this->configuration['payment_methods_always_save'],
+          '#free_orders' => $this->configuration['payment_methods_free_orders'],
           '#default_value' => $payment_method,
         ];
       }
@@ -407,10 +503,7 @@ class PaymentInformation extends CheckoutPaneBase {
    *  Returns TRUE if only the billing profile should be collected.
    */
   protected function collectBillingProfileOnly() {
-    // This will be enhanced to consider the payment method storage strategy
-    // that will be determined in #2871483. Such as collecting payment methods
-    // for free orders for later use in recurring instances.
-    return $this->order->getTotalPrice()->isZero();
+    return $this->order->getTotalPrice()->isZero() && !$this->configuration['payment_methods_free_orders'];
   }
 
 }
