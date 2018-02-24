@@ -1,0 +1,6 @@
+langcode: en
+status: true
+dependencies: {  }
+id: brightness
+label: Brightness
+elementType: select

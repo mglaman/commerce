@@ -1,0 +1,7 @@
+name: Commerce Product Add To Cart Variation Change Test Helper
+description: Helper module for testing product variation change in the add to fart form
+core: 8.x
+type: module
+dependencies:
+  - commerce:commerce_price
+  - commerce:commerce_product
