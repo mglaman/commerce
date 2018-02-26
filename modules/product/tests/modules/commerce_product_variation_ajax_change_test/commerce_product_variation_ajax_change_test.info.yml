@@ -1,7 +1,0 @@
-name: Commerce Product Variation Ajax Change Test
-description: Test module for testing the ajax change for field injection.
-core: 8.x
-type: module
-dependencies:
-  - commerce:commerce_price
-  - commerce:commerce_product

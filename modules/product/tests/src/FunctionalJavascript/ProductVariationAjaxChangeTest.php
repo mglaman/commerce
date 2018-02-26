@@ -4,6 +4,8 @@ namespace Drupal\Tests\commerce_product\FunctionalJavascript;
 
 use Drupal\commerce_price\Entity\Currency;
 use Drupal\Core\Entity\Entity\EntityFormDisplay;
+use Drupal\Core\Entity\Entity\EntityViewDisplay;
+use Drupal\Core\Entity\Entity\EntityViewMode;
 use Drupal\Tests\commerce\FunctionalJavascript\JavascriptTestTrait;
 use Drupal\Tests\commerce_product\Functional\ProductBrowserTestBase;
 use Drupal\commerce_price\Price;
@@ -36,7 +38,6 @@ class ProductVariationAjaxChangeTest extends ProductBrowserTestBase {
    */
   public static $modules = [
     'commerce_cart',
-    'commerce_product_variation_ajax_change_test',
   ];
 
   /**
@@ -44,6 +45,53 @@ class ProductVariationAjaxChangeTest extends ProductBrowserTestBase {
    */
   protected function setUp() {
     parent::setUp();
+
+    // Use title widget so we do not need to use attributes.
+    $order_item_form_display = EntityFormDisplay::load('commerce_order_item.default.add_to_cart');
+    $order_item_form_display->setComponent('purchased_entity', [
+      'type' => 'commerce_product_variation_title',
+    ]);
+    $order_item_form_display->save();
+
+    // Set up the Full view modes.
+    EntityViewMode::create([
+      'id' => 'commerce_product.full',
+      'label' => 'Full',
+      'targetEntityType' => 'commerce_product',
+    ])->save();
+    EntityViewMode::create([
+      'id' => 'commerce_product_variation.full',
+      'label' => 'Full',
+      'targetEntityType' => 'commerce_product_variation',
+    ])->save();
+
+    // Configure the Default and Full displays for variations.
+    $variation_view_display_default = EntityViewDisplay::load('commerce_product_variation.default.default');
+    if (!$variation_view_display_default) {
+      $variation_view_display_default = EntityViewDisplay::create([
+        'targetEntityType' => 'commerce_product_variation',
+        'bundle' => 'default',
+        'mode' => 'default',
+        'status' => TRUE,
+      ]);
+    }
+    $variation_view_display_default->setComponent('price', [
+      'type' => 'commerce_price_default',
+    ]);
+    $variation_view_display_default->save();
+    $variation_view_display_full = EntityViewDisplay::load('commerce_product_variation.default.full');
+    if (!$variation_view_display_full) {
+      $variation_view_display_full = EntityViewDisplay::create([
+        'targetEntityType' => 'commerce_product_variation',
+        'bundle' => 'default',
+        'mode' => 'full',
+        'status' => TRUE,
+      ]);
+    }
+    $variation_view_display_full->setComponent('price', [
+      'type' => 'commerce_price_plain',
+    ]);
+    $variation_view_display_full->save();
 
     // Create test commerce_product.
     $this->product = $this->createEntity('commerce_product', [
@@ -79,13 +127,6 @@ class ProductVariationAjaxChangeTest extends ProductBrowserTestBase {
       $this->lowBulb,
       $this->highBulb,
     ])->save();
-
-    // Use title widget so we do not need to use attributes.
-    $order_item_form_display = EntityFormDisplay::load('commerce_order_item.default.add_to_cart');
-    $order_item_form_display->setComponent('purchased_entity', [
-      'type' => 'commerce_product_variation_title',
-    ]);
-    $order_item_form_display->save();
   }
 
   /**
