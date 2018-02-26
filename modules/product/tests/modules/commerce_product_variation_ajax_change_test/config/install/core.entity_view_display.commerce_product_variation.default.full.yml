@@ -4,7 +4,6 @@ dependencies:
   config:
     - commerce_product.commerce_product_variation_type.default
     - core.entity_view_mode.commerce_product_variation.full
-    - field.field.commerce_product_variation.default.attribute_brightness
   module:
     - commerce_price
 id: commerce_product_variation.default.full
@@ -20,7 +19,6 @@ content:
     settings: {  }
     third_party_settings: {  }
 hidden:
-  attribute_brightness: true
   product_id: true
   sku: true
   title: true

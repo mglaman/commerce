@@ -1,5 +1,5 @@
-name: Commerce Product Add To Cart Variation Change Test Helper
-description: Helper module for testing product variation change in the add to fart form
+name: Commerce Product Variation Ajax Change Test
+description: Test module for testing the ajax change for field injection.
 core: 8.x
 type: module
 dependencies:

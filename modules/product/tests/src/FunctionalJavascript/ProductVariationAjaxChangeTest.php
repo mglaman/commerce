@@ -3,6 +3,7 @@
 namespace Drupal\Tests\commerce_product\FunctionalJavascript;
 
 use Drupal\commerce_price\Entity\Currency;
+use Drupal\Core\Entity\Entity\EntityFormDisplay;
 use Drupal\Tests\commerce\FunctionalJavascript\JavascriptTestTrait;
 use Drupal\Tests\commerce_product\Functional\ProductBrowserTestBase;
 use Drupal\commerce_price\Price;
@@ -44,16 +45,6 @@ class ProductVariationAjaxChangeTest extends ProductBrowserTestBase {
   protected function setUp() {
     parent::setUp();
 
-    // Create test attribute values.
-    $low = $this->createEntity('commerce_product_attribute_value', [
-      'attribute' => 'brightness',
-      'name' => 'Low',
-    ]);
-    $high = $this->createEntity('commerce_product_attribute_value', [
-      'attribute' => 'brightness',
-      'name' => 'High',
-    ]);
-
     // Create test commerce_product.
     $this->product = $this->createEntity('commerce_product', [
       'type' => 'default',
@@ -62,7 +53,7 @@ class ProductVariationAjaxChangeTest extends ProductBrowserTestBase {
     ]);
 
     // Create test commerce_product_variations.
-    $this->lowBulb  = $this->createEntity('commerce_product_variation', [
+    $this->lowBulb = $this->createEntity('commerce_product_variation', [
       'title' => 'Bulb - Low',
       'type' => 'default',
       'sku' => 'bulb-low',
@@ -71,7 +62,6 @@ class ProductVariationAjaxChangeTest extends ProductBrowserTestBase {
         'number' => 10,
         'currency_code' => $this->store->getDefaultCurrencyCode(),
       ],
-      'attribute_brightness' => $low->id()
     ]);
 
     $this->highBulb = $this->createEntity('commerce_product_variation', [
@@ -83,13 +73,19 @@ class ProductVariationAjaxChangeTest extends ProductBrowserTestBase {
         'number' => 20,
         'currency_code' => $this->store->getDefaultCurrencyCode(),
       ],
-      'attribute_brightness' => $high->id()
     ]);
 
     $this->product->setVariations([
       $this->lowBulb,
-      $this->highBulb
+      $this->highBulb,
     ])->save();
+
+    // Use title widget so we do not need to use attributes.
+    $order_item_form_display = EntityFormDisplay::load('commerce_order_item.default.add_to_cart');
+    $order_item_form_display->setComponent('purchased_entity', [
+      'type' => 'commerce_product_variation_title',
+    ]);
+    $order_item_form_display->save();
   }
 
   /**
@@ -108,34 +104,31 @@ class ProductVariationAjaxChangeTest extends ProductBrowserTestBase {
     $page = $session->getPage();
     $render = $this->container->get('renderer');
 
-    $low_bulb_id = $this->lowBulb->id();
     $low_bulb_price = [
       '#theme' => 'commerce_price_plain',
       '#number' => $this->lowBulb->getPrice()->getNumber(),
       '#currency' => Currency::load($this->lowBulb->getPrice()->getCurrencyCode()),
     ];
     $low_bulb_price = trim($render->renderPlain($low_bulb_price));
-    $high_bulb_id = $this->highBulb->id();
     $high_bulb_price = [
       '#theme' => 'commerce_price_plain',
       '#number' => $this->highBulb->getPrice()->getNumber(),
       '#currency' => Currency::load($this->highBulb->getPrice()->getCurrencyCode()),
     ];
     $high_bulb_price = trim($render->renderPlain($high_bulb_price));
+
     $price_field_selector = '.product--variation-field--variation_price__' . $this->product->id();
 
     $assert_session->elementExists('css', $price_field_selector);
     $assert_session->elementTextContains('css', $price_field_selector . ' .field__item', $low_bulb_price);
-    $assert_session->selectExists('purchased_entity[0][attributes][attribute_brightness]');
-    $assert_session->optionExists('purchased_entity[0][attributes][attribute_brightness]', $low_bulb_id);
-    $assert_session->optionExists('purchased_entity[0][attributes][attribute_brightness]', $high_bulb_id);
-    $assert_session->fieldValueEquals('purchased_entity[0][attributes][attribute_brightness]', $low_bulb_id);
-    $page->selectFieldOption('purchased_entity[0][attributes][attribute_brightness]', $high_bulb_id);
+    $assert_session->fieldValueEquals('purchased_entity[0][variation]', $this->lowBulb->id());
+    $page->selectFieldOption('purchased_entity[0][variation]', $this->highBulb->id());
     $assert_session->assertWaitOnAjaxRequest();
+
     $assert_session->elementExists('css', $price_field_selector);
     $assert_session->elementTextContains('css', $price_field_selector . ' .field__item', $high_bulb_price);
 
-    $page->selectFieldOption('purchased_entity[0][attributes][attribute_brightness]', $low_bulb_id);
+    $page->selectFieldOption('purchased_entity[0][variation]', $this->lowBulb->id());
     $assert_session->assertWaitOnAjaxRequest();
     $assert_session->elementExists('css', $price_field_selector);
     $assert_session->elementTextContains('css', $price_field_selector . ' .field__item', $low_bulb_price);
