@@ -227,16 +227,21 @@ class ProductVariationAttributesWidget extends ProductVariationWidgetBase implem
     $current_variation = reset($variations);
     if (!empty($user_input['attributes'])) {
       $attributes = $user_input['attributes'];
-      foreach ($variations as $variation) {
-        $match = TRUE;
-        foreach ($attributes as $field_name => $value) {
-          if ($variation->getAttributeValueId($field_name) != $value) {
-            $match = FALSE;
+      foreach ($attributes as $field_name => $value) {
+        if (sizeof($variations) > 0) {
+          foreach ($variations as $variation) {
+            if ($variation->getAttributeValueId($field_name) != $value) {
+              unset($variations[$variation->id()]);
+            }
           }
-        }
-        if ($match) {
-          $current_variation = $variation;
-          break;
+
+          if (sizeof($variations) > 0) {
+            // Change the current variation based on attribute narrow down.
+            $current_variation = reset($variations);
+          }
+          else {
+            break;
+          }
         }
       }
     }
@@ -281,11 +286,29 @@ class ProductVariationAttributesWidget extends ProductVariationWidgetBase implem
       // variations, but only the sizes of variations with the selected color.
       $callback = NULL;
       if ($index > 0) {
-        $previous_field_name = $field_names[$index - 1];
-        $previous_field_value = $selected_variation->getAttributeValueId($previous_field_name);
-        $callback = function ($variation) use ($previous_field_name, $previous_field_value) {
-          /** @var \Drupal\commerce_product\Entity\ProductVariationInterface $variation */
-          return $variation->getAttributeValueId($previous_field_name) == $previous_field_value;
+        $previous_field_names = $previous_field_values = [];
+        $current_index = $index;
+        while ($current_index) {
+          $previous_field_names[(int)($current_index - 1)] = $field_names[$current_index - 1];
+          $previous_field_values[(int)($current_index - 1)] = $selected_variation->getAttributeValueId($field_names[$current_index - 1]);
+          $current_index--;
+        }
+        ksort($previous_field_names);
+        ksort($previous_field_values);
+
+        $callback = function ($variation) use ($previous_field_names, $previous_field_values) {
+          $results = [];
+          foreach ($previous_field_names as $index => $previous_field_name) {
+            /** @var \Drupal\commerce_product\Entity\ProductVariationInterface $variation */
+            if ($variation->getAttributeValueId($previous_field_name) == $previous_field_values[$index]) {
+              $results[] = TRUE;
+            }
+            else {
+              $results[] = FALSE;
+            }
+          }
+
+          return !in_array(FALSE, $results, TRUE);
         };
       }
 
