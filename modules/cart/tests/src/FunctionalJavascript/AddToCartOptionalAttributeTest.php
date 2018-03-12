@@ -46,7 +46,7 @@ class AddToCartOptionalAttributeTest extends CartBrowserTestBase {
         'type' => $variation_type->id(),
         'sku' => $this->randomMachineName(),
         'price' => [
-          'amount' => 999,
+          'number' => 999,
           'currency_code' => 'USD',
         ],
         'attribute_number' => $number_attributes[$value[0]],
@@ -126,7 +126,7 @@ class AddToCartOptionalAttributeTest extends CartBrowserTestBase {
         'type' => $variation_type->id(),
         'sku' => $this->randomMachineName(),
         'price' => [
-          'amount' => 999,
+          'number' => 999,
           'currency_code' => 'USD',
         ],
         'attribute_number' => $number_attributes[$value[0]],
