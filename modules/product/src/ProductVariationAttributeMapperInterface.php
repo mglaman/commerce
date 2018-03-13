@@ -4,10 +4,16 @@ namespace Drupal\commerce_product;
 
 use Drupal\commerce_product\Entity\ProductVariationInterface;
 
-interface  ProductVariationAttributeValueResolverInterface {
+/**
+ * Provides mapping between variations and attributes.
+ *
+ * This is used when working with variations and their attributes, such as
+ * the 'commerce_product_variation_attributes' widget.
+ */
+interface ProductVariationAttributeMapperInterface {
 
   /**
-   * Resolves an available variation by the attributes.
+   * Gets the variation that best matches the provided the attributes.
    *
    * @param \Drupal\commerce_product\Entity\ProductVariationInterface[] $variations
    *   The variations.
@@ -17,7 +23,7 @@ interface  ProductVariationAttributeValueResolverInterface {
    * @return \Drupal\commerce_product\Entity\ProductVariationInterface
    *   The variation.
    */
-  public function resolve(array $variations, array $attribute_values = []);
+  public function getVariation(array $variations, array $attribute_values = []);
 
   /**
    * Gets the attribute information for the selected product variation.

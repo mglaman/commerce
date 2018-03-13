@@ -16,7 +16,7 @@ use Drupal\Tests\commerce\Kernel\CommerceKernelTestBase;
  *
  * @group commerce
  */
-class ProductVariationAttributeValueResolverTest extends CommerceKernelTestBase {
+class ProductVariationAttributeMapperTest extends CommerceKernelTestBase {
 
   /**
    * Modules to enable.
@@ -45,11 +45,11 @@ class ProductVariationAttributeValueResolverTest extends CommerceKernelTestBase 
   protected $sizeAttributes;
 
   /**
-   * The variation attribute value resolver.
+   * The variation attribute value mapper.
    *
-   * @var \Drupal\commerce_product\ProductVariationAttributeValueResolverInterface
+   * @var \Drupal\commerce_product\ProductVariationAttributeMapperInterface
    */
-  protected $resolver;
+  protected $mapper;
 
   /**
    * The attribute field manager.
@@ -91,7 +91,7 @@ class ProductVariationAttributeValueResolverTest extends CommerceKernelTestBase 
     $this->installEntitySchema('commerce_product_attribute_value');
     $this->installConfig(['commerce_product']);
     $this->attributeFieldManager = $this->container->get('commerce_product.attribute_field_manager');
-    $this->resolver = $this->container->get('commerce_product.variation_attribute_value_resolver');
+    $this->mapper = $this->container->get('commerce_product.variation_attribute_value_mapper');
 
     $variation_type = ProductVariationType::load('default');
 
@@ -137,15 +137,15 @@ class ProductVariationAttributeValueResolverTest extends CommerceKernelTestBase 
    */
   public function testResolveWithNoAttributes() {
     $product = $this->generateThreeByTwoScenario();
-    $resolved_variation = $this->resolver->resolve($product->getVariations());
+    $resolved_variation = $this->mapper->getVariation($product->getVariations());
     $this->assertEquals($product->getDefaultVariation()->id(), $resolved_variation->id());
 
-    $resolved_variation = $this->resolver->resolve($product->getVariations(), [
+    $resolved_variation = $this->mapper->getVariation($product->getVariations(), [
       'attribute_color' => '',
     ]);
     $this->assertEquals($product->getDefaultVariation()->id(), $resolved_variation->id());
 
-    $resolved_variation = $this->resolver->resolve($product->getVariations(), [
+    $resolved_variation = $this->mapper->getVariation($product->getVariations(), [
       'attribute_color' => '',
       'attribute_size' => '',
     ]);
@@ -159,12 +159,12 @@ class ProductVariationAttributeValueResolverTest extends CommerceKernelTestBase 
     $product = $this->generateThreeByTwoScenario();
     $variations = $product->getVariations();
 
-    $resolved_variation = $this->resolver->resolve($variations, [
+    $resolved_variation = $this->mapper->getVariation($variations, [
       'attribute_color' => $this->colorAttributes['blue']->id(),
     ]);
     $this->assertEquals($variations[3]->id(), $resolved_variation->id());
 
-    $resolved_variation = $this->resolver->resolve($variations, [
+    $resolved_variation = $this->mapper->getVariation($variations, [
       'attribute_size' => $this->sizeAttributes['large']->id(),
     ]);
     $this->assertEquals($variations[2]->id(), $resolved_variation->id());
@@ -177,27 +177,27 @@ class ProductVariationAttributeValueResolverTest extends CommerceKernelTestBase 
     $product = $this->generateThreeByTwoScenario();
     $variations = $product->getVariations();
 
-    $resolved_variation = $this->resolver->resolve($variations, [
+    $resolved_variation = $this->mapper->getVariation($variations, [
       'attribute_color' => $this->colorAttributes['red']->id(),
       'attribute_size' => $this->sizeAttributes['large']->id(),
     ]);
     $this->assertEquals($variations[2]->id(), $resolved_variation->id());
 
-    $resolved_variation = $this->resolver->resolve($variations, [
+    $resolved_variation = $this->mapper->getVariation($variations, [
       'attribute_color' => $this->colorAttributes['blue']->id(),
       'attribute_size' => $this->sizeAttributes['large']->id(),
     ]);
     // An invalid arrangement was passed, so the default variation is resolved.
     $this->assertEquals($product->getDefaultVariation()->id(), $resolved_variation->id());
 
-    $resolved_variation = $this->resolver->resolve($variations, [
+    $resolved_variation = $this->mapper->getVariation($variations, [
       'attribute_color' => '',
       'attribute_size' => $this->sizeAttributes['large']->id(),
     ]);
     // A missing attribute was passed for first option.
     $this->assertEquals($product->getDefaultVariation()->id(), $resolved_variation->id());
 
-    $resolved_variation = $this->resolver->resolve($variations, [
+    $resolved_variation = $this->mapper->getVariation($variations, [
       'attribute_color' => $this->colorAttributes['blue']->id(),
       'attribute_size' => $this->sizeAttributes['small']->id(),
     ]);
@@ -212,19 +212,19 @@ class ProductVariationAttributeValueResolverTest extends CommerceKernelTestBase 
     $product = $this->generateThreeByTwoOptionalScenario();
     $variations = $product->getVariations();
 
-    $resolved_variation = $this->resolver->resolve($variations, [
+    $resolved_variation = $this->mapper->getVariation($variations, [
       'attribute_ram' => $this->ramAttributes['16gb']->id(),
     ]);
     $this->assertEquals($variations[1]->id(), $resolved_variation->id());
 
-    $resolved_variation = $this->resolver->resolve($variations, [
+    $resolved_variation = $this->mapper->getVariation($variations, [
       'attribute_ram' => $this->ramAttributes['16gb']->id(),
       'attribute_disk1' => $this->disk1Attributes['1tb']->id(),
       'attribute_disk2' => $this->disk2Attributes['1tb']->id(),
     ]);
     $this->assertEquals($variations[2]->id(), $resolved_variation->id());
 
-    $resolved_variation = $this->resolver->resolve($variations, [
+    $resolved_variation = $this->mapper->getVariation($variations, [
       'attribute_ram' => $this->ramAttributes['16gb']->id(),
       'attribute_disk1' => $this->disk1Attributes['1tb']->id(),
       'attribute_disk2' => $this->disk2Attributes['2tb']->id(),
@@ -240,13 +240,13 @@ class ProductVariationAttributeValueResolverTest extends CommerceKernelTestBase 
     $variations = $product->getVariations();
 
     // With no callback, all value should be returned.
-    $values = $this->resolver->getAttributeValues($variations, 'attribute_color');
+    $values = $this->mapper->getAttributeValues($variations, 'attribute_color');
     foreach ($this->colorAttributes as $color_attribute) {
       $this->assertTrue(in_array($color_attribute->label(), $values));
     }
 
     // With no callback, all value should be returned.
-    $values = $this->resolver->getAttributeValues($variations, 'attribute_color', function (ProductVariationInterface $variation) {
+    $values = $this->mapper->getAttributeValues($variations, 'attribute_color', function (ProductVariationInterface $variation) {
       return $variation->getAttributeValueId('attribute_color') == $this->colorAttributes['blue']->id();
     });
     $this->assertTrue(in_array('Blue', $values));
@@ -261,7 +261,7 @@ class ProductVariationAttributeValueResolverTest extends CommerceKernelTestBase 
     $variations = $product->getVariations();
 
     // Test from initial variation.
-    $attribute_info = $this->resolver->getAttributeInfo(reset($variations), $variations);
+    $attribute_info = $this->mapper->getAttributeInfo(reset($variations), $variations);
 
     $color_attribute_info = $attribute_info['attribute_color'];
     $this->assertEquals('select', $color_attribute_info['element_type']);
@@ -274,7 +274,7 @@ class ProductVariationAttributeValueResolverTest extends CommerceKernelTestBase 
     $this->assertCount(3, $size_attribute_info['values']);
 
     // Test Blue Medium.
-    $attribute_info = $this->resolver->getAttributeInfo($variations[4], $variations);
+    $attribute_info = $this->mapper->getAttributeInfo($variations[4], $variations);
 
     $color_attribute_info = $attribute_info['attribute_color'];
     $this->assertEquals('select', $color_attribute_info['element_type']);
@@ -296,7 +296,7 @@ class ProductVariationAttributeValueResolverTest extends CommerceKernelTestBase 
     $variations = $product->getVariations();
 
     // Test from initial variation.
-    $attribute_info = $this->resolver->getAttributeInfo(reset($variations), $variations);
+    $attribute_info = $this->mapper->getAttributeInfo(reset($variations), $variations);
 
     $ram_attribute_info = $attribute_info['attribute_ram'];
     $this->assertEquals('select', $ram_attribute_info['element_type']);
@@ -325,7 +325,7 @@ class ProductVariationAttributeValueResolverTest extends CommerceKernelTestBase 
     $this->assertTrue(isset($disk2_attribute_info['values']['_none']));
 
     // Test from with 16GB which has a variation with option.
-    $attribute_info = $this->resolver->getAttributeInfo($variations[1], $variations);
+    $attribute_info = $this->mapper->getAttributeInfo($variations[1], $variations);
 
     $ram_attribute_info = $attribute_info['attribute_ram'];
     $this->assertEquals('select', $ram_attribute_info['element_type']);
@@ -385,7 +385,7 @@ class ProductVariationAttributeValueResolverTest extends CommerceKernelTestBase 
     $product->save();
 
     // Test from initial variation.
-    $attribute_info = $this->resolver->getAttributeInfo(reset($variations), $variations);
+    $attribute_info = $this->mapper->getAttributeInfo(reset($variations), $variations);
 
     $ram_attribute_info = $attribute_info['attribute_ram'];
     $this->assertEquals('select', $ram_attribute_info['element_type']);
@@ -407,7 +407,7 @@ class ProductVariationAttributeValueResolverTest extends CommerceKernelTestBase 
     $this->assertTrue(in_array('2TB', $disk2_attribute_info['values']), 'Only the one valid Disk 2 option is available.');
 
     // Test 8GB 1TB 2TB.
-    $attribute_info = $this->resolver->getAttributeInfo($variations[1], $variations);
+    $attribute_info = $this->mapper->getAttributeInfo($variations[1], $variations);
 
     $ram_attribute_info = $attribute_info['attribute_ram'];
     $this->assertEquals('select', $ram_attribute_info['element_type']);
@@ -430,7 +430,7 @@ class ProductVariationAttributeValueResolverTest extends CommerceKernelTestBase 
     $this->assertCount(1, $disk2_attribute_info['values']);
 
     // Test 8GB 2TB 1TB.
-    $attribute_info = $this->resolver->getAttributeInfo($variations[2], $variations);
+    $attribute_info = $this->mapper->getAttributeInfo($variations[2], $variations);
 
     $ram_attribute_info = $attribute_info['attribute_ram'];
     $this->assertEquals('select', $ram_attribute_info['element_type']);

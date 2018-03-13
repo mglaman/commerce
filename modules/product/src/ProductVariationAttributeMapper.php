@@ -6,7 +6,7 @@ use Drupal\commerce_product\Entity\ProductVariationInterface;
 use Drupal\Core\Entity\EntityRepositoryInterface;
 use Drupal\Core\Entity\EntityTypeManagerInterface;
 
-class ProductVariationAttributeValueResolver implements ProductVariationAttributeValueResolverInterface {
+class ProductVariationAttributeMapper implements ProductVariationAttributeMapperInterface {
 
   /**
    * The attribute field manager.
@@ -50,7 +50,7 @@ class ProductVariationAttributeValueResolver implements ProductVariationAttribut
   /**
    * {@inheritdoc}
    */
-  public function resolve(array $variations, array $attribute_values = []) {
+  public function getVariation(array $variations, array $attribute_values = []) {
     $current_variation = reset($variations);
     if (empty($attribute_values)) {
       return $current_variation;

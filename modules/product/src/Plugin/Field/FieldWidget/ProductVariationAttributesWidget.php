@@ -4,7 +4,7 @@ namespace Drupal\commerce_product\Plugin\Field\FieldWidget;
 
 use Drupal\commerce_product\Entity\ProductVariationInterface;
 use Drupal\commerce_product\ProductAttributeFieldManagerInterface;
-use Drupal\commerce_product\ProductVariationAttributeValueResolverInterface;
+use Drupal\commerce_product\ProductVariationAttributeMapperInterface;
 use Drupal\Component\Utility\Html;
 use Drupal\Component\Utility\NestedArray;
 use Drupal\Core\Entity\EntityRepositoryInterface;
@@ -43,11 +43,11 @@ class ProductVariationAttributesWidget extends ProductVariationWidgetBase implem
   protected $attributeStorage;
 
   /**
-   * The variation attribute value resolver.
+   * The variation attribute value mapper.
    *
-   * @var \Drupal\commerce_product\ProductVariationAttributeValueResolverInterface
+   * @var \Drupal\commerce_product\ProductVariationAttributeMapperInterface
    */
-  protected $variationAttributeValueResolver;
+  protected $variationAttributeValueMapper;
 
   /**
    * Constructs a new ProductVariationAttributesWidget object.
@@ -68,15 +68,15 @@ class ProductVariationAttributesWidget extends ProductVariationWidgetBase implem
    *   The entity repository.
    * @param \Drupal\commerce_product\ProductAttributeFieldManagerInterface $attribute_field_manager
    *   The attribute field manager.
-   * @param \Drupal\commerce_product\ProductVariationAttributeValueResolverInterface $variation_attribute_value_resolver
+   * @param \Drupal\commerce_product\ProductVariationAttributeMapperInterface $variation_attribute_value_mapper
    *   The variation attribute value resolver.
    */
-  public function __construct($plugin_id, $plugin_definition, FieldDefinitionInterface $field_definition, array $settings, array $third_party_settings, EntityTypeManagerInterface $entity_type_manager, EntityRepositoryInterface $entity_repository, ProductAttributeFieldManagerInterface $attribute_field_manager, ProductVariationAttributeValueResolverInterface $variation_attribute_value_resolver) {
+  public function __construct($plugin_id, $plugin_definition, FieldDefinitionInterface $field_definition, array $settings, array $third_party_settings, EntityTypeManagerInterface $entity_type_manager, EntityRepositoryInterface $entity_repository, ProductAttributeFieldManagerInterface $attribute_field_manager, ProductVariationAttributeMapperInterface $variation_attribute_value_mapper) {
     parent::__construct($plugin_id, $plugin_definition, $field_definition, $settings, $third_party_settings, $entity_type_manager, $entity_repository);
 
     $this->attributeFieldManager = $attribute_field_manager;
     $this->attributeStorage = $entity_type_manager->getStorage('commerce_product_attribute');
-    $this->variationAttributeValueResolver = $variation_attribute_value_resolver;
+    $this->variationAttributeValueMapper = $variation_attribute_value_mapper;
   }
 
   /**
@@ -92,7 +92,7 @@ class ProductVariationAttributesWidget extends ProductVariationWidgetBase implem
       $container->get('entity_type.manager'),
       $container->get('entity.repository'),
       $container->get('commerce_product.attribute_field_manager'),
-      $container->get('commerce_product.variation_attribute_value_resolver')
+      $container->get('commerce_product.variation_attribute_value_mapper')
     );
   }
 
@@ -237,7 +237,7 @@ class ProductVariationAttributesWidget extends ProductVariationWidgetBase implem
    */
   protected function selectVariationFromUserInput(array $variations, array $user_input) {
     $attributes = !empty($user_input['attributes']) ? $user_input['attributes'] : [];
-    return $this->variationAttributeValueResolver->resolve($variations, $attributes);
+    return $this->variationAttributeValueMapper->getVariation($variations, $attributes);
   }
 
   /**
@@ -252,7 +252,7 @@ class ProductVariationAttributesWidget extends ProductVariationWidgetBase implem
    *   The attribute information, keyed by field name.
    */
   protected function getAttributeInfo(ProductVariationInterface $selected_variation, array $variations) {
-    return $this->variationAttributeValueResolver->getAttributeInfo($selected_variation, $variations);
+    return $this->variationAttributeValueMapper->getAttributeInfo($selected_variation, $variations);
   }
 
   /**
@@ -269,7 +269,7 @@ class ProductVariationAttributesWidget extends ProductVariationWidgetBase implem
    *   The attribute values, keyed by attribute ID.
    */
   protected function getAttributeValues(array $variations, $field_name, callable $callback = NULL) {
-    return $this->variationAttributeValueResolver->getAttributeValues($variations, $field_name, $callback);
+    return $this->variationAttributeValueMapper->getAttributeValues($variations, $field_name, $callback);
   }
 
 }
