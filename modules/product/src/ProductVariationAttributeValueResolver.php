@@ -111,11 +111,19 @@ class ProductVariationAttributeValueResolver implements ProductVariationAttribut
       // variations, but only the sizes of variations with the selected color.
       $callback = NULL;
       if ($index > 0) {
-        $previous_field_name = $field_names[$index - 1];
-        $previous_field_value = $selected_variation->getAttributeValueId($previous_field_name);
-        $callback = function ($variation) use ($previous_field_name, $previous_field_value) {
-          /** @var \Drupal\commerce_product\Entity\ProductVariationInterface $variation */
-          return $variation->getAttributeValueId($previous_field_name) == $previous_field_value;
+        $index_limit = $index - 1;
+        // Get all previous field values.
+        $previous_variation_field_values = [];
+        for ($i = 0; $i <= $index_limit; $i++) {
+          $previous_variation_field_values[$field_names[$i]] = $selected_variation->getAttributeValueId($field_names[$i]);
+        }
+
+        $callback = function (ProductVariationInterface $variation) use ($previous_variation_field_values) {
+          $results = [];
+          foreach ($previous_variation_field_values as $previous_field_name => $previous_field_value) {
+            $results[] = $variation->getAttributeValueId($previous_field_name) == $previous_field_value;
+          }
+          return !in_array(FALSE, $results, TRUE);
         };
       }
 

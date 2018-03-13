@@ -321,7 +321,7 @@ class ProductVariationAttributeValueResolverTest extends CommerceKernelTestBase 
     $this->assertEquals(1, $disk2_attribute_info['required']);
     $this->assertNotCount(3, $disk2_attribute_info['values'], 'Out of the three available attribute values, only the one used is returned.');
     // There are two values. Since this is optional there is a "_none" option.
-    $this->assertCount(2, $disk2_attribute_info['values']);
+    $this->assertCount(1, $disk2_attribute_info['values']);
     $this->assertTrue(isset($disk2_attribute_info['values']['_none']));
 
     // Test from with 16GB which has a variation with option.
@@ -403,7 +403,8 @@ class ProductVariationAttributeValueResolverTest extends CommerceKernelTestBase 
     $this->assertEquals('select', $disk2_attribute_info['element_type']);
     $this->assertEquals(1, $disk2_attribute_info['required']);
     $this->assertNotCount(3, $disk2_attribute_info['values'], 'Out of the three available attribute values, only the one used is returned.');
-    $this->assertCount(2, $disk2_attribute_info['values']);
+    $this->assertCount(1, $disk2_attribute_info['values']);
+    $this->assertTrue(in_array('2TB', $disk2_attribute_info['values']), 'Only the one valid Disk 2 option is available.');
 
     // Test 8GB 1TB 2TB.
     $attribute_info = $this->resolver->getAttributeInfo($variations[1], $variations);
