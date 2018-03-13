@@ -252,48 +252,7 @@ class ProductVariationAttributesWidget extends ProductVariationWidgetBase implem
    *   The attribute information, keyed by field name.
    */
   protected function getAttributeInfo(ProductVariationInterface $selected_variation, array $variations) {
-    $attributes = [];
-    $field_definitions = $this->attributeFieldManager->getFieldDefinitions($selected_variation->bundle());
-    $field_map = $this->attributeFieldManager->getFieldMap($selected_variation->bundle());
-    $field_names = array_column($field_map, 'field_name');
-    $attribute_ids = array_column($field_map, 'attribute_id');
-    $index = 0;
-    foreach ($field_names as $field_name) {
-      $field = $field_definitions[$field_name];
-      /** @var \Drupal\commerce_product\Entity\ProductAttributeInterface $attribute */
-      $attribute = $this->attributeStorage->load($attribute_ids[$index]);
-      // Make sure we have translation for attribute.
-      $attribute = $this->entityRepository->getTranslationFromContext($attribute, $selected_variation->language()->getId());
-
-      $attributes[$field_name] = [
-        'field_name' => $field_name,
-        'title' => $attribute->label(),
-        'required' => $field->isRequired(),
-        'element_type' => $attribute->getElementType(),
-      ];
-      // The first attribute gets all values. Every next attribute gets only
-      // the values from variations matching the previous attribute value.
-      // For 'Color' and 'Size' attributes that means getting the colors of all
-      // variations, but only the sizes of variations with the selected color.
-      $callback = NULL;
-      if ($index > 0) {
-        $previous_field_name = $field_names[$index - 1];
-        $previous_field_value = $selected_variation->getAttributeValueId($previous_field_name);
-        $callback = function ($variation) use ($previous_field_name, $previous_field_value) {
-          /** @var \Drupal\commerce_product\Entity\ProductVariationInterface $variation */
-          return $variation->getAttributeValueId($previous_field_name) == $previous_field_value;
-        };
-      }
-
-      $attributes[$field_name]['values'] = $this->getAttributeValues($variations, $field_name, $callback);
-      $index++;
-    }
-    // Filter out attributes with no values.
-    $attributes = array_filter($attributes, function ($attribute) {
-      return !empty($attribute['values']);
-    });
-
-    return $attributes;
+    return $this->variationAttributeValueResolver->getAttributeInfo($selected_variation, $variations);
   }
 
   /**
@@ -310,20 +269,7 @@ class ProductVariationAttributesWidget extends ProductVariationWidgetBase implem
    *   The attribute values, keyed by attribute ID.
    */
   protected function getAttributeValues(array $variations, $field_name, callable $callback = NULL) {
-    $values = [];
-    foreach ($variations as $variation) {
-      if (is_null($callback) || call_user_func($callback, $variation)) {
-        $attribute_value = $variation->getAttributeValue($field_name);
-        if ($attribute_value) {
-          $values[$attribute_value->id()] = $attribute_value->label();
-        }
-        else {
-          $values['_none'] = '';
-        }
-      }
-    }
-
-    return $values;
+    return $this->variationAttributeValueResolver->getAttributeValues($variations, $field_name, $callback);
   }
 
 }
