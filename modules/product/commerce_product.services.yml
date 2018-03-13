@@ -19,3 +19,4 @@ services:
 
   commerce_product.variation_attribute_value_resolver:
     class: Drupal\commerce_product\ProductVariationAttributeValueResolver
+    arguments: ['@entity_type.manager', '@entity.repository', '@commerce_product.attribute_field_manager']

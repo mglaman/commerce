@@ -233,6 +233,27 @@ class ProductVariationAttributeValueResolverTest extends CommerceKernelTestBase 
   }
 
   /**
+   * Tests the getAttributeValues method.
+   */
+  public function testGetAttributeValues() {
+    $product = $this->generateThreeByTwoScenario();
+    $variations = $product->getVariations();
+
+    // With no callback, all value should be returned.
+    $values = $this->resolver->getAttributeValues($variations, 'attribute_color');
+    foreach ($this->colorAttributes as $color_attribute) {
+      $this->assertTrue(in_array($color_attribute->label(), $values));
+    }
+
+    // With no callback, all value should be returned.
+    $values = $this->resolver->getAttributeValues($variations, 'attribute_color', function (ProductVariationInterface $variation) {
+      return $variation->getAttributeValueId('attribute_color') == $this->colorAttributes['blue']->id();
+    });
+    $this->assertTrue(in_array('Blue', $values));
+    $this->assertFalse(in_array('Red', $values));
+  }
+
+  /**
    * Generates a three by two secenario.
    *
    * This generates a product and variations in 3x2 scenario. There are three
@@ -376,6 +397,5 @@ class ProductVariationAttributeValueResolverTest extends CommerceKernelTestBase 
 
     return $attribute_value;
   }
-
 
 }
