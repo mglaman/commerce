@@ -290,8 +290,6 @@ class ProductVariationAttributeValueResolverTest extends CommerceKernelTestBase 
 
   /**
    * Tests the getAttributeInfo method.
-   *
-   * @group debug
    */
   public function testGetAttributeInfoOptional() {
     $product = $this->generateThreeByTwoOptionalScenario();
@@ -348,6 +346,114 @@ class ProductVariationAttributeValueResolverTest extends CommerceKernelTestBase 
     // There are two values. Since this is optional there is a "_none" option.
     $this->assertCount(2, $disk2_attribute_info['values']);
     $this->assertTrue(isset($disk2_attribute_info['values']['_none']));
+  }
+
+  /**
+   * Tests the getAttributeInfo method.
+   *
+   * @group debug
+   */
+  public function testMutuallyExclusiveAttributeMatrixTwoByTwobyTwo() {
+    $product = Product::create([
+      'type' => 'default',
+      'title' => $this->randomMachineName(),
+      'stores' => [$this->store],
+      'variations' => [],
+    ]);
+    $attribute_values_matrix = [
+      ['4gb', '2tb', '2tb'],
+      ['8gb', '1tb', '2tb'],
+      ['8gb', '2tb', '1tb'],
+    ];
+    $variations = [];
+    foreach ($attribute_values_matrix as $key => $value) {
+      $variation = ProductVariation::create([
+        'type' => 'default',
+        'sku' => $this->randomMachineName(),
+        'price' => [
+          'number' => 999,
+          'currency_code' => 'USD',
+        ],
+        'attribute_ram' => $this->ramAttributes[$value[0]],
+        'attribute_disk1' => $this->disk1Attributes[$value[1]],
+        'attribute_disk2' => isset($this->disk2Attributes[$value[2]]) ? $this->disk2Attributes[$value[2]] : NULL,
+      ]);
+      $variation->save();
+      $variations[] = $variation;
+      $product->addVariation($variation);
+    }
+    $product->save();
+
+    // Test from initial variation.
+    $attribute_info = $this->resolver->getAttributeInfo(reset($variations), $variations);
+
+    $ram_attribute_info = $attribute_info['attribute_ram'];
+    $this->assertEquals('select', $ram_attribute_info['element_type']);
+    $this->assertEquals(1, $ram_attribute_info['required']);
+    $this->assertNotCount(4, $ram_attribute_info['values'], 'Out of the four available attribute values, only the two used are returned.');
+    $this->assertCount(2, $ram_attribute_info['values']);
+
+    $disk1_attribute_info = $attribute_info['attribute_disk1'];
+    $this->assertEquals('select', $disk1_attribute_info['element_type']);
+    $this->assertEquals(1, $disk1_attribute_info['required']);
+    $this->assertNotCount(3, $disk1_attribute_info['values'], 'Out of the three available attribute values, only the one used is returned.');
+    $this->assertCount(1, $disk1_attribute_info['values']);
+
+    $disk2_attribute_info = $attribute_info['attribute_disk2'];
+    $this->assertEquals('select', $disk2_attribute_info['element_type']);
+    $this->assertEquals(1, $disk2_attribute_info['required']);
+    $this->assertNotCount(3, $disk2_attribute_info['values'], 'Out of the three available attribute values, only the one used is returned.');
+    $this->assertCount(2, $disk2_attribute_info['values']);
+
+    // Test 8GB 1TB 2TB.
+    $attribute_info = $this->resolver->getAttributeInfo($variations[1], $variations);
+
+    $ram_attribute_info = $attribute_info['attribute_ram'];
+    $this->assertEquals('select', $ram_attribute_info['element_type']);
+    $this->assertEquals(1, $ram_attribute_info['required']);
+    $this->assertNotCount(4, $ram_attribute_info['values'], 'Out of the four available attribute values, only the two used are returned.');
+    $this->assertCount(2, $ram_attribute_info['values']);
+
+    $disk1_attribute_info = $attribute_info['attribute_disk1'];
+    $this->assertEquals('select', $disk1_attribute_info['element_type']);
+    $this->assertEquals(1, $disk1_attribute_info['required']);
+    $this->assertNotCount(3, $disk1_attribute_info['values'], 'Out of the three available attribute values, only the one used is returned.');
+    $this->assertCount(2, $disk1_attribute_info['values']);
+
+    $disk2_attribute_info = $attribute_info['attribute_disk2'];
+    $this->assertEquals('select', $disk2_attribute_info['element_type']);
+    $this->assertEquals(1, $disk2_attribute_info['required']);
+    $this->assertNotCount(3, $disk2_attribute_info['values'], 'Out of the three available attribute values, only the one used is returned.');
+    // There should only be one Disk 2 option, since the other 8GB RAM option
+    // has a Disk 1 value of 2TB.
+    $this->assertCount(1, $disk2_attribute_info['values']);
+
+    // Test 8GB 2TB 1TB.
+    $attribute_info = $this->resolver->getAttributeInfo($variations[2], $variations);
+
+    $ram_attribute_info = $attribute_info['attribute_ram'];
+    $this->assertEquals('select', $ram_attribute_info['element_type']);
+    $this->assertEquals(1, $ram_attribute_info['required']);
+    $this->assertNotCount(4, $ram_attribute_info['values'], 'Out of the four available attribute values, only the two used are returned.');
+    $this->assertCount(2, $ram_attribute_info['values']);
+
+    $disk1_attribute_info = $attribute_info['attribute_disk1'];
+    $this->assertEquals('select', $disk1_attribute_info['element_type']);
+    $this->assertEquals(1, $disk1_attribute_info['required']);
+    $this->assertNotCount(3, $disk1_attribute_info['values'], 'Out of the three available attribute values, only the one used is returned.');
+    $this->assertCount(2, $disk1_attribute_info['values']);
+
+    $disk2_attribute_info = $attribute_info['attribute_disk2'];
+    $this->assertEquals('select', $disk2_attribute_info['element_type']);
+    $this->assertEquals(1, $disk2_attribute_info['required']);
+    $this->assertNotCount(3, $disk2_attribute_info['values'], 'Out of the three available attribute values, only the one used is returned.');
+    // There should only be one Disk 2 option, since the other 8GB RAM option
+    // has a Disk 1 value of 2TB.
+    // @todo This fails. This is the bug in #2730643
+    // This is allowing us to go to 2TB for Disk 2, which is a variation that
+    // has a Disk 1 value of 1TB. So selecting 2TB for Disk 2 would make an
+    // invalid variation OR reset attributes.
+    $this->assertCount(1, $disk2_attribute_info['values'], print_r($disk2_attribute_info['values'], TRUE));
   }
 
   /**
