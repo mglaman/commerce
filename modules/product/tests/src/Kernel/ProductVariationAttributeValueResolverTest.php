@@ -254,7 +254,104 @@ class ProductVariationAttributeValueResolverTest extends CommerceKernelTestBase 
   }
 
   /**
-   * Generates a three by two secenario.
+   * Tests the getAttributeInfo method.
+   */
+  public function testGetAttributeInfo() {
+    $product = $this->generateThreeByTwoScenario();
+    $variations = $product->getVariations();
+
+    // Test from initial variation.
+    $attribute_info = $this->resolver->getAttributeInfo(reset($variations), $variations);
+
+    $color_attribute_info = $attribute_info['attribute_color'];
+    $this->assertEquals('select', $color_attribute_info['element_type']);
+    $this->assertEquals(1, $color_attribute_info['required']);
+    $this->assertCount(2, $color_attribute_info['values']);
+
+    $size_attribute_info = $attribute_info['attribute_size'];
+    $this->assertEquals('select', $size_attribute_info['element_type']);
+    $this->assertEquals(1, $size_attribute_info['required']);
+    $this->assertCount(3, $size_attribute_info['values']);
+
+    // Test Blue Medium.
+    $attribute_info = $this->resolver->getAttributeInfo($variations[4], $variations);
+
+    $color_attribute_info = $attribute_info['attribute_color'];
+    $this->assertEquals('select', $color_attribute_info['element_type']);
+    $this->assertEquals(1, $color_attribute_info['required']);
+    $this->assertCount(2, $color_attribute_info['values']);
+
+    $size_attribute_info = $attribute_info['attribute_size'];
+    $this->assertEquals('select', $size_attribute_info['element_type']);
+    $this->assertEquals(1, $size_attribute_info['required']);
+    $this->assertCount(2, $size_attribute_info['values']);
+    $this->assertFalse(in_array('Large', $size_attribute_info['values']));
+  }
+
+  /**
+   * Tests the getAttributeInfo method.
+   *
+   * @group debug
+   */
+  public function testGetAttributeInfoOptional() {
+    $product = $this->generateThreeByTwoOptionalScenario();
+    $variations = $product->getVariations();
+
+    // Test from initial variation.
+    $attribute_info = $this->resolver->getAttributeInfo(reset($variations), $variations);
+
+    $ram_attribute_info = $attribute_info['attribute_ram'];
+    $this->assertEquals('select', $ram_attribute_info['element_type']);
+    $this->assertEquals(1, $ram_attribute_info['required']);
+    $this->assertNotCount(4, $ram_attribute_info['values'], 'Out of the four available attribute values, only the two used are returned.');
+    $this->assertCount(2, $ram_attribute_info['values']);
+
+    $disk1_attribute_info = $attribute_info['attribute_disk1'];
+    $this->assertEquals('select', $disk1_attribute_info['element_type']);
+    $this->assertEquals(1, $disk1_attribute_info['required']);
+    $this->assertNotCount(3, $disk1_attribute_info['values'], 'Out of the three available attribute values, only the one used is returned.');
+    $this->assertCount(1, $disk1_attribute_info['values']);
+
+    // @todo The Disk 2 1TB option should not show. Only "none"
+    // This returns disk2 [ [ '_none' => '', 13 => '1TB' ] ]
+    //
+    // The default variation is 8GB x 1TB, which does not have the Disk 2 value
+    // so it should only return "_none". The Disk 2 option should have only have
+    // this option is the 16GB RAM option is chosen.
+    $disk2_attribute_info = $attribute_info['attribute_disk2'];
+    $this->assertEquals('select', $disk2_attribute_info['element_type']);
+    $this->assertEquals(1, $disk2_attribute_info['required']);
+    $this->assertNotCount(3, $disk2_attribute_info['values'], 'Out of the three available attribute values, only the one used is returned.');
+    // There are two values. Since this is optional there is a "_none" option.
+    $this->assertCount(2, $disk2_attribute_info['values']);
+    $this->assertTrue(isset($disk2_attribute_info['values']['_none']));
+
+    // Test from with 16GB which has a variation with option.
+    $attribute_info = $this->resolver->getAttributeInfo($variations[1], $variations);
+
+    $ram_attribute_info = $attribute_info['attribute_ram'];
+    $this->assertEquals('select', $ram_attribute_info['element_type']);
+    $this->assertEquals(1, $ram_attribute_info['required']);
+    $this->assertNotCount(4, $ram_attribute_info['values'], 'Out of the four available attribute values, only the two used are returned.');
+    $this->assertCount(2, $ram_attribute_info['values']);
+
+    $disk1_attribute_info = $attribute_info['attribute_disk1'];
+    $this->assertEquals('select', $disk1_attribute_info['element_type']);
+    $this->assertEquals(1, $disk1_attribute_info['required']);
+    $this->assertNotCount(3, $disk1_attribute_info['values'], 'Out of the three available attribute values, only the one used is returned.');
+    $this->assertCount(1, $disk1_attribute_info['values']);
+
+    $disk2_attribute_info = $attribute_info['attribute_disk2'];
+    $this->assertEquals('select', $disk2_attribute_info['element_type']);
+    $this->assertEquals(1, $disk2_attribute_info['required']);
+    $this->assertNotCount(3, $disk2_attribute_info['values'], 'Out of the three available attribute values, only the one used is returned.');
+    // There are two values. Since this is optional there is a "_none" option.
+    $this->assertCount(2, $disk2_attribute_info['values']);
+    $this->assertTrue(isset($disk2_attribute_info['values']['_none']));
+  }
+
+  /**
+   * Generates a three by two scenario.
    *
    * This generates a product and variations in 3x2 scenario. There are three
    * sizes and two colors. Missing one color option.
