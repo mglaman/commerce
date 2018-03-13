@@ -59,6 +59,27 @@ class ProductVariationAttributeValueResolverTest extends CommerceKernelTestBase 
   protected $attributeFieldManager;
 
   /**
+   * The RAM attribute values.
+   *
+   * @var \Drupal\commerce_product\Entity\ProductAttributeValue[]
+   */
+  protected $ramAttributes;
+
+  /**
+   * The Disk 1 attribute values.
+   *
+   * @var \Drupal\commerce_product\Entity\ProductAttributeValue[]
+   */
+  protected $disk1Attributes;
+
+  /**
+   * The Disk 2 attribute values.
+   *
+   * @var \Drupal\commerce_product\Entity\ProductAttributeValue[]
+   */
+  protected $disk2Attributes;
+
+  /**
    * {@inheritdoc}
    */
   protected function setUp() {
@@ -85,8 +106,30 @@ class ProductVariationAttributeValueResolverTest extends CommerceKernelTestBase 
       'large' => 'Large',
     ]);
 
+    $ram_attributes = $this->createAttributeSet($variation_type, 'ram', [
+      '4gb' => '4GB',
+      '8gb' => '8GB',
+      '16gb' => '16GB',
+      '32gb' => '32GB',
+    ]);
+
+    $disk1_attributes = $this->createAttributeSet($variation_type, 'disk1', [
+      '1tb' => '1TB',
+      '2tb' => '2TB',
+      '3tb' => '3TB',
+    ]);
+    $disk2_attributes = $this->createAttributeSet($variation_type, 'disk2', [
+      '1tb' => '1TB',
+      '2tb' => '2TB',
+      '3tb' => '3TB',
+    ]);
+
     $this->colorAttributes = $color_attributes;
     $this->sizeAttributes = $size_attributes;
+
+    $this->ramAttributes = $ram_attributes;
+    $this->disk1Attributes = $disk1_attributes;
+    $this->disk2Attributes = $disk2_attributes;
   }
 
   /**
@@ -163,6 +206,33 @@ class ProductVariationAttributeValueResolverTest extends CommerceKernelTestBase 
   }
 
   /**
+   * Tests optional attributes.
+   */
+  public function testResolveWithOptionalAttributes() {
+    $product = $this->generateThreeByTwoOptionalScenario();
+    $variations = $product->getVariations();
+
+    $resolved_variation = $this->resolver->resolve($variations, [
+      'attribute_ram' => $this->ramAttributes['16gb']->id(),
+    ]);
+    $this->assertEquals($variations[1]->id(), $resolved_variation->id());
+
+    $resolved_variation = $this->resolver->resolve($variations, [
+      'attribute_ram' => $this->ramAttributes['16gb']->id(),
+      'attribute_disk1' => $this->disk1Attributes['1tb']->id(),
+      'attribute_disk2' => $this->disk2Attributes['1tb']->id(),
+    ]);
+    $this->assertEquals($variations[2]->id(), $resolved_variation->id());
+
+    $resolved_variation = $this->resolver->resolve($variations, [
+      'attribute_ram' => $this->ramAttributes['16gb']->id(),
+      'attribute_disk1' => $this->disk1Attributes['1tb']->id(),
+      'attribute_disk2' => $this->disk2Attributes['2tb']->id(),
+    ]);
+    $this->assertEquals($product->getDefaultVariation()->id(), $resolved_variation->id());
+  }
+
+  /**
    * Generates a three by two secenario.
    *
    * This generates a product and variations in 3x2 scenario. There are three
@@ -171,7 +241,7 @@ class ProductVariationAttributeValueResolverTest extends CommerceKernelTestBase 
    * [ RS, RM, RL ]
    * [ BS, BM, X  ]
    *
-   * @return \Drupal\Core\Entity\EntityInterface
+   * @return \Drupal\commerce_product\Entity\ProductInterface
    *   The product.
    */
   protected function generateThreeByTwoScenario() {
@@ -199,6 +269,54 @@ class ProductVariationAttributeValueResolverTest extends CommerceKernelTestBase 
         ],
         'attribute_color' => $this->colorAttributes[$value[0]],
         'attribute_size' => $this->sizeAttributes[$value[1]],
+      ]);
+      $variation->save();
+      $variations[] = $variation;
+      $product->addVariation($variation);
+    }
+    $product->save();
+
+    return $product;
+  }
+
+  /**
+   * Generates a three by two (optional) secenario.
+   *
+   * This generates a product and variations in 3x2 scenario.
+   *
+   * https://www.drupal.org/project/commerce/issues/2730643#comment-11216983
+   *
+   * [ 8GBx1TB,    X        , X ]
+   * [    X   , 16GBx1TB    , X ]
+   * [    X   , 16GBx1TBx1TB, X ]
+   *
+   * @return \Drupal\commerce_product\Entity\ProductInterface
+   *   The product.
+   */
+  protected function generateThreeByTwoOptionalScenario() {
+    $product = Product::create([
+      'type' => 'default',
+      'title' => $this->randomMachineName(),
+      'stores' => [$this->store],
+      'variations' => [],
+    ]);
+    $attribute_values_matrix = [
+      ['8gb', '1tb', ''],
+      ['16gb', '1tb', ''],
+      ['16gb', '1tb', '1tb'],
+    ];
+    $variations = [];
+    foreach ($attribute_values_matrix as $key => $value) {
+      $variation = ProductVariation::create([
+        'type' => 'default',
+        'sku' => $this->randomMachineName(),
+        'price' => [
+          'number' => 999,
+          'currency_code' => 'USD',
+        ],
+        'attribute_ram' => $this->ramAttributes[$value[0]],
+        'attribute_disk1' => $this->disk1Attributes[$value[1]],
+        'attribute_disk2' => isset($this->disk2Attributes[$value[2]]) ? $this->disk2Attributes[$value[2]] : NULL,
       ]);
       $variation->save();
       $variations[] = $variation;
