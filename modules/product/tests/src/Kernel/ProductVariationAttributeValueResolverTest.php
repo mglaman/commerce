@@ -31,21 +31,29 @@ class ProductVariationAttributeValueResolverTest extends CommerceKernelTestBase 
   ];
 
   /**
+   * The color attributes values.
+   *
    * @var \Drupal\commerce_product\Entity\ProductAttributeValue[]
    */
   protected $colorAttributes;
 
   /**
+   * The size attribute values.
+   *
    * @var \Drupal\commerce_product\Entity\ProductAttributeValue[]
    */
   protected $sizeAttributes;
 
   /**
+   * The variation attribute value resolver.
+   *
    * @var \Drupal\commerce_product\ProductVariationAttributeValueResolverInterface
    */
   protected $resolver;
 
   /**
+   * The attribute field manager.
+   *
    * @var \Drupal\commerce_product\ProductAttributeFieldManagerInterface
    */
   protected $attributeFieldManager;
@@ -81,12 +89,29 @@ class ProductVariationAttributeValueResolverTest extends CommerceKernelTestBase 
     $this->sizeAttributes = $size_attributes;
   }
 
+  /**
+   * Tests that if no attributes are passed, the default variation is returned.
+   */
   public function testResolveWithNoAttributes() {
     $product = $this->generateThreeByTwoScenario();
     $resolved_variation = $this->resolver->resolve($product->getVariations());
     $this->assertEquals($product->getDefaultVariation()->id(), $resolved_variation->id());
+
+    $resolved_variation = $this->resolver->resolve($product->getVariations(), [
+      'attribute_color' => '',
+    ]);
+    $this->assertEquals($product->getDefaultVariation()->id(), $resolved_variation->id());
+
+    $resolved_variation = $this->resolver->resolve($product->getVariations(), [
+      'attribute_color' => '',
+      'attribute_size' => '',
+    ]);
+    $this->assertEquals($product->getDefaultVariation()->id(), $resolved_variation->id());
   }
 
+  /**
+   * Tests that if one attribute passed, the proper variation is returned.
+   */
   public function testResolveWithWithOneAttribute() {
     $product = $this->generateThreeByTwoScenario();
     $variations = $product->getVariations();
@@ -97,16 +122,13 @@ class ProductVariationAttributeValueResolverTest extends CommerceKernelTestBase 
     $this->assertEquals($variations[3]->id(), $resolved_variation->id());
 
     $resolved_variation = $this->resolver->resolve($variations, [
-      'attribute_size' => $this->sizeAttributes['large']->id()
+      'attribute_size' => $this->sizeAttributes['large']->id(),
     ]);
-    // This fails because we target in a cascading logic check. The first
-    // attribute must pass a value check, then the second. In this case
-    // the default variation was returned.
-    $this->assertNotEquals($variations[2]->id(), $resolved_variation->id());
+    $this->assertEquals($variations[2]->id(), $resolved_variation->id());
   }
 
   /**
-   * @group debug
+   * Tests that if two attributes are passed, the proper variation is returned.
    */
   public function testResolveWithWithTwoAttributes() {
     $product = $this->generateThreeByTwoScenario();
@@ -114,18 +136,44 @@ class ProductVariationAttributeValueResolverTest extends CommerceKernelTestBase 
 
     $resolved_variation = $this->resolver->resolve($variations, [
       'attribute_color' => $this->colorAttributes['red']->id(),
-      'attribute_size' => $this->sizeAttributes['large']->id()
+      'attribute_size' => $this->sizeAttributes['large']->id(),
     ]);
     $this->assertEquals($variations[2]->id(), $resolved_variation->id());
 
     $resolved_variation = $this->resolver->resolve($variations, [
       'attribute_color' => $this->colorAttributes['blue']->id(),
-      'attribute_size' => $this->sizeAttributes['large']->id()
+      'attribute_size' => $this->sizeAttributes['large']->id(),
     ]);
     // An invalid arrangement was passed, so the default variation is resolved.
     $this->assertEquals($product->getDefaultVariation()->id(), $resolved_variation->id());
+
+    $resolved_variation = $this->resolver->resolve($variations, [
+      'attribute_color' => '',
+      'attribute_size' => $this->sizeAttributes['large']->id(),
+    ]);
+    // A missing attribute was passed for first option.
+    $this->assertEquals($product->getDefaultVariation()->id(), $resolved_variation->id());
+
+    $resolved_variation = $this->resolver->resolve($variations, [
+      'attribute_color' => $this->colorAttributes['blue']->id(),
+      'attribute_size' => $this->sizeAttributes['small']->id(),
+    ]);
+    // An empty second option defaults to first variation option.
+    $this->assertEquals($variations[3]->id(), $resolved_variation->id());
   }
 
+  /**
+   * Generates a three by two secenario.
+   *
+   * This generates a product and variations in 3x2 scenario. There are three
+   * sizes and two colors. Missing one color option.
+   *
+   * [ RS, RM, RL ]
+   * [ BS, BM, X  ]
+   *
+   * @return \Drupal\Core\Entity\EntityInterface
+   *   The product.
+   */
   protected function generateThreeByTwoScenario() {
     $product = Product::create([
       'type' => 'default',

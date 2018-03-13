@@ -87,6 +87,8 @@ env:
     # etc. to only output those channels.
     #- DRUPAL_TI_DEBUG_FILE_OUTPUT="selenium xvfb webserver"
 
+    - SYMFONY_DEPRECATIONS_HELPER=weak
+
   matrix:
     # [[[ SELECT ANY OR MORE OPTIONS ]]]
     #- DRUPAL_TI_RUNNERS="phpunit"
