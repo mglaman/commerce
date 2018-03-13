@@ -4,6 +4,7 @@ namespace Drupal\commerce_product\Plugin\Field\FieldWidget;
 
 use Drupal\commerce_product\Entity\ProductVariationInterface;
 use Drupal\commerce_product\ProductAttributeFieldManagerInterface;
+use Drupal\commerce_product\ProductVariationAttributeValueResolverInterface;
 use Drupal\Component\Utility\Html;
 use Drupal\Component\Utility\NestedArray;
 use Drupal\Core\Entity\EntityRepositoryInterface;
@@ -42,6 +43,13 @@ class ProductVariationAttributesWidget extends ProductVariationWidgetBase implem
   protected $attributeStorage;
 
   /**
+   * The variation attribute value resolver.
+   *
+   * @var \Drupal\commerce_product\ProductVariationAttributeValueResolverInterface
+   */
+  protected $variationAttributeValueResolver;
+
+  /**
    * Constructs a new ProductVariationAttributesWidget object.
    *
    * @param string $plugin_id
@@ -60,12 +68,15 @@ class ProductVariationAttributesWidget extends ProductVariationWidgetBase implem
    *   The entity repository.
    * @param \Drupal\commerce_product\ProductAttributeFieldManagerInterface $attribute_field_manager
    *   The attribute field manager.
+   * @param \Drupal\commerce_product\ProductVariationAttributeValueResolverInterface $variation_attribute_value_resolver
+   *   The variation attribute value resolver.
    */
-  public function __construct($plugin_id, $plugin_definition, FieldDefinitionInterface $field_definition, array $settings, array $third_party_settings, EntityTypeManagerInterface $entity_type_manager, EntityRepositoryInterface $entity_repository, ProductAttributeFieldManagerInterface $attribute_field_manager) {
+  public function __construct($plugin_id, $plugin_definition, FieldDefinitionInterface $field_definition, array $settings, array $third_party_settings, EntityTypeManagerInterface $entity_type_manager, EntityRepositoryInterface $entity_repository, ProductAttributeFieldManagerInterface $attribute_field_manager, ProductVariationAttributeValueResolverInterface $variation_attribute_value_resolver) {
     parent::__construct($plugin_id, $plugin_definition, $field_definition, $settings, $third_party_settings, $entity_type_manager, $entity_repository);
 
     $this->attributeFieldManager = $attribute_field_manager;
     $this->attributeStorage = $entity_type_manager->getStorage('commerce_product_attribute');
+    $this->variationAttributeValueResolver = $variation_attribute_value_resolver;
   }
 
   /**
@@ -80,7 +91,8 @@ class ProductVariationAttributesWidget extends ProductVariationWidgetBase implem
       $configuration['third_party_settings'],
       $container->get('entity_type.manager'),
       $container->get('entity.repository'),
-      $container->get('commerce_product.attribute_field_manager')
+      $container->get('commerce_product.attribute_field_manager'),
+      $container->get('commerce_product.variation_attribute_value_resolver')
     );
   }
 
@@ -224,24 +236,8 @@ class ProductVariationAttributesWidget extends ProductVariationWidgetBase implem
    *   The selected variation.
    */
   protected function selectVariationFromUserInput(array $variations, array $user_input) {
-    $current_variation = reset($variations);
-    if (!empty($user_input['attributes'])) {
-      $attributes = $user_input['attributes'];
-      foreach ($variations as $variation) {
-        $match = TRUE;
-        foreach ($attributes as $field_name => $value) {
-          if ($variation->getAttributeValueId($field_name) != $value) {
-            $match = FALSE;
-          }
-        }
-        if ($match) {
-          $current_variation = $variation;
-          break;
-        }
-      }
-    }
-
-    return $current_variation;
+    $attributes = !empty($user_input['attributes']) ? $user_input['attributes'] : [];
+    return $this->variationAttributeValueResolver->resolve($variations, $attributes);
   }
 
   /**
