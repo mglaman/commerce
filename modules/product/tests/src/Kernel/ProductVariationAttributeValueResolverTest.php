@@ -450,10 +450,6 @@ class ProductVariationAttributeValueResolverTest extends CommerceKernelTestBase 
     $this->assertNotCount(3, $disk2_attribute_info['values'], 'Out of the three available attribute values, only the one used is returned.');
     // There should only be one Disk 2 option, since the other 8GB RAM option
     // has a Disk 1 value of 2TB.
-    // @todo This fails. This is the bug in #2730643
-    // This is allowing us to go to 2TB for Disk 2, which is a variation that
-    // has a Disk 1 value of 1TB. So selecting 2TB for Disk 2 would make an
-    // invalid variation OR reset attributes.
     $this->assertCount(1, $disk2_attribute_info['values'], print_r($disk2_attribute_info['values'], TRUE));
   }
 
