@@ -169,8 +169,8 @@ class PromotionOfferTest extends CommerceKernelTestBase {
     $this->order = $this->reloadEntity($this->order);
 
     // Offer amount larger than the order subtotal.
-    $this->assertEquals(1, count($this->order->getAdjustments()));
-    $this->assertEquals(new Price('-20.00', 'USD'), $this->order->getAdjustments()[0]->getAmount());
+    $this->assertEquals(1, count($this->order->collectAdjustments()));
+    $this->assertEquals(new Price('-20.00', 'USD'), $this->order->collectAdjustments()[0]->getAmount());
     $this->assertEquals(new Price('0.00', 'USD'), $this->order->getTotalPrice());
 
     // Offer amount smaller than the order subtotal.
@@ -178,8 +178,8 @@ class PromotionOfferTest extends CommerceKernelTestBase {
     $order_item->save();
     $this->order->save();
     $this->order = $this->reloadEntity($this->order);
-    $this->assertEquals(1, count($this->order->getAdjustments()));
-    $this->assertEquals(new Price('-25.00', 'USD'), $this->order->getAdjustments()[0]->getAmount());
+    $this->assertEquals(1, count($this->order->collectAdjustments()));
+    $this->assertEquals(new Price('-25.00', 'USD'), $this->order->collectAdjustments()[0]->getAmount());
     $this->assertEquals(new Price('15.00', 'USD'), $this->order->getTotalPrice());
   }
 
