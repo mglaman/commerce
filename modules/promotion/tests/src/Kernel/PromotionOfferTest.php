@@ -184,6 +184,110 @@ class PromotionOfferTest extends CommerceKernelTestBase {
   }
 
   /**
+   * Tests order fixed amount off.
+   */
+  public function testOrderFixedAmountOffWithOddRounding() {
+    // Starts now, enabled. No end time.
+    $promotion = Promotion::create([
+      'name' => 'Promotion 1',
+      'order_types' => [$this->order->bundle()],
+      'stores' => [$this->store->id()],
+      'status' => TRUE,
+      'offer' => [
+        'target_plugin_id' => 'order_fixed_amount_off',
+        'target_plugin_configuration' => [
+          'amount' => [
+            'number' => '33.00',
+            'currency_code' => 'USD',
+          ],
+        ],
+      ],
+    ]);
+    $promotion->save();
+
+    // Order total of 100.
+    $this->order->get('order_items')->appendItem(OrderItem::create([
+      'type' => 'test',
+      'quantity' => '1',
+      'unit_price' => [
+        'number' => '34.00',
+        'currency_code' => 'USD',
+      ],
+    ]));
+    $this->order->get('order_items')->appendItem(OrderItem::create([
+      'type' => 'test',
+      'quantity' => '2',
+      'unit_price' => [
+        'number' => '33.00',
+        'currency_code' => 'USD',
+      ],
+    ]));
+    $this->order->state = 'draft';
+    $this->order->save();
+    $this->order = $this->reloadEntity($this->order);
+
+    $this->assertEquals(new Price('100.00', 'USD'), $this->order->getSubtotalPrice());
+    $this->assertEquals(2, count($this->order->collectAdjustments()));
+    $this->assertEquals(new Price('67.00', 'USD'), $this->order->getTotalPrice());
+  }
+
+  /**
+   * Tests order fixed amount off.
+   */
+  public function testOrderFixedAmountOffWithPossibleRoundingError() {
+    // Starts now, enabled. No end time.
+    $promotion = Promotion::create([
+      'name' => 'Promotion 1',
+      'order_types' => [$this->order->bundle()],
+      'stores' => [$this->store->id()],
+      'status' => TRUE,
+      'offer' => [
+        'target_plugin_id' => 'order_fixed_amount_off',
+        'target_plugin_configuration' => [
+          'amount' => [
+            'number' => '50.00',
+            'currency_code' => 'USD',
+          ],
+        ],
+      ],
+    ]);
+    $promotion->save();
+
+    // Order total of 100.
+    $this->order->get('order_items')->appendItem(OrderItem::create([
+      'type' => 'test',
+      'quantity' => '1',
+      'unit_price' => [
+        'number' => '34.00',
+        'currency_code' => 'USD',
+      ],
+    ]));
+    $this->order->get('order_items')->appendItem(OrderItem::create([
+      'type' => 'test',
+      'quantity' => '3',
+      'unit_price' => [
+        'number' => '22.00',
+        'currency_code' => 'USD',
+      ],
+    ]));
+    $this->order->get('order_items')->appendItem(OrderItem::create([
+      'type' => 'test',
+      'quantity' => '2',
+      'unit_price' => [
+        'number' => '6.50',
+        'currency_code' => 'USD',
+      ],
+    ]));
+    $this->order->state = 'draft';
+    $this->order->save();
+    $this->order = $this->reloadEntity($this->order);
+
+    $this->assertEquals(new Price('113.00', 'USD'), $this->order->getSubtotalPrice());
+    $this->assertEquals(3, count($this->order->collectAdjustments()));
+    $this->assertEquals(new Price('63.00', 'USD'), $this->order->getTotalPrice());
+  }
+
+  /**
    * Tests product percentage off.
    */
   public function testProductPercentageOff() {
