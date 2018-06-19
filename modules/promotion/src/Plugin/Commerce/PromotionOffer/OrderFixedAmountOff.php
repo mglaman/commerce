@@ -42,8 +42,6 @@ class OrderFixedAmountOff extends FixedAmountOffBase {
 
     foreach ($order->getItems() as $order_item) {
       $adjustment_amount = $order_item->getUnitPrice()->multiply($adjustment_percentage);
-      $adjustment_amount = $this->rounder->round($adjustment_amount);
-
       $order_item->addAdjustment(new Adjustment([
         'type' => 'promotion',
         // @todo Change to label from UI when added in #2770731.

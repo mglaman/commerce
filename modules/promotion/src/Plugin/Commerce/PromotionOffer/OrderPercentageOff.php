@@ -27,7 +27,6 @@ class OrderPercentageOff extends PercentageOffBase {
     // Reduce each individual order item, to simplify VAT taxes, refunds.
     foreach ($order->getItems() as $order_item) {
       $adjustment_amount = $order_item->getUnitPrice()->multiply($this->getPercentage());
-      $adjustment_amount = $this->rounder->round($adjustment_amount);
 
       $order_item->addAdjustment(new Adjustment([
         'type' => 'promotion',
