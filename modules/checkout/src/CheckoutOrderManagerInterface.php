@@ -16,7 +16,9 @@ interface CheckoutOrderManagerInterface {
    *   The order.
    *
    * @return \Drupal\commerce_checkout\Entity\CheckoutFlowInterface
-   *   THe checkout flow.
+   *   The checkout flow.
+   *
+   * @throws \Drupal\commerce_checkout\Exception\CheckoutValidationException
    */
   public function getCheckoutFlow(OrderInterface $order);
 

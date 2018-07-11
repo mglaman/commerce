@@ -4,7 +4,9 @@ namespace Drupal\commerce_checkout\Controller;
 
 use Drupal\commerce_cart\CartSession;
 use Drupal\commerce_cart\CartSessionInterface;
+use Drupal\commerce_checkout\CheckoutValidator\ChainCheckoutValidatorInterface;
 use Drupal\commerce_checkout\CheckoutOrderManagerInterface;
+use Drupal\commerce_checkout\Exception\CheckoutValidationException;
 use Drupal\Core\Access\AccessResult;
 use Drupal\Core\DependencyInjection\ContainerInjectionInterface;
 use Drupal\Core\DependencyInjection\DependencySerializationTrait;
@@ -30,6 +32,13 @@ class CheckoutController implements ContainerInjectionInterface {
   protected $checkoutOrderManager;
 
   /**
+   * The chain checkout guard.
+   *
+   * @var \Drupal\commerce_checkout\CheckoutValidator\ChainCheckoutValidatorInterface
+   */
+  protected $chainCheckoutValidator;
+
+  /**
    * The form builder.
    *
    * @var \Drupal\Core\Form\FormBuilderInterface
@@ -48,13 +57,16 @@ class CheckoutController implements ContainerInjectionInterface {
    *
    * @param \Drupal\commerce_checkout\CheckoutOrderManagerInterface $checkout_order_manager
    *   The checkout order manager.
+   * @param \Drupal\commerce_checkout\CheckoutValidator\ChainCheckoutValidatorInterface $chain_checkout_guard
+   *   The chian checkout guard.
    * @param \Drupal\Core\Form\FormBuilderInterface $form_builder
    *   The form builder.
    * @param \Drupal\commerce_cart\CartSessionInterface $cart_session
    *   The cart session.
    */
-  public function __construct(CheckoutOrderManagerInterface $checkout_order_manager, FormBuilderInterface $form_builder, CartSessionInterface $cart_session) {
+  public function __construct(CheckoutOrderManagerInterface $checkout_order_manager, ChainCheckoutValidatorInterface $chain_checkout_guard, FormBuilderInterface $form_builder, CartSessionInterface $cart_session) {
     $this->checkoutOrderManager = $checkout_order_manager;
+    $this->chainCheckoutValidator = $chain_checkout_guard;
     $this->formBuilder = $form_builder;
     $this->cartSession = $cart_session;
   }
@@ -65,6 +77,7 @@ class CheckoutController implements ContainerInjectionInterface {
   public static function create(ContainerInterface $container) {
     return new static(
       $container->get('commerce_checkout.checkout_order_manager'),
+      $container->get('commerce_checkout.chain_checkout_validator'),
       $container->get('form_builder'),
       $container->get('commerce_cart.cart_session')
     );
@@ -88,10 +101,19 @@ class CheckoutController implements ContainerInjectionInterface {
       $url = Url::fromRoute('commerce_checkout.form', ['commerce_order' => $order->id(), 'step' => $step_id]);
       return new RedirectResponse($url->toString());
     }
-    $checkout_flow = $this->checkoutOrderManager->getCheckoutFlow($order);
-    $checkout_flow_plugin = $checkout_flow->getPlugin();
-
-    return $this->formBuilder->getForm($checkout_flow_plugin, $step_id);
+    try {
+      // @todo instead of throwing an exception, invoke validate directly
+      // through the checkout order manager.
+      $checkout_flow = $this->checkoutOrderManager->getCheckoutFlow($order);
+      $checkout_flow_plugin = $checkout_flow->getPlugin();
+      return $this->formBuilder->getForm($checkout_flow_plugin, $step_id);
+    }
+    catch (CheckoutValidationException $e) {
+      // @todo display messages from the constraints in the validator object
+      // @todo allow validators to specify the return response.
+      \Drupal::messenger()->addError($e->getMessage());
+      return new RedirectResponse(Url::fromRoute('<front>')->toString());
+    }
   }
 
   /**

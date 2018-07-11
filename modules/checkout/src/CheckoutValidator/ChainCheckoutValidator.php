@@ -1,6 +1,6 @@
 <?php
 
-namespace Drupal\commerce_checkout\CheckoutGuard;
+namespace Drupal\commerce_checkout\CheckoutValidator;
 
 use Drupal\commerce_checkout\Plugin\Commerce\CheckoutFlow\CheckoutFlowInterface;
 use Drupal\commerce_order\Entity\OrderInterface;
@@ -8,19 +8,19 @@ use Drupal\commerce_order\Entity\OrderInterface;
 /**
  * Default implementation of the chained checkout guard.
  */
-class ChainCheckoutGuard implements ChainCheckoutGuardInterface {
+class ChainCheckoutValidator implements ChainCheckoutValidatorInterface {
 
   /**
    * Array of checkout guards.
    *
-   * @var \Drupal\commerce_checkout\CheckoutGuard\CheckoutGuardInterface[]
+   * @var \Drupal\commerce_checkout\CheckoutValidator\CheckoutValidatorInterface[]
    */
   protected $guards = [];
 
   /**
    * {@inheritdoc}
    */
-  public function add(CheckoutGuardInterface $guard) {
+  public function add(CheckoutValidatorInterface $guard) {
     $this->guards[] = $guard;
   }
 

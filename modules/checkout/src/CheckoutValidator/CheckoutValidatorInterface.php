@@ -1,6 +1,6 @@
 <?php
 
-namespace Drupal\commerce_checkout\CheckoutGuard;
+namespace Drupal\commerce_checkout\CheckoutValidator;
 
 use Drupal\commerce_checkout\Plugin\Commerce\CheckoutFlow\CheckoutFlowInterface;
 use Drupal\commerce_order\Entity\OrderInterface;
@@ -11,10 +11,16 @@ use Drupal\commerce_order\Entity\OrderInterface;
  * By default, an order can go through checkout unless at least one guard
  * returns FALSE.
  */
-interface CheckoutGuardInterface {
+interface CheckoutValidatorInterface {
 
-  const PHASE_START = 'start';
+  /**
+   * The PHASE_ENTER constant signifies the order is entering a checkout step.
+   */
+  const PHASE_ENTER = 'enter';
 
+  /**
+   * The PHASE_END constant signifies the order is preparing to finish checkout.
+   */
   const PHASE_END = 'end';
 
   /**

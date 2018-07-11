@@ -2,6 +2,8 @@
 
 namespace Drupal\commerce_checkout;
 
+use Drupal\commerce_checkout\CheckoutValidator\ChainCheckoutValidatorInterface;
+use Drupal\commerce_checkout\Exception\CheckoutValidationException;
 use Drupal\commerce_checkout\Resolver\ChainCheckoutFlowResolverInterface;
 use Drupal\commerce_order\Entity\OrderInterface;
 
@@ -18,13 +20,23 @@ class CheckoutOrderManager implements CheckoutOrderManagerInterface {
   protected $chainCheckoutFlowResolver;
 
   /**
+   * The chain checkout validator.
+   *
+   * @var \Drupal\commerce_checkout\CheckoutValidator\ChainCheckoutValidatorInterface
+   */
+  protected $chainCheckoutValidator;
+
+  /**
    * Constructs a new CheckoutOrderManager object.
    *
    * @param \Drupal\commerce_checkout\Resolver\ChainCheckoutFlowResolverInterface $chain_checkout_flow_resolver
    *   The chain checkout flow resolver.
+   * @param \Drupal\commerce_checkout\CheckoutValidator\ChainCheckoutValidatorInterface $chain_checkout_validator
+   *   The chain checkout validator.
    */
-  public function __construct(ChainCheckoutFlowResolverInterface $chain_checkout_flow_resolver) {
+  public function __construct(ChainCheckoutFlowResolverInterface $chain_checkout_flow_resolver, ChainCheckoutValidatorInterface $chain_checkout_validator) {
     $this->chainCheckoutFlowResolver = $chain_checkout_flow_resolver;
+    $this->chainCheckoutValidator = $chain_checkout_validator;
   }
 
   /**
@@ -33,6 +45,16 @@ class CheckoutOrderManager implements CheckoutOrderManagerInterface {
   public function getCheckoutFlow(OrderInterface $order) {
     if ($order->get('checkout_flow')->isEmpty()) {
       $checkout_flow = $this->chainCheckoutFlowResolver->resolve($order);
+
+      $validation_result = $this->chainCheckoutValidator->allowed($order, $checkout_flow->getPlugin(), ChainCheckoutValidatorInterface::PHASE_ENTER);
+      if (!$validation_result) {
+        // @todo $validation_result should be a value object with constraints.
+        throw new CheckoutValidationException(
+          $order,
+          $checkout_flow->getPlugin(),
+          sprintf('Checkout flow %s failed to validate with order %s', $checkout_flow->id(), $order->id())
+        );
+      }
       $order->set('checkout_flow', $checkout_flow);
       $order->save();
     }
