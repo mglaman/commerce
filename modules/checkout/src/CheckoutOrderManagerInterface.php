@@ -10,6 +10,16 @@ use Drupal\commerce_order\Entity\OrderInterface;
 interface CheckoutOrderManagerInterface {
 
   /**
+   * Validates the order for checkout.
+   *
+   * @param \Drupal\commerce_order\Entity\OrderInterface $order
+   *   The order.
+   *
+   * @throws \Drupal\commerce_checkout\Exception\CheckoutValidationException
+   */
+  public function validate(OrderInterface $order);
+
+  /**
    * Gets the order's checkout flow.
    *
    * @param \Drupal\commerce_order\Entity\OrderInterface $order

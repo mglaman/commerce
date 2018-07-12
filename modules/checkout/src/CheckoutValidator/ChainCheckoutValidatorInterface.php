@@ -10,9 +10,9 @@ interface ChainCheckoutValidatorInterface extends CheckoutValidatorInterface {
   /**
    * Adds a checkout guard.
    *
-   * @param \Drupal\commerce_checkout\CheckoutValidator\CheckoutValidatorInterface $guard
+   * @param \Drupal\commerce_checkout\CheckoutValidator\CheckoutValidatorInterface $validator
    *   The checkout guard.
    */
-  public function add(CheckoutValidatorInterface $guard);
+  public function add(CheckoutValidatorInterface $validator);
 
 }

@@ -2,7 +2,6 @@
 
 namespace Drupal\commerce_checkout\CheckoutValidator;
 
-use Drupal\commerce_checkout\Plugin\Commerce\CheckoutFlow\CheckoutFlowInterface;
 use Drupal\commerce_order\Entity\OrderInterface;
 
 /**
@@ -28,14 +27,12 @@ interface CheckoutValidatorInterface {
    *
    * @param \Drupal\commerce_order\Entity\OrderInterface $order
    *   The order.
-   * @param \Drupal\commerce_checkout\Plugin\Commerce\CheckoutFlow\CheckoutFlowInterface $checkout_flow
-   *   The checkout flow.
    * @param string $phase
    *   The phase.
    *
-   * @return bool
-   *   Returns TRUE if allowed, FALSE otherwise.
+   * @return \Drupal\commerce_checkout\CheckoutValidator\CheckoutValidatorConstraintList
+   *   Returns a validator constraint list.
    */
-  public function allowed(OrderInterface $order, CheckoutFlowInterface $checkout_flow, $phase);
+  public function validate(OrderInterface $order, $phase = self::PHASE_ENTER);
 
 }

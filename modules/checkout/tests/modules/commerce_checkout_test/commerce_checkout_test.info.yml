@@ -1,0 +1,6 @@
+name: Commerce Checkout Test
+description: Provides testing items for Checkout
+core: 8.x
+type: module
+dependencies:
+  - commerce:commerce_checkout

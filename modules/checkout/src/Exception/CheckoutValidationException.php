@@ -2,7 +2,7 @@
 
 namespace Drupal\commerce_checkout\Exception;
 
-use Drupal\commerce_checkout\Plugin\Commerce\CheckoutFlow\CheckoutFlowInterface;
+use Drupal\commerce_checkout\CheckoutValidator\CheckoutValidatorConstraintList;
 use Drupal\commerce_order\Entity\OrderInterface;
 
 /**
@@ -18,19 +18,19 @@ class CheckoutValidationException extends \Exception {
   protected $order;
 
   /**
-   * The checkout flow.
+   * The constraint list.
    *
-   * @var \Drupal\commerce_checkout\Plugin\Commerce\CheckoutFlow\CheckoutFlowInterface
+   * @var \Drupal\commerce_checkout\CheckoutValidator\CheckoutValidatorConstraintList
    */
-  protected $checkoutFlow;
+  protected $constraintList;
 
   /**
    * {@inheritdoc}
    */
-  public function __construct(OrderInterface $order, CheckoutFlowInterface $checkout_flow, $message = "", $code = 0, \Throwable $previous = NULL) {
+  public function __construct(OrderInterface $order, CheckoutValidatorConstraintList $constraint_list, $message = "", $code = 0, \Throwable $previous = NULL) {
     parent::__construct($message, $code, $previous);
     $this->order = $order;
-    $this->checkoutFlow = $checkout_flow;
+    $this->constraintList = $constraint_list;
   }
 
   /**
@@ -44,13 +44,13 @@ class CheckoutValidationException extends \Exception {
   }
 
   /**
-   * Gets the checkout flow.
+   * Gets the constraint list.
    *
-   * @return \Drupal\commerce_checkout\Plugin\Commerce\CheckoutFlow\CheckoutFlowInterface
-   *   The checkout flow.
+   * @return \Drupal\commerce_checkout\CheckoutValidator\CheckoutValidatorConstraintList
+   *   The constraint list.
    */
-  public function getCheckoutFlow() {
-    return $this->checkoutFlow;
+  public function getConstraintList() {
+    return $this->constraintList;
   }
 
 }

@@ -42,20 +42,28 @@ class CheckoutOrderManager implements CheckoutOrderManagerInterface {
   /**
    * {@inheritdoc}
    */
+  public function validate(OrderInterface $order) {
+    $validation_result = $this->chainCheckoutValidator->validate($order, ChainCheckoutValidatorInterface::PHASE_ENTER);
+    if ($validation_result->count() > 0) {
+      throw new CheckoutValidationException(
+        $order,
+        $validation_result,
+        sprintf('Order %s failed to validate.', $order->id())
+      );
+    }
+  }
+
+  /**
+   * {@inheritdoc}
+   */
   public function getCheckoutFlow(OrderInterface $order) {
     if ($order->get('checkout_flow')->isEmpty()) {
       $checkout_flow = $this->chainCheckoutFlowResolver->resolve($order);
-
-      $validation_result = $this->chainCheckoutValidator->allowed($order, $checkout_flow->getPlugin(), ChainCheckoutValidatorInterface::PHASE_ENTER);
-      if (!$validation_result) {
-        // @todo $validation_result should be a value object with constraints.
-        throw new CheckoutValidationException(
-          $order,
-          $checkout_flow->getPlugin(),
-          sprintf('Checkout flow %s failed to validate with order %s', $checkout_flow->id(), $order->id())
-        );
-      }
       $order->set('checkout_flow', $checkout_flow);
+
+      // Validate the order before setting the flow.
+      $this->validate($order);
+
       $order->save();
     }
 

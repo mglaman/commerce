@@ -102,18 +102,20 @@ class CheckoutController implements ContainerInjectionInterface {
       return new RedirectResponse($url->toString());
     }
     try {
-      // @todo instead of throwing an exception, invoke validate directly
-      // through the checkout order manager.
       $checkout_flow = $this->checkoutOrderManager->getCheckoutFlow($order);
-      $checkout_flow_plugin = $checkout_flow->getPlugin();
-      return $this->formBuilder->getForm($checkout_flow_plugin, $step_id);
     }
     catch (CheckoutValidationException $e) {
-      // @todo display messages from the constraints in the validator object
-      // @todo allow validators to specify the return response.
-      \Drupal::messenger()->addError($e->getMessage());
+      $messenger = \Drupal::messenger();
+      /** @var \Drupal\commerce_checkout\CheckoutValidator\CheckoutValidatorConstraint $constraint */
+      foreach ($e->getConstraintList() as $constraint) {
+        $messenger->addError($constraint->getMessage());
+      }
+      // @todo provide some way to alter this route.
       return new RedirectResponse(Url::fromRoute('<front>')->toString());
     }
+
+    $checkout_flow_plugin = $checkout_flow->getPlugin();
+    return $this->formBuilder->getForm($checkout_flow_plugin, $step_id);
   }
 
   /**

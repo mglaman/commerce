@@ -1,0 +1,5 @@
+services:
+  commerce_checkout_test.test_checkout_validator:
+    class: Drupal\commerce_checkout_test\CheckoutValidator\TestValidator
+    tags:
+      - { name: commerce_checkout.checkout_validator }
