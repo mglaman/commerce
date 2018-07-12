@@ -6,7 +6,6 @@ core: 8.x
 dependencies:
   - commerce:commerce
   - commerce:commerce_order
-  - commerce:commerce_cart
 config_devel:
   install:
     - commerce_checkout.commerce_checkout_flow.default

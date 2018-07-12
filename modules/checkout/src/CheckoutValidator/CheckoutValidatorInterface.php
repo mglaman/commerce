@@ -3,6 +3,7 @@
 namespace Drupal\commerce_checkout\CheckoutValidator;
 
 use Drupal\commerce_order\Entity\OrderInterface;
+use Drupal\Core\Session\AccountInterface;
 
 /**
  * Defines the interface for checkout guards.
@@ -27,12 +28,14 @@ interface CheckoutValidatorInterface {
    *
    * @param \Drupal\commerce_order\Entity\OrderInterface $order
    *   The order.
+   * @param \Drupal\Core\Session\AccountInterface $account
+   *   The account.
    * @param string $phase
    *   The phase.
    *
    * @return \Drupal\commerce_checkout\CheckoutValidator\CheckoutValidatorConstraintList
    *   Returns a validator constraint list.
    */
-  public function validate(OrderInterface $order, $phase = self::PHASE_ENTER);
+  public function validate(OrderInterface $order, AccountInterface $account, $phase = self::PHASE_ENTER);
 
 }

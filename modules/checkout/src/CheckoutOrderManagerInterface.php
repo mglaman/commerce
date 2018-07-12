@@ -2,22 +2,21 @@
 
 namespace Drupal\commerce_checkout;
 
+use Drupal\commerce_checkout\CheckoutValidator\CheckoutValidatorInterface;
 use Drupal\commerce_order\Entity\OrderInterface;
 
 /**
  * Provides functionality for handling an order's checkout.
  */
-interface CheckoutOrderManagerInterface {
+interface CheckoutOrderManagerInterface extends CheckoutValidatorInterface {
 
   /**
-   * Validates the order for checkout.
+   * Adds a checkout validator.
    *
-   * @param \Drupal\commerce_order\Entity\OrderInterface $order
-   *   The order.
-   *
-   * @throws \Drupal\commerce_checkout\Exception\CheckoutValidationException
+   * @param \Drupal\commerce_checkout\CheckoutValidator\CheckoutValidatorInterface $validator
+   *   The checkout validator.
    */
-  public function validate(OrderInterface $order);
+  public function addValidator(CheckoutValidatorInterface $validator);
 
   /**
    * Gets the order's checkout flow.
@@ -27,8 +26,6 @@ interface CheckoutOrderManagerInterface {
    *
    * @return \Drupal\commerce_checkout\Entity\CheckoutFlowInterface
    *   The checkout flow.
-   *
-   * @throws \Drupal\commerce_checkout\Exception\CheckoutValidationException
    */
   public function getCheckoutFlow(OrderInterface $order);
 

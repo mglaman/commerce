@@ -2,7 +2,6 @@
 
 namespace Drupal\Tests\commerce_checkout\Unit;
 
-use Drupal\commerce_checkout\CheckoutValidator\ChainCheckoutValidator;
 use Drupal\commerce_checkout\CheckoutValidator\CheckoutValidatorConstraint;
 use Drupal\commerce_checkout\CheckoutValidator\CheckoutValidatorConstraintList;
 use Drupal\commerce_checkout\CheckoutValidator\CheckoutValidatorInterface;
@@ -64,7 +63,9 @@ class CheckoutValidatorTest extends UnitTestCase {
    */
   public function testCheckoutValidator() {
     $container = new ContainerBuilder();
-    $chain_checkout_validator = new ChainCheckoutValidator();
+    $checkout_order_manager = new CheckoutOrderManager(
+      $this->prophesize(ChainCheckoutFlowResolverInterface::class)->reveal()
+    );
     $container->set('commerce_checkout.default_checkout_validator', new DefaultCheckoutValidator());
     $mock_checkout_validator = $this->prophesize(CheckoutValidatorInterface::class);
     $mock_checkout_validator->validate(
@@ -82,10 +83,10 @@ class CheckoutValidatorTest extends UnitTestCase {
     ];
     arsort($validators, SORT_NUMERIC);
     foreach ($validators as $id => $priority) {
-      $chain_checkout_validator->add($container->get($id));
+      $checkout_order_manager->addValidator($container->get($id));
     }
 
-    $result = $chain_checkout_validator->validate(
+    $result = $checkout_order_manager->validate(
       $this->prophesize(OrderInterface::class)->reveal(),
       CheckoutValidatorInterface::PHASE_ENTER
     );
@@ -101,7 +102,9 @@ class CheckoutValidatorTest extends UnitTestCase {
     ]));
     $container->set('commerce_checkout.mocked_checkout_validator', $mock_checkout_validator->reveal());
 
-    $chain_checkout_validator = new ChainCheckoutValidator();
+    $checkout_order_manager = new CheckoutOrderManager(
+      $this->prophesize(ChainCheckoutFlowResolverInterface::class)->reveal()
+    );
     // Mimic how the container would add the services.
     // @see \Drupal\Core\DependencyInjection\Compiler\TaggedHandlersPass::process
     $validators = [
@@ -110,68 +113,13 @@ class CheckoutValidatorTest extends UnitTestCase {
     ];
     arsort($validators, SORT_NUMERIC);
     foreach ($validators as $id => $priority) {
-      $chain_checkout_validator->add($container->get($id));
+      $checkout_order_manager->addValidator($container->get($id));
     }
-    $result = $chain_checkout_validator->validate(
+    $result = $checkout_order_manager->validate(
       $this->prophesize(OrderInterface::class)->reveal(),
       CheckoutValidatorInterface::PHASE_ENTER
     );
     $this->assertEquals(2, $result->count());
-  }
-
-  /**
-   * Tests the checkout order manager throws exception when validation fails.
-   */
-  public function testValidationException() {
-    $container = new ContainerBuilder();
-    $chain_checkout_validator = new ChainCheckoutValidator();
-    $container->set('commerce_checkout.default_checkout_validator', new DefaultCheckoutValidator());
-    $mock_checkout_validator = $this->prophesize(CheckoutValidatorInterface::class);
-    $mock_checkout_validator->validate(
-      Argument::type(OrderInterface::class),
-      Argument::type('string')
-    )->willReturn(new CheckoutValidatorConstraintList([
-      new CheckoutValidatorConstraint('A random condition failed!'),
-      new CheckoutValidatorConstraint('An excuse not to enter checkout!'),
-    ]));
-    $container->set('commerce_checkout.mocked_checkout_validator', $mock_checkout_validator->reveal());
-    // Mimic how the container would add the services.
-    // @see \Drupal\Core\DependencyInjection\Compiler\TaggedHandlersPass::process
-    $validators = [
-      'commerce_checkout.default_checkout_validator' => -100,
-      'commerce_checkout.mocked_checkout_validator' => 100,
-    ];
-    arsort($validators, SORT_NUMERIC);
-    foreach ($validators as $id => $priority) {
-      $chain_checkout_validator->add($container->get($id));
-    }
-
-    $this->setExpectedException(
-      CheckoutValidationException::class,
-      'Order 1234 failed to validate'
-    );
-
-    $chain_checkout_flow_resolver = $this->prophesize(ChainCheckoutFlowResolverInterface::class);
-    $checkout_flow = $this->prophesize(EntityCheckoutFlowInterface::class);
-    $checkout_flow->getPlugin()->willReturn(
-      $this->prophesize(PluginCheckoutFlowInterface::class)->reveal()
-    );
-    $checkout_flow->id()->willReturn('validation_test_flow');
-    $chain_checkout_flow_resolver->resolve(Argument::type(OrderInterface::class))->willReturn($checkout_flow->reveal());
-
-    $checkout_order_manager = new CheckoutOrderManager(
-      $chain_checkout_flow_resolver->reveal(),
-      $chain_checkout_validator
-    );
-
-    $order = $this->prophesize(OrderInterface::class);
-    $order->id()->willReturn(1234);
-    $checkout_flow_field_item_list = $this->prophesize(FieldItemListInterface::class);
-    $checkout_flow_field_item_list->isEmpty()->willReturn(TRUE);
-    $order->set('checkout_flow', Argument::any())->willReturn();
-    $order->get('checkout_flow')->willReturn($checkout_flow_field_item_list->reveal());
-    $checkout_order_manager->getCheckoutFlow($order->reveal());
-
   }
 
 }

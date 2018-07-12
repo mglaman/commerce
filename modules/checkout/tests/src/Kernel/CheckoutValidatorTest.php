@@ -46,10 +46,12 @@ class CheckoutValidatorTest extends CommerceKernelTestBase {
    * Tests checkout validation.
    */
   public function testCheckoutValidation() {
+    $user = $this->createUser(['access checkout']);
     $order = Order::create([
       'type' => 'default',
       'mail' => $this->randomMachineName() . '@example.com',
       'store_id' => $this->store->id(),
+      'uid' => $user->id(),
     ]);
     $order_item = OrderItem::create([
       'type' => 'default',
@@ -58,13 +60,13 @@ class CheckoutValidatorTest extends CommerceKernelTestBase {
     ]);
     $order->addItem($order_item);
 
-    $chain_validator = $this->container->get('commerce_checkout.chain_checkout_validator');
+    $checkout_order_manager = $this->container->get('commerce_checkout.checkout_order_manager');
 
-    $result = $chain_validator->validate($order, CheckoutValidatorInterface::PHASE_ENTER);
+    $result = $checkout_order_manager->validate($order, $user, CheckoutValidatorInterface::PHASE_ENTER);
     $this->assertCount(0, $result);
 
     $order_item->setQuantity(20);
-    $result = $chain_validator->validate($order, CheckoutValidatorInterface::PHASE_ENTER);
+    $result = $checkout_order_manager->validate($order, $user, CheckoutValidatorInterface::PHASE_ENTER);
     $this->assertCount(1, $result);
   }
 

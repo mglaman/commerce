@@ -12,7 +12,9 @@ services:
 
   commerce_checkout.checkout_order_manager:
     class: Drupal\commerce_checkout\CheckoutOrderManager
-    arguments: ['@commerce_checkout.chain_checkout_flow_resolver', '@commerce_checkout.chain_checkout_validator']
+    arguments: ['@commerce_checkout.chain_checkout_flow_resolver']
+    tags:
+      - { name: service_collector, call: addValidator, tag: commerce_checkout.checkout_validator }
 
   plugin.manager.commerce_checkout_flow:
     class: Drupal\commerce_checkout\CheckoutFlowManager
@@ -22,12 +24,7 @@ services:
     class: Drupal\commerce_checkout\CheckoutPaneManager
     parent: default_plugin_manager
 
-  commerce_checkout.chain_checkout_validator:
-    class: Drupal\commerce_checkout\CheckoutValidator\ChainCheckoutValidator
-    tags:
-      - { name: service_collector, call: add, tag: commerce_checkout.checkout_validator }
-
   commerce_checkout.default_checkout_validator:
     class: Drupal\commerce_checkout\CheckoutValidator\DefaultCheckoutValidator
     tags:
-      - { name: commerce_checkout.checkout_validator, priority: -100 }
+      - { name: commerce_checkout.checkout_validator }

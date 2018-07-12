@@ -4,6 +4,7 @@ namespace Drupal\Tests\commerce_checkout\Kernel;
 
 use Drupal\commerce_checkout\Entity\CheckoutFlow;
 use Drupal\commerce_order\Entity\Order;
+use Drupal\commerce_order\Entity\OrderItem;
 use Drupal\Core\Url;
 use Drupal\Tests\commerce\Kernel\CommerceKernelTestBase;
 use Symfony\Cmf\Component\Routing\RouteObjectInterface;
@@ -52,6 +53,7 @@ class CheckoutOrderManagerTest extends CommerceKernelTestBase {
     parent::setUp();
 
     $this->installEntitySchema('commerce_order');
+    $this->installEntitySchema('commerce_order_item');
     $this->installConfig('commerce_order');
     $this->installConfig('commerce_product');
     $this->installConfig('commerce_checkout');
@@ -64,6 +66,9 @@ class CheckoutOrderManagerTest extends CommerceKernelTestBase {
       'store_id' => $this->store->id(),
     ]);
     $order->save();
+    $order->addItem(OrderItem::create([
+      'type' => 'default',
+    ]));
     $this->order = $order;
 
     $this->checkoutOrderManager = $this->container->get('commerce_checkout.checkout_order_manager');

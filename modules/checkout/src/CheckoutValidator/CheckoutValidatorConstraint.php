@@ -41,7 +41,7 @@ final class CheckoutValidatorConstraint {
    *   The message.
    */
   public function __toString() {
-    return $this->getMessage();
+    return (string) $this->getMessage();
   }
 
 }

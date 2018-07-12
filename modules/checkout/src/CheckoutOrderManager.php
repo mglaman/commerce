@@ -2,15 +2,24 @@
 
 namespace Drupal\commerce_checkout;
 
-use Drupal\commerce_checkout\CheckoutValidator\ChainCheckoutValidatorInterface;
+use Drupal\commerce_checkout\CheckoutValidator\CheckoutValidatorConstraintList;
+use Drupal\commerce_checkout\CheckoutValidator\CheckoutValidatorInterface;
 use Drupal\commerce_checkout\Exception\CheckoutValidationException;
 use Drupal\commerce_checkout\Resolver\ChainCheckoutFlowResolverInterface;
 use Drupal\commerce_order\Entity\OrderInterface;
+use Drupal\Core\Session\AccountInterface;
 
 /**
  * Manages checkout flows for orders.
  */
 class CheckoutOrderManager implements CheckoutOrderManagerInterface {
+
+  /**
+   * Array of checkout validators.
+   *
+   * @var \Drupal\commerce_checkout\CheckoutValidator\CheckoutValidatorInterface[]
+   */
+  protected $validators = [];
 
   /**
    * The chain checkout flow resolver.
@@ -20,37 +29,31 @@ class CheckoutOrderManager implements CheckoutOrderManagerInterface {
   protected $chainCheckoutFlowResolver;
 
   /**
-   * The chain checkout validator.
-   *
-   * @var \Drupal\commerce_checkout\CheckoutValidator\ChainCheckoutValidatorInterface
-   */
-  protected $chainCheckoutValidator;
-
-  /**
    * Constructs a new CheckoutOrderManager object.
    *
    * @param \Drupal\commerce_checkout\Resolver\ChainCheckoutFlowResolverInterface $chain_checkout_flow_resolver
    *   The chain checkout flow resolver.
-   * @param \Drupal\commerce_checkout\CheckoutValidator\ChainCheckoutValidatorInterface $chain_checkout_validator
-   *   The chain checkout validator.
    */
-  public function __construct(ChainCheckoutFlowResolverInterface $chain_checkout_flow_resolver, ChainCheckoutValidatorInterface $chain_checkout_validator) {
+  public function __construct(ChainCheckoutFlowResolverInterface $chain_checkout_flow_resolver) {
     $this->chainCheckoutFlowResolver = $chain_checkout_flow_resolver;
-    $this->chainCheckoutValidator = $chain_checkout_validator;
   }
 
   /**
    * {@inheritdoc}
    */
-  public function validate(OrderInterface $order) {
-    $validation_result = $this->chainCheckoutValidator->validate($order, ChainCheckoutValidatorInterface::PHASE_ENTER);
-    if ($validation_result->count() > 0) {
-      throw new CheckoutValidationException(
-        $order,
-        $validation_result,
-        sprintf('Order %s failed to validate.', $order->id())
-      );
+  public function validate(OrderInterface $order, AccountInterface $account, $phase = CheckoutValidatorInterface::PHASE_ENTER) {
+    $constraints = new CheckoutValidatorConstraintList();
+    foreach ($this->validators as $validator) {
+      $constraints->addAll($validator->validate($order, $account, $phase));
     }
+    return $constraints;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function addValidator(CheckoutValidatorInterface $validator) {
+    $this->validators[] = $validator;
   }
 
   /**
@@ -60,10 +63,6 @@ class CheckoutOrderManager implements CheckoutOrderManagerInterface {
     if ($order->get('checkout_flow')->isEmpty()) {
       $checkout_flow = $this->chainCheckoutFlowResolver->resolve($order);
       $order->set('checkout_flow', $checkout_flow);
-
-      // Validate the order before setting the flow.
-      $this->validate($order);
-
       $order->save();
     }
 

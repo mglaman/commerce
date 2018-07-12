@@ -7,6 +7,7 @@ use Drupal\commerce_order\Entity\OrderInterface;
 use Drupal\commerce_product\Entity\Product;
 use Drupal\commerce_product\Entity\ProductVariation;
 use Drupal\commerce_store\StoreCreationTrait;
+use Drupal\Core\Access\AccessResultReasonInterface;
 use Drupal\Core\Url;
 use Drupal\Tests\commerce\Kernel\CommerceKernelTestBase;
 use Drupal\Tests\commerce_cart\Kernel\CartManagerTestTrait;
@@ -82,6 +83,9 @@ class CheckoutAccessTest extends CommerceKernelTestBase {
     $this->installConfig('commerce_product');
     $this->installConfig('commerce_checkout');
     $this->createUser();
+    // Cart is no longer a dependency on checkout, but it provides an access
+    // check based on anonymous users.
+    // @todo Move any testing of cart's checkout validator into the cart module.
     $this->installCommerceCart();
     $this->accessManager = $this->container->get('access_manager');
     $this->orderItemStorage = $this->container->get('entity_type.manager')->getStorage('commerce_order_item');
@@ -132,6 +136,12 @@ class CheckoutAccessTest extends CommerceKernelTestBase {
     /** @var \Drupal\commerce_order\Entity\Order $order */
     $order = $this->createOrder($user1);
     $request = $this->createRequest($order);
+
+    $result = $this->accessManager->checkRequest($request, $user1, TRUE);
+    if ($result instanceof AccessResultReasonInterface) {
+      $this->fail($result->getReason());
+    }
+
     $this->assertTrue($this->accessManager->checkRequest($request, $user1));
     $this->assertFalse($this->accessManager->checkRequest($request, $user2));
   }

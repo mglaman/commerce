@@ -7,6 +7,7 @@ use Drupal\commerce_checkout\CheckoutValidator\CheckoutValidatorConstraintList;
 use Drupal\commerce_checkout\CheckoutValidator\CheckoutValidatorInterface;
 use Drupal\commerce_order\Entity\OrderInterface;
 use Drupal\commerce_price\Price;
+use Drupal\Core\Session\AccountInterface;
 
 /**
  * Checkout validator used for testing.
@@ -16,7 +17,7 @@ class TestValidator implements CheckoutValidatorInterface {
   /**
    * {@inheritdoc}
    */
-  public function validate(OrderInterface $order, $phase = self::PHASE_ENTER) {
+  public function validate(OrderInterface $order, AccountInterface $account, $phase = self::PHASE_ENTER) {
     $list = new CheckoutValidatorConstraintList();
     if ($phase == self::PHASE_ENTER) {
       foreach ($order->getItems() as $item) {

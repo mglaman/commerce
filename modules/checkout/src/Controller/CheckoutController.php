@@ -4,10 +4,9 @@ namespace Drupal\commerce_checkout\Controller;
 
 use Drupal\commerce_cart\CartSession;
 use Drupal\commerce_cart\CartSessionInterface;
-use Drupal\commerce_checkout\CheckoutValidator\ChainCheckoutValidatorInterface;
 use Drupal\commerce_checkout\CheckoutOrderManagerInterface;
-use Drupal\commerce_checkout\Exception\CheckoutValidationException;
 use Drupal\Core\Access\AccessResult;
+use Drupal\Core\Access\AccessResultReasonInterface;
 use Drupal\Core\DependencyInjection\ContainerInjectionInterface;
 use Drupal\Core\DependencyInjection\DependencySerializationTrait;
 use Drupal\Core\Form\FormBuilderInterface;
@@ -32,13 +31,6 @@ class CheckoutController implements ContainerInjectionInterface {
   protected $checkoutOrderManager;
 
   /**
-   * The chain checkout guard.
-   *
-   * @var \Drupal\commerce_checkout\CheckoutValidator\ChainCheckoutValidatorInterface
-   */
-  protected $chainCheckoutValidator;
-
-  /**
    * The form builder.
    *
    * @var \Drupal\Core\Form\FormBuilderInterface
@@ -46,29 +38,16 @@ class CheckoutController implements ContainerInjectionInterface {
   protected $formBuilder;
 
   /**
-   * The cart session.
-   *
-   * @var \Drupal\commerce_cart\CartSessionInterface
-   */
-  protected $cartSession;
-
-  /**
    * Constructs a new CheckoutController object.
    *
    * @param \Drupal\commerce_checkout\CheckoutOrderManagerInterface $checkout_order_manager
    *   The checkout order manager.
-   * @param \Drupal\commerce_checkout\CheckoutValidator\ChainCheckoutValidatorInterface $chain_checkout_guard
-   *   The chian checkout guard.
    * @param \Drupal\Core\Form\FormBuilderInterface $form_builder
    *   The form builder.
-   * @param \Drupal\commerce_cart\CartSessionInterface $cart_session
-   *   The cart session.
    */
-  public function __construct(CheckoutOrderManagerInterface $checkout_order_manager, ChainCheckoutValidatorInterface $chain_checkout_guard, FormBuilderInterface $form_builder, CartSessionInterface $cart_session) {
+  public function __construct(CheckoutOrderManagerInterface $checkout_order_manager, FormBuilderInterface $form_builder) {
     $this->checkoutOrderManager = $checkout_order_manager;
-    $this->chainCheckoutValidator = $chain_checkout_guard;
     $this->formBuilder = $form_builder;
-    $this->cartSession = $cart_session;
   }
 
   /**
@@ -77,9 +56,7 @@ class CheckoutController implements ContainerInjectionInterface {
   public static function create(ContainerInterface $container) {
     return new static(
       $container->get('commerce_checkout.checkout_order_manager'),
-      $container->get('commerce_checkout.chain_checkout_validator'),
-      $container->get('form_builder'),
-      $container->get('commerce_cart.cart_session')
+      $container->get('form_builder')
     );
   }
 
@@ -101,19 +78,8 @@ class CheckoutController implements ContainerInjectionInterface {
       $url = Url::fromRoute('commerce_checkout.form', ['commerce_order' => $order->id(), 'step' => $step_id]);
       return new RedirectResponse($url->toString());
     }
-    try {
-      $checkout_flow = $this->checkoutOrderManager->getCheckoutFlow($order);
-    }
-    catch (CheckoutValidationException $e) {
-      $messenger = \Drupal::messenger();
-      /** @var \Drupal\commerce_checkout\CheckoutValidator\CheckoutValidatorConstraint $constraint */
-      foreach ($e->getConstraintList() as $constraint) {
-        $messenger->addError($constraint->getMessage());
-      }
-      // @todo provide some way to alter this route.
-      return new RedirectResponse(Url::fromRoute('<front>')->toString());
-    }
 
+    $checkout_flow = $this->checkoutOrderManager->getCheckoutFlow($order);
     $checkout_flow_plugin = $checkout_flow->getPlugin();
     return $this->formBuilder->getForm($checkout_flow_plugin, $step_id);
   }
@@ -132,24 +98,14 @@ class CheckoutController implements ContainerInjectionInterface {
   public function checkAccess(RouteMatchInterface $route_match, AccountInterface $account) {
     /** @var \Drupal\commerce_order\Entity\OrderInterface $order */
     $order = $route_match->getParameter('commerce_order');
-    if ($order->getState()->value == 'canceled') {
-      return AccessResult::forbidden()->addCacheableDependency($order);
-    }
 
-    // The user can checkout only their own non-empty orders.
-    if ($account->isAuthenticated()) {
-      $customer_check = $account->id() == $order->getCustomerId();
-    }
-    else {
-      $active_cart = $this->cartSession->hasCartId($order->id(), CartSession::ACTIVE);
-      $completed_cart = $this->cartSession->hasCartId($order->id(), CartSession::COMPLETED);
-      $customer_check = $active_cart || $completed_cart;
-    }
-
-    $access = AccessResult::allowedIf($customer_check)
-      ->andIf(AccessResult::allowedIf($order->hasItems()))
-      ->andIf(AccessResult::allowedIfHasPermission($account, 'access checkout'))
+    $constraints = $this->checkoutOrderManager->validate($order, $account);
+    $access = AccessResult::allowedIf($constraints->count() === 0)
       ->addCacheableDependency($order);
+
+    if ($access instanceof AccessResultReasonInterface) {
+      $access->setReason($constraints);
+    }
 
     return $access;
   }

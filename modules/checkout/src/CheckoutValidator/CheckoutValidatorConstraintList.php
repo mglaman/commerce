@@ -62,4 +62,15 @@ final class CheckoutValidatorConstraintList implements \IteratorAggregate, \Coun
     return count($this->constraints);
   }
 
+  /**
+   * Converts the constraints into a string.
+   *
+   * @return string
+   *   The constraints as string.
+   */
+  public function __toString() {
+    $string = implode("\n", $this->constraints);
+    return $string;
+  }
+
 }
