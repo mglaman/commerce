@@ -14,6 +14,7 @@ use Drupal\commerce_checkout\Resolver\ChainCheckoutFlowResolverInterface;
 use Drupal\commerce_order\Entity\OrderInterface;
 use Drupal\Core\DependencyInjection\ContainerBuilder;
 use Drupal\Core\Field\FieldItemListInterface;
+use Drupal\Core\Session\AccountInterface;
 use Drupal\Tests\UnitTestCase;
 use Prophecy\Argument;
 
@@ -70,6 +71,7 @@ class CheckoutValidatorTest extends UnitTestCase {
     $mock_checkout_validator = $this->prophesize(CheckoutValidatorInterface::class);
     $mock_checkout_validator->validate(
       Argument::type(OrderInterface::class),
+      Argument::type(AccountInterface::class),
       Argument::type('string')
     )->willReturn(new CheckoutValidatorConstraintList());
     $container->set('commerce_checkout.mocked_checkout_validator', $mock_checkout_validator->reveal());
@@ -86,8 +88,21 @@ class CheckoutValidatorTest extends UnitTestCase {
       $checkout_order_manager->addValidator($container->get($id));
     }
 
+    $account = $this->prophesize(AccountInterface::class);
+    $account->isAuthenticated()->willReturn(TRUE);
+    $account->id()->willReturn(3);
+    $account->hasPermission('access checkout')->willReturn(TRUE);
+
+    $order = $this->prophesize(OrderInterface::class);
+    $order->getState()->willReturn((object) [
+      'value' => 'draft',
+    ]);
+    $order->hasItems()->willReturn(TRUE);
+    $order->getCustomerId()->willReturn(3);
+
     $result = $checkout_order_manager->validate(
-      $this->prophesize(OrderInterface::class)->reveal(),
+      $order->reveal(),
+      $account->reveal(),
       CheckoutValidatorInterface::PHASE_ENTER
     );
     $this->assertEquals(0, $result->count());
@@ -95,6 +110,7 @@ class CheckoutValidatorTest extends UnitTestCase {
     $mock_checkout_validator = $this->prophesize(CheckoutValidatorInterface::class);
     $mock_checkout_validator->validate(
       Argument::type(OrderInterface::class),
+      Argument::type(AccountInterface::class),
       Argument::type('string')
     )->willReturn(new CheckoutValidatorConstraintList([
       new CheckoutValidatorConstraint('A random condition failed!'),
@@ -116,7 +132,8 @@ class CheckoutValidatorTest extends UnitTestCase {
       $checkout_order_manager->addValidator($container->get($id));
     }
     $result = $checkout_order_manager->validate(
-      $this->prophesize(OrderInterface::class)->reveal(),
+      $order->reveal(),
+      $account->reveal(),
       CheckoutValidatorInterface::PHASE_ENTER
     );
     $this->assertEquals(2, $result->count());

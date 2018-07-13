@@ -16,6 +16,7 @@ class CheckoutFlowTest extends CommerceBrowserTestBase {
    * {@inheritdoc}
    */
   public static $modules = [
+    'commerce_product',
     'commerce_checkout',
   ];
 

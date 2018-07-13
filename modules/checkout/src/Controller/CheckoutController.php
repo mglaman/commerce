@@ -2,8 +2,6 @@
 
 namespace Drupal\commerce_checkout\Controller;
 
-use Drupal\commerce_cart\CartSession;
-use Drupal\commerce_cart\CartSessionInterface;
 use Drupal\commerce_checkout\CheckoutOrderManagerInterface;
 use Drupal\Core\Access\AccessResult;
 use Drupal\Core\Access\AccessResultReasonInterface;
