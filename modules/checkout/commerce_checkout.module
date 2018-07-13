@@ -163,16 +163,24 @@ function commerce_checkout_form_alter(&$form, FormStateInterface $form_state, $f
     $view = reset($form_state->getBuildInfo()['args']);
     // Only add the Checkout button if the cart form view has order items.
     if ($view->storage->get('tag') == 'commerce_cart_form' && !empty($view->result)) {
+      $messenger = \Drupal::messenger();
       /** @var \Drupal\commerce_checkout\CheckoutOrderManagerInterface $checkout_order_manager */
       $checkout_order_manager = \Drupal::service('commerce_checkout.checkout_order_manager');
       /** @var \Drupal\commerce_order\Entity\OrderInterface $order */
       $order = $view->result[0]->_entity;
+
+      $constraints = $checkout_order_manager->validate($order, $view->getUser());
+      /** @var \Drupal\commerce_checkout\CheckoutValidator\CheckoutValidatorConstraint $constraint */
+      foreach ($constraints as $constraint) {
+        $messenger->addWarning($constraint->getMessage());
+      }
+
       $form['actions']['checkout'] = [
         '#type' => 'submit',
         '#value' => t('Checkout'),
         '#weight' => 5,
         '#access' => \Drupal::currentUser()->hasPermission('access checkout'),
-        '#disabled' => !$checkout_order_manager->validate($order, $view->getUser()),
+        '#disabled' => $constraints->count() > 0,
         '#submit' => array_merge($form['#submit'], ['commerce_checkout_order_item_views_form_submit']),
         '#order_id' => $order->id(),
         '#update_cart' => TRUE,
