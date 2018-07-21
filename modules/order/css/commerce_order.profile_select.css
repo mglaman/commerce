@@ -1,0 +1,9 @@
+.profile-form-wrapper {
+  display: none;
+}
+.profile-form-wrapper.editing {
+  display: block;
+}
+.profile-view-wrapper.editing {
+  display: none;
+}

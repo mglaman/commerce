@@ -9,3 +9,15 @@ total_summary:
   css:
     layout:
       css/commerce_order.total_summary.css: {}
+
+profile_select:
+  version: VERSION
+  js:
+    js/profile-select.js: {}
+  css:
+    component:
+      css/commerce_order.profile_select.css: {}
+  dependencies:
+    - core/jquery
+    - core/jquery.once
+    - core/drupal
