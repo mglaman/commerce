@@ -7,3 +7,10 @@
 .profile-select.editing .hidden-on-edit {
   display: none;
 }
+
+.profile-select.creating .visible-on-create {
+  display: block;
+}
+.profile-select.creating .hidden-on-create {
+  display: none;
+}

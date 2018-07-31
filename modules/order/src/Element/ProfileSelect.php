@@ -178,10 +178,10 @@ class ProfileSelect extends RenderElement {
       '#element_mode' => $form_state->get('element_mode') ?: 'view',
     ] + $element;
 
-    // If the profile is new, apply the `editing` class so that the form is
+    // If the profile is new, apply the `creating` class so that the form is
     // displayed automatically.
     if ($default_profile->isNew()) {
-      $element['#attributes']['class'][] = 'editing';
+      $element['#attributes']['class'][] = 'creating';
     }
 
 
@@ -209,8 +209,7 @@ class ProfileSelect extends RenderElement {
     $element['profile_view']['#access'] = !$default_profile->isNew();
     $element['profile_view']['edit'] = [
       '#type' => 'button',
-      '#value' => t('Edit address'),
-      '#name' => 'edit_profile',
+      '#value' => t('Edit'),
       '#limit_validation_errors' => [],
       '#attributes' => [
         'class' => ['edit-profile'],
@@ -221,17 +220,19 @@ class ProfileSelect extends RenderElement {
     $element['profile_form'] = [
       '#type' => 'container',
       '#attributes' => [
-        'class' => ['visible-on-edit'],
+        'class' => ['visible-on-edit visible-on-create'],
       ],
       '#parents' => $element['#parents'],
       'cancel' => [
         '#type' => 'button',
-        '#value' => t('Return to address selection'),
-        '#name' => 'address_selection',
+        '#value' => t('Cancel changes'),
         '#limit_validation_errors' => [],
         '#weight' => 100,
         '#attributes' => [
-          'class' => [$default_profile->isNew() ? 'cancel-new-profile' : 'cancel-edit-profile'],
+          'class' => [
+            'cancel-edit-profile',
+            'hidden-on-create',
+          ],
         ],
       ],
     ];

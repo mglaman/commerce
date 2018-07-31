@@ -5,7 +5,7 @@
       if ($selects.length > 0) {
         $selects.each(function (index, el) {
           var $profileSelect = $(el);
-          $profileSelect.find('[name="edit_profile"]').once().click(function (event) {
+          $profileSelect.find('.edit-profile').once().click(function (event) {
             event.preventDefault();
             $profileSelect.toggleClass('editing');
             $profileSelect.find('.cancel-edit-profile').once().click(function (event) {
