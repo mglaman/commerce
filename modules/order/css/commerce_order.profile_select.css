@@ -1,9 +1,9 @@
-.profile-form-wrapper {
+.profile-select .visible-on-edit {
   display: none;
 }
-.profile-form-wrapper.editing {
+.profile-select.editing .visible-on-edit {
   display: block;
 }
-.profile-view-wrapper.editing {
+.profile-select.editing .hidden-on-edit {
   display: none;
 }

@@ -20,6 +20,8 @@ use Drupal\profile\Entity\ProfileInterface;
  * $form['billing_profile'] = [
  *   '#type' => 'commerce_profile_select',
  *   '#default_value' => $profile,
+ *   '#profile_type' => 'customer',
+ *   '#profile_uid' => \Drupal::currentUser()->id(),
  *   '#default_country' => 'FR',
  *   '#available_countries' => ['US', 'FR'],
  * ];
@@ -31,8 +33,6 @@ use Drupal\profile\Entity\ProfileInterface;
  *   - $form['billing_profile']['#profile'].
  *
  * @RenderElement("commerce_profile_select")
- *
- * @todo allow defining profile_type and owner_uid, with null default value.
  */
 class ProfileSelect extends RenderElement {
 
@@ -44,6 +44,13 @@ class ProfileSelect extends RenderElement {
   public function getInfo() {
     $class = get_class($this);
     return [
+      '#title' => t('Select a profile'),
+      '#create_title' => t('+ Enter a new profile'),
+
+      // Whether profiles should always be loaded in the latest revision.
+      // Disable when editing historical data, such as placed orders.
+      '#profile_latest_revision' => TRUE,
+
       // The country to select if the address widget doesn't have a default.
       '#default_country' => NULL,
       // A list of country codes. If empty, all countries will be available.
@@ -53,7 +60,7 @@ class ProfileSelect extends RenderElement {
       '#default_value' => NULL,
       '#process' => [
         [$class, 'attachElementSubmit'],
-        [$class, 'processForm'],
+        [$class, 'processElement'],
       ],
       '#element_validate' => [
         [$class, 'validateElementSubmit'],
@@ -67,6 +74,33 @@ class ProfileSelect extends RenderElement {
       ],
       '#theme_wrappers' => ['container'],
     ];
+  }
+
+  /**
+   * Validates the element properties.
+   *
+   * @param array $element
+   *   The form element.
+   *
+   * @throws \InvalidArgumentException
+   *   Thrown if an element property is invalid, or empty but required.
+   */
+  public static function validateElementProperties(array $element) {
+    if (empty($element['#default_value'])) {
+      throw new \InvalidArgumentException('The commerce_profile_select element requires the #default_value property.');
+    }
+    elseif (isset($element['#default_value']) && !($element['#default_value'] instanceof ProfileInterface)) {
+      throw new \InvalidArgumentException('The commerce_profile_select #default_value property must be a profile entity.');
+    }
+    if (!is_array($element['#available_countries'])) {
+      throw new \InvalidArgumentException('The commerce_profile_select #available_countries property must be an array.');
+    }
+    // Make sure that the specified default country is available.
+    if (!empty($element['#default_country']) && !empty($element['#available_countries'])) {
+      if (!in_array($element['#default_country'], $element['#available_countries'])) {
+        $element['#default_country'] = NULL;
+      }
+    }
   }
 
   /**
@@ -85,22 +119,9 @@ class ProfileSelect extends RenderElement {
    * @throws \Drupal\Component\Plugin\Exception\InvalidPluginDefinitionException
    * @throws \Drupal\Component\Plugin\Exception\PluginNotFoundException
    */
-  public static function processForm(array $element, FormStateInterface $form_state, array &$complete_form) {
-    if (empty($element['#default_value'])) {
-      throw new \InvalidArgumentException('The commerce_profile_select element requires the #default_value property.');
-    }
-    elseif (isset($element['#default_value']) && !($element['#default_value'] instanceof ProfileInterface)) {
-      throw new \InvalidArgumentException('The commerce_profile_select #default_value property must be a profile entity.');
-    }
-    if (!is_array($element['#available_countries'])) {
-      throw new \InvalidArgumentException('The commerce_profile_select #available_countries property must be an array.');
-    }
-    // Make sure that the specified default country is available.
-    if (!empty($element['#default_country']) && !empty($element['#available_countries'])) {
-      if (!in_array($element['#default_country'], $element['#available_countries'])) {
-        $element['#default_country'] = NULL;
-      }
-    }
+  public static function processElement(array $element, FormStateInterface $form_state, array &$complete_form) {
+    self::validateElementProperties($element);
+
     $element['#attached']['library'][] = 'commerce_order/profile_select';
     $element['#attributes']['class'][] = 'profile-select';
 
@@ -157,21 +178,33 @@ class ProfileSelect extends RenderElement {
       '#element_mode' => $form_state->get('element_mode') ?: 'view',
     ] + $element;
 
+    // If the profile is new, apply the `editing` class so that the form is
+    // displayed automatically.
+    if ($default_profile->isNew()) {
+      $element['#attributes']['class'][] = 'editing';
+    }
+
+
     $element['available_profiles'] = [
       '#type' => 'select',
-      '#title' => t('Address'),
-      '#options' => EntityHelper::extractLabels($available_profiles) + ['_new' => t('+ New billing address')],
+      '#title' => $element['#title'],
+      '#options' => EntityHelper::extractLabels($available_profiles) + ['_new' => $element['#create_title']],
       '#default_value' => $default_profile->id() ?: '_new',
       '#access' => !empty($available_profiles),
       '#ajax' => [
         'callback' => [get_called_class(), 'ajaxRefresh'],
         'wrapper' => $wrapper_id,
       ],
+      '#prefix' => '<div class="hidden-on-edit">',
+      '#suffix' => '</div>',
+      '#attributes' => [
+        'class' => ['available-profiles'],
+      ],
     ];
 
-    $view_display = EntityViewDisplay::collectRenderDisplay($element['#default_value'], 'default');
+    $view_display = EntityViewDisplay::collectRenderDisplay($default_profile, 'default');
     $element['profile_view'] = $view_display->build($element['#default_value']);
-    $element['profile_view']['#prefix'] = '<div class="profile-view-wrapper">';
+    $element['profile_view']['#prefix'] = '<div class="hidden-on-edit">';
     $element['profile_view']['#suffix'] = '</div>';
     $element['profile_view']['#access'] = !$default_profile->isNew();
     $element['profile_view']['edit'] = [
@@ -184,22 +217,26 @@ class ProfileSelect extends RenderElement {
       ],
     ];
 
-    $form_display = EntityFormDisplay::collectRenderDisplay($element['#default_value'], 'default');
+    $form_display = EntityFormDisplay::collectRenderDisplay($default_profile, 'default');
     $element['profile_form'] = [
       '#type' => 'container',
       '#attributes' => [
-        'class' => ['profile-form-wrapper'],
+        'class' => ['visible-on-edit'],
       ],
       '#parents' => $element['#parents'],
+      'cancel' => [
+        '#type' => 'button',
+        '#value' => t('Return to address selection'),
+        '#name' => 'address_selection',
+        '#limit_validation_errors' => [],
+        '#weight' => 100,
+        '#attributes' => [
+          'class' => [$default_profile->isNew() ? 'cancel-new-profile' : 'cancel-edit-profile'],
+        ],
+      ],
     ];
 
-    // If the profile is new, apply the `editing` class so that the form is
-    // displayed automatically.
-    if ($default_profile->isNew()) {
-      $element['profile_form']['#attributes']['class'][] = 'editing';
-    }
-
-    $form_display->buildForm($element['#default_value'], $element['profile_form'], $form_state);
+    $form_display->buildForm($default_profile, $element['profile_form'], $form_state);
 
     // Adjust the address widget on the profile, if present.
     if (!empty($element['profile_form']['address']['widget'][0])) {

@@ -33,18 +33,14 @@ class BillingInformation extends CheckoutPaneBase implements CheckoutPaneInterfa
    */
   public function buildPaneForm(array $pane_form, FormStateInterface $form_state, array &$complete_form) {
     $store = $this->order->getStore();
-    $billing_profile = $this->order->getBillingProfile();
-    if (!$billing_profile) {
-      $profile_storage = $this->entityTypeManager->getStorage('profile');
-      $billing_profile = $profile_storage->create([
-        'type' => 'customer',
-        'uid' => $this->order->getCustomerId(),
-      ]);
-    }
 
     $pane_form['profile'] = [
       '#type' => 'commerce_profile_select',
-      '#default_value' => $billing_profile,
+      '#title' => $this->t('Select an address'),
+      '#create_title' => $this->t('+ Enter a new address'),
+      '#default_value' => $this->order->getBillingProfile(),
+      '#profile_type' => 'customer',
+      '#profile_uid' => $this->order->getCustomerId(),
       '#default_country' => $store->getAddress()->getCountryCode(),
       '#available_countries' => $store->getBillingCountries(),
     ];

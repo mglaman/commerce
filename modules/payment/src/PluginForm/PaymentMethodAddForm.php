@@ -76,6 +76,8 @@ class PaymentMethodAddForm extends PaymentGatewayFormBase {
     $form['billing_information'] = [
       '#parents' => array_merge($form['#parents'], ['billing_information']),
       '#type' => 'commerce_profile_select',
+      '#title' => t('Select an address'),
+      '#create_title' => t('+ Enter a new address'),
       '#default_value' => $billing_profile,
       '#default_country' => $store ? $store->getAddress()->getCountryCode() : NULL,
       '#available_countries' => $store ? $store->getBillingCountries() : [],
