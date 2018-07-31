@@ -270,6 +270,8 @@ class PaymentInformation extends CheckoutPaneBase {
 
     $pane_form['billing_information'] = [
       '#type' => 'commerce_profile_select',
+      '#title' => t('Select an address'),
+      '#create_title' => t('+ Enter a new address'),
       '#default_value' => $billing_profile,
       '#default_country' => $store->getAddress()->getCountryCode(),
       '#available_countries' => $store->getBillingCountries(),

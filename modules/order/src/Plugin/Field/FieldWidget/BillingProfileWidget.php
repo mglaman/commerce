@@ -88,7 +88,10 @@ class BillingProfileWidget extends WidgetBase implements ContainerFactoryPluginI
     $element['#type'] = 'fieldset';
     $element['profile'] = [
       '#type' => 'commerce_profile_select',
+      '#title' => $this->t('Select an address'),
+      '#create_title' => $this->t('+ Enter a new address'),
       '#default_value' => $profile,
+      '#profile_latest_revision' => $order->getState()->value == 'draft',
       '#default_country' => $store->getAddress()->getCountryCode(),
       '#available_countries' => $store->getBillingCountries(),
     ];

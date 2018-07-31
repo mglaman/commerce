@@ -150,6 +150,9 @@ class ProfileSelect extends RenderElement {
         }
       }
     }
+    if (!$default_profile->isLatestRevision()) {
+      $stop = null;
+    }
 
     // Handle a form rebuild and grab the selected profile value.
     $selected_available_profile = $form_state->getValue(array_merge($element['#parents'], ['available_profiles']));
@@ -202,6 +205,8 @@ class ProfileSelect extends RenderElement {
       ],
     ];
 
+    $has_edit_access = $element['#profile_latest_revision'] || $default_profile->isDefaultRevision();
+
     $view_display = EntityViewDisplay::collectRenderDisplay($default_profile, 'default');
     $element['profile_view'] = $view_display->build($element['#default_value']);
     $element['profile_view']['#prefix'] = '<div class="hidden-on-edit">';
@@ -214,6 +219,7 @@ class ProfileSelect extends RenderElement {
       '#attributes' => [
         'class' => ['edit-profile'],
       ],
+      '#access' => $has_edit_access,
     ];
 
     $form_display = EntityFormDisplay::collectRenderDisplay($default_profile, 'default');
@@ -222,6 +228,7 @@ class ProfileSelect extends RenderElement {
       '#attributes' => [
         'class' => ['visible-on-edit visible-on-create'],
       ],
+      '#access' => $has_edit_access,
       '#parents' => $element['#parents'],
       'cancel' => [
         '#type' => 'button',
@@ -269,9 +276,10 @@ class ProfileSelect extends RenderElement {
    *   form, as a protection against buggy behavior.
    */
   public static function validateForm(array &$element, FormStateInterface $form_state) {
+    $selected_available_profile = self::getSelectedAvailableProfile($element, $form_state);
     $form_display = EntityFormDisplay::collectRenderDisplay($element['#default_value'], 'default');
-    $form_display->extractFormValues($element['#default_value'], $element, $form_state);
-    $form_display->validateFormValues($element['#default_value'], $element, $form_state);
+    $form_display->extractFormValues($selected_available_profile, $element, $form_state);
+    $form_display->validateFormValues($selected_available_profile, $element, $form_state);
   }
 
   /**
@@ -281,13 +289,47 @@ class ProfileSelect extends RenderElement {
    *   The form element.
    * @param \Drupal\Core\Form\FormStateInterface $form_state
    *   The current state of the form.
+   *
+   * @throws \Drupal\Component\Plugin\Exception\InvalidPluginDefinitionException
+   * @throws \Drupal\Component\Plugin\Exception\PluginNotFoundException
+   * @throws \Drupal\Core\Entity\EntityStorageException
    */
   public static function submitForm(array &$element, FormStateInterface $form_state) {
-    $form_display = EntityFormDisplay::collectRenderDisplay($element['#default_value'], 'default');
-    $form_display->extractFormValues($element['#default_value'], $element, $form_state);
-    $element['#default_value']->save();
-    $form_state->setValueForElement($element, $element['#default_value']);
-    $element['#profile'] = $element['#default_value'];
+    $selected_available_profile = self::getSelectedAvailableProfile($element, $form_state);
+    $form_display = EntityFormDisplay::collectRenderDisplay($selected_available_profile, 'default');
+    $form_display->extractFormValues($selected_available_profile, $element, $form_state);
+    $selected_available_profile->save();
+    $form_state->setValueForElement($element, $selected_available_profile);
+    $element['#profile'] = $selected_available_profile;
+  }
+
+  /**
+   * Gets the selected available profile.
+   *
+   * @param array $element
+   *   The form element.
+   * @param \Drupal\Core\Form\FormStateInterface $form_state
+   *   The current state of the form.
+   *
+   * @return \Drupal\profile\Entity\ProfileInterface
+   *   The selected profile.
+   *
+   * @throws \Drupal\Component\Plugin\Exception\InvalidPluginDefinitionException
+   * @throws \Drupal\Component\Plugin\Exception\PluginNotFoundException
+   */
+  protected static function getSelectedAvailableProfile(array $element, FormStateInterface $form_state) {
+    /** @var \Drupal\profile\ProfileStorageInterface $profile_storage */
+    $profile_storage = \Drupal::entityTypeManager()->getStorage('profile');
+    $selected_available_profile = $form_state->getValue(array_merge($element['#parents'], ['available_profiles']));
+    if ($selected_available_profile == '_new') {
+      return $profile_storage->create([
+        'type' => $element['#default_value']->bundle(),
+        'uid' => $element['#default_value']->getOwnerId(),
+      ]);
+    }
+    else {
+      return $profile_storage->load($selected_available_profile);
+    }
   }
 
   /**
