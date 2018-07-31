@@ -24,11 +24,15 @@ use Drupal\profile\Entity\ProfileInterface;
  *   '#available_countries' => ['US', 'FR'],
  * ];
  * @endcode
+ *
  * To access the profile in validation or submission callbacks, use
- * $form['billing_profile']['#profile']. Due to Drupal core limitations the
- * profile can't be accessed via $form_state->getValue('billing_profile').
+ *   - $form_state->getValue('billing_profile')
+ * Or, (kept for backwards compatibility)
+ *   - $form['billing_profile']['#profile'].
  *
  * @RenderElement("commerce_profile_select")
+ *
+ * @todo allow defining profile_type and owner_uid, with null default value.
  */
 class ProfileSelect extends RenderElement {
 
@@ -75,12 +79,11 @@ class ProfileSelect extends RenderElement {
    * @param array $complete_form
    *   The complete form structure.
    *
-   * @throws \InvalidArgumentException
-   *   Thrown when #default_value is empty or not an entity, or when
-   *   #available_countries is not an array of country codes.
-   *
    * @return array
    *   The processed form element.
+   *
+   * @throws \Drupal\Component\Plugin\Exception\InvalidPluginDefinitionException
+   * @throws \Drupal\Component\Plugin\Exception\PluginNotFoundException
    */
   public static function processForm(array $element, FormStateInterface $form_state, array &$complete_form) {
     if (empty($element['#default_value'])) {
@@ -103,36 +106,44 @@ class ProfileSelect extends RenderElement {
 
     /** @var \Drupal\profile\ProfileStorageInterface $profile_storage */
     $profile_storage = \Drupal::entityTypeManager()->getStorage('profile');
+    /** @var \Drupal\profile\Entity\ProfileInterface $default_profile */
+    $default_profile = $element['#default_value'];
 
-    $profile = $element['#default_value'];
+    $owner = $default_profile->getOwner();
+    $profile_type = $default_profile->bundle();
 
+    // If the owner is a registered user, load their other active profiles for
+    // selection and reuse.
     $available_profiles = [];
-    if (!$profile->getOwner()->isAnonymous()) {
-      $available_profiles = $profile_storage->loadMultipleByUser($profile->getOwner(), $profile->bundle(), TRUE);
+    if ($owner->isAuthenticated()) {
+      $available_profiles = $profile_storage->loadMultipleByUser($owner, $profile_type, TRUE);
     }
-    if ($profile->isNew()) {
+    // If the default value is a new profile, automatically select their
+    // default profile.
+    if ($default_profile->isNew()) {
       foreach ($available_profiles as $available_profile) {
         if ($available_profile->isDefault()) {
           $element['#default_value'] = $available_profile;
-          $profile = $available_profile;
+          $default_profile = $available_profile;
           break;
         }
       }
     }
 
+    // Handle a form rebuild and grab the selected profile value.
     $selected_available_profile = $form_state->getValue(array_merge($element['#parents'], ['available_profiles']));
     if ($selected_available_profile) {
       if ($selected_available_profile == '_new') {
         $selected_available_profile = $profile_storage->create([
-          'type' => $profile->bundle(),
-          'uid' => $profile->getOwnerId(),
+          'type' => $default_profile->bundle(),
+          'uid' => $default_profile->getOwnerId(),
         ]);
       }
       else {
         $selected_available_profile = $profile_storage->load($selected_available_profile);
       }
       $element['#default_value'] = $selected_available_profile;
-      $profile = $selected_available_profile;
+      $default_profile = $selected_available_profile;
     }
 
     $id_prefix = implode('-', $element['#parents']);
@@ -150,7 +161,7 @@ class ProfileSelect extends RenderElement {
       '#type' => 'select',
       '#title' => t('Address'),
       '#options' => EntityHelper::extractLabels($available_profiles) + ['_new' => t('+ New billing address')],
-      '#default_value' => $profile->id() ?: '_new',
+      '#default_value' => $default_profile->id() ?: '_new',
       '#access' => !empty($available_profiles),
       '#ajax' => [
         'callback' => [get_called_class(), 'ajaxRefresh'],
@@ -162,7 +173,7 @@ class ProfileSelect extends RenderElement {
     $element['profile_view'] = $view_display->build($element['#default_value']);
     $element['profile_view']['#prefix'] = '<div class="profile-view-wrapper">';
     $element['profile_view']['#suffix'] = '</div>';
-    $element['profile_view']['#access'] = !$profile->isNew();
+    $element['profile_view']['#access'] = !$default_profile->isNew();
     $element['profile_view']['edit'] = [
       '#type' => 'button',
       '#value' => t('Edit address'),
@@ -181,11 +192,16 @@ class ProfileSelect extends RenderElement {
       ],
       '#parents' => $element['#parents'],
     ];
-    if ($profile->isNew()) {
+
+    // If the profile is new, apply the `editing` class so that the form is
+    // displayed automatically.
+    if ($default_profile->isNew()) {
       $element['profile_form']['#attributes']['class'][] = 'editing';
     }
 
     $form_display->buildForm($element['#default_value'], $element['profile_form'], $form_state);
+
+    // Adjust the address widget on the profile, if present.
     if (!empty($element['profile_form']['address']['widget'][0])) {
       $widget_element = &$element['profile_form']['address']['widget'][0];
       // Remove the details wrapper from the address widget.
@@ -232,8 +248,7 @@ class ProfileSelect extends RenderElement {
     $form_display = EntityFormDisplay::collectRenderDisplay($element['#default_value'], 'default');
     $form_display->extractFormValues($element['#default_value'], $element, $form_state);
     $element['#default_value']->save();
-    // @todo use setValueForElement().
-    // $form_state->setValueForElement($element, $element['#default_value']);
+    $form_state->setValueForElement($element, $element['#default_value']);
     $element['#profile'] = $element['#default_value'];
   }
 
@@ -247,7 +262,7 @@ class ProfileSelect extends RenderElement {
   }
 
   /**
-   * Clears dependent form values when the country or subdivision changes.
+   * Clears dependent form values when the profile changes.
    *
    * Clears all input, so that the default values for a new profile form will
    * be used, instead of the last input.
