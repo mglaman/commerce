@@ -130,6 +130,8 @@ class ProfileSelect extends RenderElement {
     /** @var \Drupal\profile\Entity\ProfileInterface $default_profile */
     $default_profile = $element['#default_value'];
 
+    $default_value_is_default_revision = $default_profile->isDefaultRevision();
+    $default_profile_label = $default_profile->label();
     $owner = $default_profile->getOwner();
     $profile_type = $default_profile->bundle();
 
@@ -150,10 +152,6 @@ class ProfileSelect extends RenderElement {
         }
       }
     }
-    if (!$default_profile->isLatestRevision()) {
-      $stop = null;
-    }
-
     // Handle a form rebuild and grab the selected profile value.
     $selected_available_profile = $form_state->getValue(array_merge($element['#parents'], ['available_profiles']));
     if ($selected_available_profile) {
@@ -162,6 +160,11 @@ class ProfileSelect extends RenderElement {
           'type' => $default_profile->bundle(),
           'uid' => $default_profile->getOwnerId(),
         ]);
+      }
+      // We are still going to use the existing profile, which is referenced at
+      // a previous revision.
+      elseif ($selected_available_profile == '_existing') {
+        $selected_available_profile = $default_profile;
       }
       else {
         $selected_available_profile = $profile_storage->load($selected_available_profile);
@@ -187,12 +190,25 @@ class ProfileSelect extends RenderElement {
       $element['#attributes']['class'][] = 'creating';
     }
 
+    $available_profiles_default_value = $default_profile->id() ?: '_new';
+    $available_profiles_options = EntityHelper::extractLabels($available_profiles);
+    $available_profiles_options += ['_new' => $element['#create_title']];
+
+    // If the original default value is not the default revision, ensure it
+    // persists as an option to prevent unexpected changes in data.
+    if (!$default_value_is_default_revision) {
+      $available_profiles_options = [
+        '_existing' => t(':label (Original)', [':label' => $default_profile_label]),
+      ] + $available_profiles_options;
+      $available_profiles_default_value = '_existing';
+    }
+
 
     $element['available_profiles'] = [
       '#type' => 'select',
       '#title' => $element['#title'],
-      '#options' => EntityHelper::extractLabels($available_profiles) + ['_new' => $element['#create_title']],
-      '#default_value' => $default_profile->id() ?: '_new',
+      '#options' => $available_profiles_options,
+      '#default_value' => $available_profiles_default_value,
       '#access' => !empty($available_profiles),
       '#ajax' => [
         'callback' => [get_called_class(), 'ajaxRefresh'],
@@ -204,8 +220,6 @@ class ProfileSelect extends RenderElement {
         'class' => ['available-profiles'],
       ],
     ];
-
-    $has_edit_access = $element['#profile_latest_revision'] || $default_profile->isDefaultRevision();
 
     $view_display = EntityViewDisplay::collectRenderDisplay($default_profile, 'default');
     $element['profile_view'] = $view_display->build($element['#default_value']);
@@ -219,7 +233,7 @@ class ProfileSelect extends RenderElement {
       '#attributes' => [
         'class' => ['edit-profile'],
       ],
-      '#access' => $has_edit_access,
+      '#access' => $default_profile->isDefaultRevision(),
     ];
 
     $form_display = EntityFormDisplay::collectRenderDisplay($default_profile, 'default');
@@ -228,7 +242,7 @@ class ProfileSelect extends RenderElement {
       '#attributes' => [
         'class' => ['visible-on-edit visible-on-create'],
       ],
-      '#access' => $has_edit_access,
+      '#access' => $default_profile->isDefaultRevision(),
       '#parents' => $element['#parents'],
       'cancel' => [
         '#type' => 'button',
@@ -298,7 +312,14 @@ class ProfileSelect extends RenderElement {
     $selected_available_profile = self::getSelectedAvailableProfile($element, $form_state);
     $form_display = EntityFormDisplay::collectRenderDisplay($selected_available_profile, 'default');
     $form_display->extractFormValues($selected_available_profile, $element, $form_state);
-    $selected_available_profile->save();
+
+    // If the profile was modified, enforce a new revision.
+    // When the _existing option is chosen, there will be no changes reported
+    // preventing an accidental flag for the revision.
+    if ($selected_available_profile->hasTranslationChanges()) {
+      $selected_available_profile->setNewRevision();
+      $selected_available_profile->save();
+    }
     $form_state->setValueForElement($element, $selected_available_profile);
     $element['#profile'] = $selected_available_profile;
   }
@@ -326,6 +347,11 @@ class ProfileSelect extends RenderElement {
         'type' => $element['#default_value']->bundle(),
         'uid' => $element['#default_value']->getOwnerId(),
       ]);
+    }
+    // We are still going to use the existing profile, which is referenced at
+    // a previous revision.
+    elseif ($selected_available_profile == '_existing') {
+      return $element['#default_value'];
     }
     else {
       return $profile_storage->load($selected_available_profile);
