@@ -206,7 +206,6 @@ class ProfileSelect extends RenderElement {
       $available_profiles_default_value = '_existing';
     }
 
-
     $element['available_profiles'] = [
       '#type' => 'select',
       '#title' => $element['#title'],

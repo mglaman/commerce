@@ -237,8 +237,7 @@ class PaymentCheckoutTest extends CommerceBrowserTestBase {
     $radio_button = $page->findField('Example');
     $this->assertNull($radio_button);
     $this->assertSession()->fieldExists('payment_information[billing_information][address][0][address][postal_code]');
-    $this->createScreenshot();
-    $this->assertSession()->fieldExists('Address');
+    $this->assertSession()->fieldExists('Select an address');
     $this->assertSession()->pageTextContains('Pabst Blue Ribbon Dr');
   }
 
@@ -374,7 +373,7 @@ class PaymentCheckoutTest extends CommerceBrowserTestBase {
     $radio_button = $this->getSession()->getPage()->findField('Example');
     $radio_button->click();
     $this->waitForAjaxToFinish();
-    $this->getSession()->getPage()->selectFieldOption('Address', '_new');
+    $this->getSession()->getPage()->selectFieldOption('Select an address', '_new');
     $this->waitForAjaxToFinish();
     $this->submitForm([
       'payment_information[billing_information][address][0][address][given_name]' => 'Johnny',

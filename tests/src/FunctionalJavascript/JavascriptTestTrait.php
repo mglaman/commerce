@@ -85,7 +85,7 @@ trait JavascriptTestTrait {
       $session->executeScript("document.body.style.backgroundColor = 'white';");
     }
     $image = $session->getScreenshot();
-    file_put_contents($jpg_output_filename, $image);
+    file_put_contents($this->htmlOutputDirectory . '/' . $jpg_output_filename, $image);
     $this->htmlOutputCounter++;
   }
 

@@ -247,12 +247,10 @@ class ProfileSelectTest extends CommerceBrowserTestBase {
     $profile_address2->setDefault(TRUE);
     $profile_address2->save();
     $this->drupalLogin($account);
-    $this->drupalGet(Url::fromRoute('commerce_order_test.profile_select_form'));
-    $this->assertSession()->statusCodeEquals(200);
     // Edit a profile.
     $this->drupalGet(Url::fromRoute('commerce_order_test.profile_select_form'));
     $this->assertSession()->statusCodeEquals(200);
-    $this->assertSession()->fieldExists('Address');
+    $this->assertSession()->fieldExists('Select a profile');
     // The last created profile should be selected by default.
     $this->assertSession()->pageTextContains($this->address2['locality']);
     $this->getSession()->getPage()->pressButton('Edit');
