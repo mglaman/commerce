@@ -158,7 +158,7 @@ class ProfileSelectTest extends CommerceBrowserTestBase {
     $this->drupalLogin($account);
     $this->drupalGet(Url::fromRoute('commerce_order_test.profile_select_form'));
     $this->assertSession()->statusCodeEquals(200);
-    $this->assertSession()->fieldExists('Select a profile');
+    $this->assertSession()->pageTextContains('Select a profile');
     // The last created profile should be selected by default.
     $this->assertSession()->pageTextContains($this->address2['locality']);
     $this->getSession()->getPage()->fillField('Select a profile', $profile_address1->id());
@@ -202,7 +202,6 @@ class ProfileSelectTest extends CommerceBrowserTestBase {
     $this->waitForAjaxToFinish();
     $this->getSession()->getPage()->fillField('Country', $address_fields['country_code']);
     $this->waitForAjaxToFinish();
-    $this->createScreenshot();
     $edit = [];
     foreach ($address_fields as $key => $value) {
       if ($key == 'country_code') {

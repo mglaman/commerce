@@ -130,7 +130,10 @@ class ProfileSelect extends RenderElement {
     /** @var \Drupal\profile\Entity\ProfileInterface $default_profile */
     $default_profile = $element['#default_value'];
 
-    $default_value_is_default_revision = $default_profile->isDefaultRevision();
+    // This is the latest revision if reports that is the default revision,
+    // and the element allows editing the current revision through the
+    // #profile_latest_revision flag.
+    $default_value_is_latest_revision = $default_profile->isDefaultRevision() && $element['#profile_latest_revision'];
     $default_profile_label = $default_profile->label();
     $owner = $default_profile->getOwner();
     $profile_type = $default_profile->bundle();
@@ -196,7 +199,7 @@ class ProfileSelect extends RenderElement {
 
     // If the original default value is not the default revision, ensure it
     // persists as an option to prevent unexpected changes in data.
-    if (!$default_value_is_default_revision) {
+    if (!$default_value_is_latest_revision) {
       $available_profiles_options = [
         '_existing' => t(':label (Original)', [':label' => $default_profile_label]),
       ] + $available_profiles_options;
