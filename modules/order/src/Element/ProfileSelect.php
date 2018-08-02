@@ -47,6 +47,11 @@ class ProfileSelect extends RenderElement {
       '#title' => t('Select a profile'),
       '#create_title' => t('+ Enter a new profile'),
 
+      // Needed for creating new profiles, since #default_value may be empty.
+      // @todo need to implement.
+      '#profile_type' => NULL,
+      '#profile_uid' => NULL,
+
       // Whether profiles should always be loaded in the latest revision.
       // Disable when editing historical data, such as placed orders.
       '#profile_latest_revision' => TRUE,
@@ -56,7 +61,7 @@ class ProfileSelect extends RenderElement {
       // A list of country codes. If empty, all countries will be available.
       '#available_countries' => [],
 
-      // The profile entity operated on. Required.
+      // The profile entity operated on.
       '#default_value' => NULL,
       '#process' => [
         [$class, 'attachElementSubmit'],
@@ -79,6 +84,10 @@ class ProfileSelect extends RenderElement {
   /**
    * Validates the element properties.
    *
+   * This also provides support breaking changes made that added the
+   * profile_type and profile_uid values instead of passing a default
+   * value.
+   *
    * @param array $element
    *   The form element.
    *
@@ -89,7 +98,7 @@ class ProfileSelect extends RenderElement {
     if (empty($element['#default_value'])) {
       throw new \InvalidArgumentException('The commerce_profile_select element requires the #default_value property.');
     }
-    elseif (isset($element['#default_value']) && !($element['#default_value'] instanceof ProfileInterface)) {
+    elseif (!($element['#default_value'] instanceof ProfileInterface)) {
       throw new \InvalidArgumentException('The commerce_profile_select #default_value property must be a profile entity.');
     }
     if (!is_array($element['#available_countries'])) {
@@ -175,6 +184,9 @@ class ProfileSelect extends RenderElement {
       $element['#default_value'] = $selected_available_profile;
       $default_profile = $selected_available_profile;
     }
+
+    // Set #profile to keep BC.
+    $element['#profile'] = $default_profile;
 
     $id_prefix = implode('-', $element['#parents']);
     $wrapper_id = Html::getId($id_prefix . '-ajax-wrapper');

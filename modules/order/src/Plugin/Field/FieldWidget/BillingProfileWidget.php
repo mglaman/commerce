@@ -9,6 +9,7 @@ use Drupal\Core\Field\FieldItemListInterface;
 use Drupal\Core\Field\WidgetBase;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Plugin\ContainerFactoryPluginInterface;
+use Drupal\profile\Entity\ProfileInterface;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 
 /**
@@ -110,6 +111,11 @@ class BillingProfileWidget extends WidgetBase implements ContainerFactoryPluginI
   public function massageFormValues(array $values, array $form, FormStateInterface $form_state) {
     $new_values = [];
     foreach ($values as $delta => $value) {
+      // @todo we're setting the value properly now, and can do this.
+      //       but it's commented out to prove BC save.
+      // if ($value['profile'] instanceof ProfileInterface) {
+      //  $new_values[$delta]['entity'] = $value['profile'];
+      // }
       $element = NestedArray::getValue($form, $value['array_parents']);
       $new_values[$delta]['entity'] = $element['profile']['#profile'];
     }
