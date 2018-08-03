@@ -4,7 +4,6 @@ namespace Drupal\commerce_checkout;
 
 use Drupal\commerce_checkout\CheckoutValidator\CheckoutValidatorConstraintList;
 use Drupal\commerce_checkout\CheckoutValidator\CheckoutValidatorInterface;
-use Drupal\commerce_checkout\Exception\CheckoutValidationException;
 use Drupal\commerce_checkout\Resolver\ChainCheckoutFlowResolverInterface;
 use Drupal\commerce_order\Entity\OrderInterface;
 use Drupal\Core\Session\AccountInterface;

@@ -32,9 +32,3 @@ services:
     arguments: ['@commerce_cart.cart_provider']
     tags:
       - { name: event_subscriber }
-
-  commerce_cart.cart_checkout_validator:
-    class: Drupal\commerce_cart\CheckoutValidator\CartCheckoutValidator
-    arguments: ['@commerce_cart.cart_session']
-    tags:
-      - { name: commerce_checkout.checkout_validator}

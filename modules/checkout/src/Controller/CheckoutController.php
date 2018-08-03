@@ -2,9 +2,10 @@
 
 namespace Drupal\commerce_checkout\Controller;
 
+use Drupal\commerce_cart\CartSession;
+use Drupal\commerce_cart\CartSessionInterface;
 use Drupal\commerce_checkout\CheckoutOrderManagerInterface;
 use Drupal\Core\Access\AccessResult;
-use Drupal\Core\Access\AccessResultReasonInterface;
 use Drupal\Core\DependencyInjection\ContainerInjectionInterface;
 use Drupal\Core\DependencyInjection\DependencySerializationTrait;
 use Drupal\Core\Form\FormBuilderInterface;
@@ -36,16 +37,26 @@ class CheckoutController implements ContainerInjectionInterface {
   protected $formBuilder;
 
   /**
+   * The cart session.
+   *
+   * @var \Drupal\commerce_cart\CartSessionInterface
+   */
+  protected $cartSession;
+
+  /**
    * Constructs a new CheckoutController object.
    *
    * @param \Drupal\commerce_checkout\CheckoutOrderManagerInterface $checkout_order_manager
    *   The checkout order manager.
    * @param \Drupal\Core\Form\FormBuilderInterface $form_builder
    *   The form builder.
+   * @param \Drupal\commerce_cart\CartSessionInterface $cart_session
+   *   The cart session.
    */
-  public function __construct(CheckoutOrderManagerInterface $checkout_order_manager, FormBuilderInterface $form_builder) {
+  public function __construct(CheckoutOrderManagerInterface $checkout_order_manager, FormBuilderInterface $form_builder, CartSessionInterface $cart_session) {
     $this->checkoutOrderManager = $checkout_order_manager;
     $this->formBuilder = $form_builder;
+    $this->cartSession = $cart_session;
   }
 
   /**
@@ -54,7 +65,8 @@ class CheckoutController implements ContainerInjectionInterface {
   public static function create(ContainerInterface $container) {
     return new static(
       $container->get('commerce_checkout.checkout_order_manager'),
-      $container->get('form_builder')
+      $container->get('form_builder'),
+      $container->get('commerce_cart.cart_session')
     );
   }
 
@@ -76,9 +88,9 @@ class CheckoutController implements ContainerInjectionInterface {
       $url = Url::fromRoute('commerce_checkout.form', ['commerce_order' => $order->id(), 'step' => $step_id]);
       return new RedirectResponse($url->toString());
     }
-
     $checkout_flow = $this->checkoutOrderManager->getCheckoutFlow($order);
     $checkout_flow_plugin = $checkout_flow->getPlugin();
+
     return $this->formBuilder->getForm($checkout_flow_plugin, $step_id);
   }
 
@@ -96,14 +108,24 @@ class CheckoutController implements ContainerInjectionInterface {
   public function checkAccess(RouteMatchInterface $route_match, AccountInterface $account) {
     /** @var \Drupal\commerce_order\Entity\OrderInterface $order */
     $order = $route_match->getParameter('commerce_order');
-
-    $constraints = $this->checkoutOrderManager->validate($order, $account);
-    $access = AccessResult::allowedIf($constraints->count() === 0)
-      ->addCacheableDependency($order);
-
-    if ($access instanceof AccessResultReasonInterface) {
-      $access->setReason($constraints);
+    if ($order->getState()->value == 'canceled') {
+      return AccessResult::forbidden()->addCacheableDependency($order);
     }
+
+    // The user can checkout only their own non-empty orders.
+    if ($account->isAuthenticated()) {
+      $customer_check = $account->id() == $order->getCustomerId();
+    }
+    else {
+      $active_cart = $this->cartSession->hasCartId($order->id(), CartSession::ACTIVE);
+      $completed_cart = $this->cartSession->hasCartId($order->id(), CartSession::COMPLETED);
+      $customer_check = $active_cart || $completed_cart;
+    }
+
+    $access = AccessResult::allowedIf($customer_check)
+      ->andIf(AccessResult::allowedIf($order->hasItems()))
+      ->andIf(AccessResult::allowedIfHasPermission($account, 'access checkout'))
+      ->addCacheableDependency($order);
 
     return $access;
   }
