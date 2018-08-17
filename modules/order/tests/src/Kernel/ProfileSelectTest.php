@@ -7,6 +7,7 @@ use Drupal\Core\Form\FormState;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\profile\Entity\Profile;
 use Drupal\Tests\commerce\Kernel\CommerceKernelTestBase;
+use Drupal\user\Entity\User;
 
 /**
  * Tests the commerce_profile_select element.
@@ -69,9 +70,9 @@ class ProfileSelectTest extends CommerceKernelTestBase implements FormInterface 
       '#type' => 'commerce_profile_select',
       '#title' => 'Select an address',
       '#create_title' => '+ Enter a new address',
-      '#default_value' => Profile::create([
+      '#default_value' => $form_state->get('profile') ?: Profile::create([
         'type' => 'customer',
-        'uid' => $this->createUser(),
+        'uid' => $form_state->get('user') ?: User::getAnonymousUser(),
       ]),
       '#profile_latest_revision' => TRUE,
       '#default_country' => 'US',
@@ -92,16 +93,13 @@ class ProfileSelectTest extends CommerceKernelTestBase implements FormInterface 
         $form['profile']['#available_countries'] = 'US';
         break;
 
-      case 'testDefaultCountryIsValid':
-        // Do nothing, the default country is valid and in the available list.
-        break;
-
       case 'testDefaultCountryIsNotValid':
         $form['profile']['#default_country'] = 'CA';
         break;
 
       default:
-        throw new \InvalidArgumentException('A valid formTestCase must be specified.');
+        // Do nothing, the default definition is enough to test with.
+        break;
     }
 
     return $form;
@@ -144,6 +142,9 @@ class ProfileSelectTest extends CommerceKernelTestBase implements FormInterface 
     $this->buildTestForm();
   }
 
+  /**
+   * Tests that an invalid default country resets to NULL.
+   */
   public function testValidateElementPropertiesDefaultCountry() {
     $this->formTestCase = 'testDefaultCountryIsValid';
     $form = $this->buildTestForm();
@@ -155,14 +156,143 @@ class ProfileSelectTest extends CommerceKernelTestBase implements FormInterface 
   }
 
   /**
+   * Tests the available profiles select list.
+   *
+   * Ensures:
+   * - Anonymous users do not see the select list
+   * - Users without existing profiles do not see the select list
+   * - Users with existing profiles see the select list
+   * - The select list defaults to the current user's profile.
+   * - The element's default value is the user's default profile.
+   */
+  public function testAvailableProfilesSelectList() {
+    $this->formTestCase = __FUNCTION__;
+
+    // Test as anonymous user, which should never show the select list.
+    $form = $this->buildTestForm();
+    $this->assertFalse($form['profile']['available_profiles']['#access']);
+
+    // Test that a user without previous profiles does not see the select list.
+    $user = $this->createUser();
+    $form = $this->buildTestForm([
+      'user' => $user,
+    ]);
+    $this->assertFalse($form['profile']['available_profiles']['#access']);
+
+    // Create profiles for the user, assert the select list is available.
+    $test_profile1 = Profile::create([
+      'type' => 'customer',
+      'address' => [
+        'organization' => '',
+        'country_code' => 'FR',
+        'postal_code' => '75002',
+        'locality' => 'Paris',
+        'address_line1' => 'A french street',
+        'given_name' => 'John',
+        'family_name' => 'LeSmith',
+      ],
+      'uid' => $user->id(),
+    ]);
+    $test_profile1->setDefault(TRUE);
+    $test_profile1->save();
+    $test_profile2 = Profile::create([
+      'type' => 'customer',
+      'address' => [
+        'country_code' => 'US',
+        'postal_code' => '53177',
+        'locality' => 'Milwaukee',
+        'address_line1' => 'Pabst Blue Ribbon Dr',
+        'administrative_area' => 'WI',
+        'given_name' => 'Frederick',
+        'family_name' => 'Pabst',
+      ],
+      'uid' => $user->id(),
+    ]);
+    $test_profile2->save();
+
+    $form = $this->buildTestForm([
+      'user' => $user,
+    ]);
+    $this->assertTrue($form['profile']['available_profiles']['#access']);
+    $this->assertCount(3, $form['profile']['available_profiles']['#options']);
+    $this->assertEquals([
+      $test_profile1->id() => $test_profile1->label(),
+      $test_profile2->id() => $test_profile2->label(),
+      '_new' => '+ Enter a new address',
+    ], $form['profile']['available_profiles']['#options']);
+    $this->assertEquals($test_profile1->id(), $form['profile']['available_profiles']['#default_value']);
+    $this->assertEquals($test_profile1->id(), $form['profile']['#default_value']->id());
+
+    // If we mark the test_profile2 as default, it should be the default option.
+    $test_profile2->setDefault(TRUE);
+    $test_profile2->save();
+
+    $form = $this->buildTestForm([
+      'user' => $user,
+    ]);
+    $this->assertEquals($test_profile2->id(), $form['profile']['available_profiles']['#default_value']);
+    $this->assertEquals($test_profile2->id(), $form['profile']['#default_value']->id());
+  }
+
+  /**
+   * Tests that the element default value respects provided profile.
+   */
+  public function testAvailableProfilesListWithProvidedDefaultValue() {
+    $user = $this->createUser();
+    $test_profile1 = Profile::create([
+      'type' => 'customer',
+      'address' => [
+        'organization' => '',
+        'country_code' => 'FR',
+        'postal_code' => '75002',
+        'locality' => 'Paris',
+        'address_line1' => 'A french street',
+        'given_name' => 'John',
+        'family_name' => 'LeSmith',
+      ],
+      'uid' => $user->id(),
+    ]);
+    $test_profile1->setDefault(TRUE);
+    $test_profile1->save();
+    $test_profile2 = Profile::create([
+      'type' => 'customer',
+      'address' => [
+        'country_code' => 'US',
+        'postal_code' => '53177',
+        'locality' => 'Milwaukee',
+        'address_line1' => 'Pabst Blue Ribbon Dr',
+        'administrative_area' => 'WI',
+        'given_name' => 'Frederick',
+        'family_name' => 'Pabst',
+      ],
+      'uid' => $user->id(),
+    ]);
+    $test_profile2->save();
+
+    // Pass the second profile to form, so it is the one being modified.
+    $form = $this->buildTestForm([
+      'profile' => $test_profile2,
+    ]);
+    $this->assertEquals($test_profile2->id(), $form['profile']['available_profiles']['#default_value']);
+    $this->assertEquals($test_profile2->id(), $form['profile']['#default_value']->id());
+  }
+
+  /**
    * Build the test form.
+   *
+   * @param array $form_state_additions
+   *   An array of values to add to the form state.
    *
    * @return array
    *   The rendered form.
+   *
+   * @throws \Drupal\Core\Form\EnforcedResponseException
+   * @throws \Drupal\Core\Form\FormAjaxException
    */
-  protected function buildTestForm() {
+  protected function buildTestForm(array $form_state_additions = []) {
     // Programmatically submit the form.
     $form_state = new FormState();
+    $form_state->setFormState($form_state_additions);
     $form = $this->formBuilder->buildForm($this, $form_state);
     return $form;
   }
