@@ -310,6 +310,11 @@ class ProfileSelect extends RenderElement {
     $form_display = EntityFormDisplay::collectRenderDisplay($element['#default_value'], 'default');
     $form_display->extractFormValues($selected_available_profile, $element, $form_state);
     $form_display->validateFormValues($selected_available_profile, $element, $form_state);
+
+    // Set the profile as a value in the `profile` key of the form state.
+    $element_clone = $element;
+    $element_clone['#parents'][] = 'profile';
+    $form_state->setValueForElement($element_clone, $selected_available_profile);
   }
 
   /**
@@ -336,6 +341,10 @@ class ProfileSelect extends RenderElement {
       $selected_available_profile->setNewRevision();
       $selected_available_profile->save();
     }
+
+    // Set the profile as a value in the `profile` key of the form state.
+    $element_clone = $element;
+    $element_clone['#parents'][] = 'profile';
     $form_state->setValueForElement($element, $selected_available_profile);
     $element['#profile'] = $selected_available_profile;
   }

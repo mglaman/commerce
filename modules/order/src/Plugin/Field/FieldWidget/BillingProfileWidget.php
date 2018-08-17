@@ -111,11 +111,7 @@ class BillingProfileWidget extends WidgetBase implements ContainerFactoryPluginI
   public function massageFormValues(array $values, array $form, FormStateInterface $form_state) {
     $new_values = [];
     foreach ($values as $delta => $value) {
-      // @todo we're setting the value properly now, and can do this.
-      //       but it's commented out to prove BC save.
-      // if ($value['profile'] instanceof ProfileInterface) {
-      //  $new_values[$delta]['entity'] = $value['profile'];
-      // }
+      // @todo Get the value from $value rather than element directly.
       $element = NestedArray::getValue($form, $value['array_parents']);
       $new_values[$delta]['entity'] = $element['profile']['#profile'];
     }

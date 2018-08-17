@@ -5,7 +5,6 @@ namespace Drupal\Tests\commerce_order\Functional;
 use Drupal\commerce_order\Adjustment;
 use Drupal\commerce_order\Entity\Order;
 use Drupal\commerce_price\Price;
-use Drupal\profile\Entity\Profile;
 
 /**
  * Tests the commerce_order entity forms.
