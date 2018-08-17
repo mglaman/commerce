@@ -1,0 +1,16 @@
+.profile-select .visible-on-edit {
+  display: none;
+}
+.profile-select.editing .visible-on-edit {
+  display: block;
+}
+.profile-select.editing .hidden-on-edit {
+  display: none;
+}
+
+.profile-select.creating .visible-on-create {
+  display: block;
+}
+.profile-select.creating .hidden-on-create {
+  display: none;
+}

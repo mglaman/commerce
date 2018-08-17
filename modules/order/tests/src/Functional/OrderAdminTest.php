@@ -15,29 +15,6 @@ use Drupal\profile\Entity\Profile;
 class OrderAdminTest extends OrderBrowserTestBase {
 
   /**
-   * The profile to test against.
-   *
-   * @var \Drupal\profile\Entity\Profile
-   */
-  protected $billingProfile;
-
-  /**
-   * {@inheritdoc}
-   */
-  protected function setUp() {
-    parent::setUp();
-    \Drupal::service('module_installer')->install(['profile']);
-
-    $profile_values = [
-      'type' => 'customer',
-      'uid' => 1,
-      'status' => 1,
-    ];
-    $this->billingProfile = Profile::create($profile_values);
-    $this->billingProfile->save();
-  }
-
-  /**
    * Tests creating/editing an Order.
    */
   public function testCreateOrder() {
@@ -74,7 +51,10 @@ class OrderAdminTest extends OrderBrowserTestBase {
       'order_items[form][inline_entity_form][unit_price][0][amount][number]' => '9.99',
     ];
     $this->submitForm($edit, 'Create order item');
-    $this->submitForm([], t('Edit'));
+    // There are two "edit" buttons, one for the profile and one for the order
+    // items.
+    // @todo AJAX on the order item IEF shouldn't cause read mode on profile.
+    $this->getSession()->getPage()->pressButton('edit-order-items-entities-0-actions-ief-entity-edit');
     $this->assertSession()->fieldExists('order_items[form][inline_entity_form][entities][0][form][purchased_entity][0][target_id]');
     $this->assertSession()->fieldExists('order_items[form][inline_entity_form][entities][0][form][quantity][0][value]');
     $this->assertSession()->fieldExists('order_items[form][inline_entity_form][entities][0][form][unit_price][0][amount][number]');
@@ -116,7 +96,7 @@ class OrderAdminTest extends OrderBrowserTestBase {
 
     $this->drupalGet('/admin/commerce/orders');
     $order_number = $this->getSession()->getPage()->find('css', 'tr td.views-field-order-number');
-    $this->assertEquals(1, count($order_number), 'Order exists in the table.');
+    $this->assertNotEmpty($order_number, 'Order exists in the table.');
 
     $order = Order::load(1);
     $this->assertEquals(1, count($order->getItems()));
