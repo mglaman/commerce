@@ -248,6 +248,8 @@ class ProfileSelect extends RenderElement {
         'class' => ['edit-profile'],
       ],
       '#access' => $default_profile->isDefaultRevision(),
+      // Ensure this edit button shows below any other fields.
+      '#weight' => 100,
     ];
 
     $form_display = EntityFormDisplay::collectRenderDisplay($default_profile, 'default');
