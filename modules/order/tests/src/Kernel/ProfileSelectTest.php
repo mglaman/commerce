@@ -277,16 +277,20 @@ class ProfileSelectTest extends CommerceKernelTestBase implements FormInterface 
     $this->assertEquals($test_profile2->id(), $form['profile']['#default_value']->id());
   }
 
-  // @todo test passing in a value for `available_profiles`
-  // LINE 168.
-  // Test passing in `_new` and asserting the default value is new.
-  // Test _existing? Revision?
-  // Test passing a new profile ID.
-  public function testAvailableProfilesFormStateValue() {}
-
-  // @todo Test the #profile works like #default_value.
-  // LINE 189
-  public function testProfilePropertyOnElement() {}
+  /**
+   * Tests that the #profile attribute contains the profile value.
+   */
+  public function testProfilePropertyOnElement() {
+    $form = $this->buildTestForm();
+    $this->assertInstanceOf(
+      Profile::class,
+      $form['profile']['#profile']
+    );
+    $this->assertInstanceOf(
+      Profile::class,
+      $form['profile']['#default_value']
+    );
+  }
 
   /**
    * Tests using a previous revision with the profile select element.
@@ -362,6 +366,115 @@ class ProfileSelectTest extends CommerceKernelTestBase implements FormInterface 
     $this->assertFalse($form['profile']['profile_view']['edit']['#access']);
   }
 
+  /**
+   * Tess the element when passing values from the select list.
+   */
+  public function testAvailableProfilesFormStateValue() {
+    $user = $this->createUser();
+    $test_profile1 = Profile::create([
+      'type' => 'customer',
+      'address' => [
+        'organization' => '',
+        'country_code' => 'FR',
+        'postal_code' => '75002',
+        'locality' => 'Paris',
+        'address_line1' => 'A french street',
+        'given_name' => 'John',
+        'family_name' => 'LeSmith',
+      ],
+      'uid' => $user->id(),
+    ]);
+    $test_profile1->setDefault(TRUE);
+    $test_profile1->save();
+    $test_profile2 = Profile::create([
+      'type' => 'customer',
+      'address' => [
+        'country_code' => 'US',
+        'postal_code' => '53177',
+        'locality' => 'Milwaukee',
+        'address_line1' => 'Pabst Blue Ribbon Dr',
+        'administrative_area' => 'WI',
+        'given_name' => 'Frederick',
+        'family_name' => 'Pabst',
+      ],
+      'uid' => $user->id(),
+    ]);
+    $test_profile2->save();
+
+    $test_profile2_revision_id = $test_profile2->getRevisionId();
+
+
+    // Mark it as default, and create a new revision.
+    $test_profile2 = $this->reloadEntity($test_profile2);
+    $test_profile2->setDefault(TRUE);
+    $test_profile2->setNewRevision();
+    $test_profile2->save();
+
+    $this->assertNotEquals(
+      $test_profile2_revision_id,
+      $test_profile2->getRevisionId()
+    );
+
+    $original_test_profile2 = $this->container->get('entity_type.manager')
+      ->getStorage('profile')
+      ->loadRevision($test_profile2_revision_id);
+
+    $this->assertFalse($original_test_profile2->isDefaultRevision());
+    $this->assertTrue($test_profile2->isDefaultRevision());
+
+    // Pass a previous revision to the form, but specify we want a new profile.
+    $form = $this->buildTestForm([
+      'profile' => $original_test_profile2,
+      'values' => [
+        'profile' => [
+          'available_profiles' => '_new',
+        ],
+      ],
+      'input' => [
+        'profile' => [
+          'available_profiles' => '_new',
+        ],
+      ],
+    ]);
+    $this->assertEquals('_new', $form['profile']['available_profiles']['#value']);
+    $this->assertTrue($form['profile']['#profile']->isNew());
+
+    // Pass a previous revision to the form, but specify the first test profile.
+    $form = $this->buildTestForm([
+      'profile' => $original_test_profile2,
+      'values' => [
+        'profile' => [
+          'available_profiles' => $test_profile1->id(),
+        ],
+      ],
+      'input' => [
+        'profile' => [
+          'available_profiles' => $test_profile1->id(),
+        ],
+      ],
+    ]);
+    $this->assertEquals($test_profile1->id(), $form['profile']['available_profiles']['#value']);
+    $this->assertEquals($test_profile1->id(), $form['profile']['#profile']->id());
+
+    // Pass in the latest revision for the default value, and ensure that we
+    // do not receive `_existing` as the option.
+    $form = $this->buildTestForm([
+      'profile' => $original_test_profile2,
+      'values' => [
+        'profile' => [
+          'available_profiles' => $test_profile2->id(),
+        ],
+      ],
+      'input' => [
+        'profile' => [
+          'available_profiles' => $test_profile2->id(),
+        ],
+      ],
+    ]);
+    $this->assertEquals($test_profile2->id(), $form['profile']['available_profiles']['#value']);
+    $this->assertEquals($test_profile2->id(), $form['profile']['#profile']->id());
+  }
+
   // @todo test validation.
   // That the element is set properly
   public function testElementValidation() {}
@@ -385,8 +498,17 @@ class ProfileSelectTest extends CommerceKernelTestBase implements FormInterface 
   protected function buildTestForm(array $form_state_additions = []) {
     // Programmatically submit the form.
     $form_state = new FormState();
+    $form_state->setProgrammed();
+    $form_state->setProcessInput();
     $form_state->setFormState($form_state_additions);
     $form = $this->formBuilder->buildForm($this, $form_state);
+
+    // If form values were passed, rebuild the form to simulate AJAX.
+    if (!empty($form_state_additions['values'])) {
+      $form_state->setMethod('GET');
+      $form_state->setValues($form_state_additions['values']);
+      $form = $this->formBuilder->rebuildForm($this->getFormId(), $form_state, $form);
+    }
     return $form;
   }
 
