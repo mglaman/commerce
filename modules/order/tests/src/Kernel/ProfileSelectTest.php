@@ -108,7 +108,12 @@ class ProfileSelectTest extends CommerceKernelTestBase implements FormInterface 
   /**
    * {@inheritdoc}
    */
-  public function validateForm(array &$form, FormStateInterface $form_state) {}
+  public function validateForm(array &$form, FormStateInterface $form_state) {
+    // If the form is being validated.
+    // The value has been set on the "profile" key of the element.
+    $profile = $form_state->getValue(['profile', 'profile']);
+    $this->assertInstanceOf(Profile::class, $profile);
+  }
 
   /**
    * {@inheritdoc}
@@ -475,9 +480,26 @@ class ProfileSelectTest extends CommerceKernelTestBase implements FormInterface 
     $this->assertEquals($test_profile2->id(), $form['profile']['#profile']->id());
   }
 
-  // @todo test validation.
-  // That the element is set properly
-  public function testElementValidation() {}
+
+  /**
+   * Tests the validation of the element.
+   *
+   * Assertions are made in this forms validate method. The main assertion
+   * is that the proposed profile is set as the element value during the
+   * validation process, so that other elements can validate against that
+   * selected profile.
+   *
+   * @see \Drupal\Tests\commerce_order\Kernel\ProfileSelectTest::validateForm
+   */
+  public function testElementValidation() {
+    $form = $this->buildTestForm();
+
+    $form_validator = $this->container->get('form_validator');
+
+    $form_state = new FormState();
+    $form_state->setProgrammed();
+    $form_validator->validateForm($this->getFormId(), $form, $form_state);
+  }
 
   // @todo test submission.
   // That the element is set properly
