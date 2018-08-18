@@ -277,6 +277,99 @@ class ProfileSelectTest extends CommerceKernelTestBase implements FormInterface 
     $this->assertEquals($test_profile2->id(), $form['profile']['#default_value']->id());
   }
 
+  // @todo test passing in a value for `available_profiles`
+  // LINE 168.
+  // Test passing in `_new` and asserting the default value is new.
+  // Test _existing? Revision?
+  // Test passing a new profile ID.
+  public function testAvailableProfilesFormStateValue() {}
+
+  // @todo Test the #profile works like #default_value.
+  // LINE 189
+  public function testProfilePropertyOnElement() {}
+
+  /**
+   * Tests using a previous revision with the profile select element.
+   *
+   * This asserts that a previous revision passed into the element will not
+   * be allowed to be modified.
+   */
+  public function testLatestRevision() {
+    $user = $this->createUser();
+    $test_profile1 = Profile::create([
+      'type' => 'customer',
+      'address' => [
+        'organization' => '',
+        'country_code' => 'FR',
+        'postal_code' => '75002',
+        'locality' => 'Paris',
+        'address_line1' => 'A french street',
+        'given_name' => 'John',
+        'family_name' => 'LeSmith',
+      ],
+      'uid' => $user->id(),
+    ]);
+    $test_profile1->setDefault(TRUE);
+    $test_profile1->save();
+    $test_profile2 = Profile::create([
+      'type' => 'customer',
+      'address' => [
+        'country_code' => 'US',
+        'postal_code' => '53177',
+        'locality' => 'Milwaukee',
+        'address_line1' => 'Pabst Blue Ribbon Dr',
+        'administrative_area' => 'WI',
+        'given_name' => 'Frederick',
+        'family_name' => 'Pabst',
+      ],
+      'uid' => $user->id(),
+    ]);
+    $test_profile2->save();
+
+    $test_profile2_revision_id = $test_profile2->getRevisionId();
+
+
+    // Mark it as default, and create a new revision.
+    $test_profile2 = $this->reloadEntity($test_profile2);
+    $test_profile2->setDefault(TRUE);
+    $test_profile2->setNewRevision();
+    $test_profile2->save();
+
+    $this->assertNotEquals(
+      $test_profile2_revision_id,
+      $test_profile2->getRevisionId()
+    );
+
+    $original_test_profile2 = $this->container->get('entity_type.manager')
+      ->getStorage('profile')
+      ->loadRevision($test_profile2_revision_id);
+
+    $this->assertFalse($original_test_profile2->isDefaultRevision());
+    $this->assertTrue($test_profile2->isDefaultRevision());
+
+    // Pass the second profile to form, so it is the one being modified.
+    $form = $this->buildTestForm([
+      'profile' => $original_test_profile2,
+    ]);
+    $this->assertCount(4, $form['profile']['available_profiles']['#options']);
+    $this->assertEquals([
+      '_existing' => t(':label (Original)', [':label' => $original_test_profile2->label()]),
+      $test_profile1->id() => $test_profile1->label(),
+      $test_profile2->id() => $test_profile2->label(),
+      '_new' => '+ Enter a new address',
+    ], $form['profile']['available_profiles']['#options']);
+    $this->assertEquals('_existing', $form['profile']['available_profiles']['#default_value']);
+    $this->assertFalse($form['profile']['profile_view']['edit']['#access']);
+  }
+
+  // @todo test validation.
+  // That the element is set properly
+  public function testElementValidation() {}
+
+  // @todo test submission.
+  // That the element is set properly
+  public function testElementSubmission() {}
+
   /**
    * Build the test form.
    *
