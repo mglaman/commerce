@@ -5,6 +5,7 @@ namespace Drupal\Tests\commerce_order\Functional;
 use Drupal\commerce_order\Adjustment;
 use Drupal\commerce_order\Entity\Order;
 use Drupal\commerce_price\Price;
+use Drupal\profile\Entity\Profile;
 
 /**
  * Tests the commerce_order entity forms.
@@ -163,6 +164,23 @@ class OrderAdminTest extends OrderBrowserTestBase {
     $this->assertSession()->pageTextContains('Pabst Blue Ribbon Dr');
     $this->assertSession()->pageTextContains('Milwaukee, WI 53177');
     $this->assertSession()->pageTextContains('United States');
+
+    // Ensure the billing profile keeps the same revision data.
+    $this->container->get('entity_type.manager')->getStorage('commerce_order')->resetCache();
+    $order = Order::load($order->id());
+    // We reload it, because the order will give us a specific revision.
+    /** @var \Drupal\profile\Entity\Profile $billing_profile */
+    $billing_profile = Profile::load($order->getBillingProfile()->id());
+    $billing_profile->setNewRevision();
+    /** @var \Drupal\address\Plugin\Field\FieldType\AddressItem $address */
+    $address = $billing_profile->get('address')->first();
+    $address->set('given_name', 'Joseph');
+    $address->set('family_name', 'Schlitz ');
+    $billing_profile->save();
+
+    $this->drupalGet($order->toUrl('edit-form'));
+    $this->assertSession()->pageTextContains('Frederick Pabst');
+    $this->assertSession()->pageTextNotContains('Joseph Schlitz');
   }
 
   /**
