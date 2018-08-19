@@ -480,7 +480,6 @@ class ProfileSelectTest extends CommerceKernelTestBase implements FormInterface 
     $this->assertEquals($test_profile2->id(), $form['profile']['#profile']->id());
   }
 
-
   /**
    * Tests the validation of the element.
    *
@@ -501,9 +500,64 @@ class ProfileSelectTest extends CommerceKernelTestBase implements FormInterface 
     $form_validator->validateForm($this->getFormId(), $form, $form_state);
   }
 
-  // @todo test submission.
-  // That the element is set properly
-  public function testElementSubmission() {}
+  /**
+   * Tests the submission of the element.
+   */
+  public function testElementSubmission() {
+    $form_state = new FormState();
+    $form_state->setFormState([
+      'values' => [
+        'profile' => [
+          'available_profiles' => '_new',
+          'address' => [
+            0 => [
+              'address' => [
+                'country_code' => 'US',
+                'postal_code' => '53177',
+                'locality' => 'Milwaukee',
+                'address_line1' => 'Pabst Blue Ribbon Dr',
+                'administrative_area' => 'WI',
+                'given_name' => 'Frederick',
+                'family_name' => 'Pabst',
+              ],
+            ],
+          ],
+        ],
+      ],
+      'input' => [
+        'profile' => [
+          'available_profiles' => '_new',
+          'address' => [
+            0 => [
+              'address' => [
+                'country_code' => 'US',
+                'postal_code' => '53177',
+                'locality' => 'Milwaukee',
+                'address_line1' => 'Pabst Blue Ribbon Dr',
+                'administrative_area' => 'WI',
+                'given_name' => 'Frederick',
+                'family_name' => 'Pabst',
+              ],
+            ],
+          ],
+        ],
+      ],
+    ]);
+    $this->formBuilder->submitForm($this, $form_state);
+
+    $complete_form = $form_state->getCompleteForm();
+    // Assert the profile is stored on the element's #profile property and
+    // has been saved.
+    $profile = $complete_form['profile']['#profile'];
+    $this->assertInstanceOf(Profile::class, $profile);
+    $this->assertFalse($profile->isNew());
+
+    // Assert the profile was set to be the element value as well.
+    /** @var \Drupal\profile\Entity\ProfileInterface $profile */
+    $profile = $form_state->getValue(['profile', 'profile']);
+    $this->assertInstanceOf(Profile::class, $profile);
+    $this->assertFalse($profile->isNew());
+  }
 
   /**
    * Build the test form.

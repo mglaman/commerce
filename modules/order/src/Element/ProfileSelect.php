@@ -94,7 +94,7 @@ class ProfileSelect extends RenderElement {
    * @throws \InvalidArgumentException
    *   Thrown if an element property is invalid, or empty but required.
    */
-  public static function validateElementProperties(array $element) {
+  public static function validateElementProperties(array &$element) {
     if (empty($element['#default_value'])) {
       throw new \InvalidArgumentException('The commerce_profile_select element requires the #default_value property.');
     }
@@ -345,7 +345,7 @@ class ProfileSelect extends RenderElement {
     // Set the profile as a value in the `profile` key of the form state.
     $element_clone = $element;
     $element_clone['#parents'][] = 'profile';
-    $form_state->setValueForElement($element, $selected_available_profile);
+    $form_state->setValueForElement($element_clone, $selected_available_profile);
     $element['#profile'] = $selected_available_profile;
   }
 
