@@ -115,6 +115,12 @@ class OrderAdminTest extends OrderBrowserTestBase {
     ]);
     $order->save();
 
+    /** @var \Drupal\commerce_order\OrderItemStorageInterface $order_item_store */
+    $order_item_store = $this->container->get('entity_type.manager')->getStorage('commerce_order_item');
+    $order_item = $order_item_store->createFromPurchasableEntity($this->variation);
+    $order_item->save();
+    $order->addItem($order_item);
+
     $adjustments = [];
     $adjustments[] = new Adjustment([
       'type' => 'custom',
@@ -136,6 +142,27 @@ class OrderAdminTest extends OrderBrowserTestBase {
     $this->assertSession()->fieldValueEquals('adjustments[1][definition][label]', 'Handling fee');
     $this->assertSession()->optionExists('adjustments[2][type]', 'Custom');
     $this->assertSession()->optionNotExists('adjustments[2][type]', 'Test order adjustment type');
+
+    $this->getSession()->getPage()->fillField('First name', 'Frederick');
+    $this->getSession()->getPage()->fillField('Last name', 'Pabst');
+    $this->getSession()->getPage()->fillField('Street address', 'Pabst Blue Ribbon Dr');
+    $this->getSession()->getPage()->fillField('City', 'Milwaukee');
+    $this->getSession()->getPage()->fillField('State', 'WI');
+    $this->getSession()->getPage()->fillField('Zip code', '53177');
+
+    $this->getSession()->getPage()->pressButton('Save');
+
+    $this->drupalGet($order->toUrl('edit-form'));
+
+    $this->assertSession()->selectExists('Select an address');
+    $this->assertSession()->optionExists('Select an address', 'Pabst Blue Ribbon Dr (Original)');
+    $this->assertSession()->optionExists('Select an address', 'Pabst Blue Ribbon Dr');
+    $this->assertSession()->optionExists('Select an address', '+ Enter a new address');
+
+    $this->assertSession()->pageTextContains('Frederick Pabst');
+    $this->assertSession()->pageTextContains('Pabst Blue Ribbon Dr');
+    $this->assertSession()->pageTextContains('Milwaukee, WI 53177');
+    $this->assertSession()->pageTextContains('United States');
   }
 
   /**
