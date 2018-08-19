@@ -44,7 +44,7 @@ class ProfileSelectTestForm extends FormBase {
    * {@inheritdoc}
    */
   public function submitForm(array &$form, FormStateInterface $form_state) {
-    $profile = $form_state->getValue('profile');
+    $profile = $form_state->getValue(['profile', 'profile']);
     drupal_set_message($this->t('Profile selected: :label', [':label' => $profile->label()]));
   }
 

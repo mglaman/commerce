@@ -79,7 +79,6 @@ class ProfileSelectTest extends CommerceKernelTestBase implements FormInterface 
       '#available_countries' => ['HU', 'FR', 'US', 'RS', 'DE'],
     ];
 
-
     switch ($this->formTestCase) {
       case 'testValidateElementPropertiesDefaultValueEmpty':
         $form['profile']['#default_value'] = NULL;
@@ -337,7 +336,6 @@ class ProfileSelectTest extends CommerceKernelTestBase implements FormInterface 
 
     $test_profile2_revision_id = $test_profile2->getRevisionId();
 
-
     // Mark it as default, and create a new revision.
     $test_profile2 = $this->reloadEntity($test_profile2);
     $test_profile2->setDefault(TRUE);
@@ -407,7 +405,6 @@ class ProfileSelectTest extends CommerceKernelTestBase implements FormInterface 
     $test_profile2->save();
 
     $test_profile2_revision_id = $test_profile2->getRevisionId();
-
 
     // Mark it as default, and create a new revision.
     $test_profile2 = $this->reloadEntity($test_profile2);

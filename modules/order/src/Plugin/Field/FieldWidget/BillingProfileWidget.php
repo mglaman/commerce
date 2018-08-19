@@ -9,7 +9,6 @@ use Drupal\Core\Field\FieldItemListInterface;
 use Drupal\Core\Field\WidgetBase;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Plugin\ContainerFactoryPluginInterface;
-use Drupal\profile\Entity\ProfileInterface;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 
 /**
