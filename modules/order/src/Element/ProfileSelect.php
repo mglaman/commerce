@@ -10,6 +10,7 @@ use Drupal\Core\Entity\Entity\EntityFormDisplay;
 use Drupal\Core\Entity\Entity\EntityViewDisplay;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Render\Element\RenderElement;
+use Drupal\Core\Session\AccountInterface;
 use Drupal\profile\Entity\ProfileInterface;
 
 /**
@@ -149,10 +150,7 @@ class ProfileSelect extends RenderElement {
 
     // If the owner is a registered user, load their other active profiles for
     // selection and reuse.
-    $available_profiles = [];
-    if ($owner->isAuthenticated()) {
-      $available_profiles = $profile_storage->loadMultipleByUser($owner, $profile_type, TRUE);
-    }
+    $available_profiles = static::getAvailableProfiles($owner, $profile_type);
     // If the default value is a new profile, automatically select their
     // default profile.
     if ($default_profile->isNew()) {
@@ -207,7 +205,10 @@ class ProfileSelect extends RenderElement {
 
     $available_profiles_default_value = $default_profile->id() ?: '_new';
     $available_profiles_options = EntityHelper::extractLabels($available_profiles);
-    $available_profiles_options += ['_new' => $element['#create_title']];
+
+    if ($owner->hasPermission('create profile')) {
+      $available_profiles_options += ['_new' => $element['#create_title']];
+    }
 
     // If the original default value is not the default revision, ensure it
     // persists as an option to prevent unexpected changes in data.
@@ -247,7 +248,7 @@ class ProfileSelect extends RenderElement {
       '#attributes' => [
         'class' => ['edit-profile'],
       ],
-      '#access' => $default_profile->isDefaultRevision(),
+      '#access' => $default_profile->isDefaultRevision() && $default_profile->access('update', $owner),
       // Ensure this edit button shows below any other fields.
       '#weight' => 100,
     ];
@@ -352,6 +353,30 @@ class ProfileSelect extends RenderElement {
     $element_clone['#parents'][] = 'profile';
     $form_state->setValueForElement($element_clone, $selected_available_profile);
     $element['#profile'] = $selected_available_profile;
+  }
+
+  /**
+   * Gets the available profiles for the user that can be selected.
+   *
+   * @param \Drupal\Core\Session\AccountInterface $account
+   *   The account.
+   * @param string $profile_type
+   *   The profile type.
+   *
+   * @return array|\Drupal\profile\Entity\ProfileInterface[]
+   *   An array of profiles.
+   *
+   * @throws \Drupal\Component\Plugin\Exception\InvalidPluginDefinitionException
+   * @throws \Drupal\Component\Plugin\Exception\PluginNotFoundException
+   */
+  protected static function getAvailableProfiles(AccountInterface $account, $profile_type) {
+    /** @var \Drupal\profile\ProfileStorageInterface $profile_storage */
+    $profile_storage = \Drupal::entityTypeManager()->getStorage('profile');
+    $available_profiles = [];
+    if ($account->isAuthenticated()) {
+      $available_profiles = $profile_storage->loadMultipleByUser($account, $profile_type, TRUE);
+    }
+    return $available_profiles;
   }
 
   /**

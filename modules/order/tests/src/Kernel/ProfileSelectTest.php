@@ -52,6 +52,9 @@ class ProfileSelectTest extends CommerceKernelTestBase implements FormInterface 
     $this->installConfig(['commerce_order']);
     $this->installEntitySchema('profile');
     $this->formBuilder = $this->container->get('form_builder');
+
+    // Create a uid1 so permissions don't get bypassed later on.
+    $uid1 = $this->createUser();
   }
 
   /**
@@ -177,7 +180,9 @@ class ProfileSelectTest extends CommerceKernelTestBase implements FormInterface 
     $this->assertFalse($form['profile']['available_profiles']['#access']);
 
     // Test that a user without previous profiles does not see the select list.
-    $user = $this->createUser();
+    $user = $this->createUser([], [
+      'create profile',
+    ]);
     $form = $this->buildTestForm([
       'user' => $user,
     ]);
@@ -217,6 +222,7 @@ class ProfileSelectTest extends CommerceKernelTestBase implements FormInterface 
     $form = $this->buildTestForm([
       'user' => $user,
     ]);
+
     $this->assertTrue($form['profile']['available_profiles']['#access']);
     $this->assertCount(3, $form['profile']['available_profiles']['#options']);
     $this->assertEquals([
@@ -303,7 +309,9 @@ class ProfileSelectTest extends CommerceKernelTestBase implements FormInterface 
    * be allowed to be modified.
    */
   public function testLatestRevision() {
-    $user = $this->createUser();
+    $user = $this->createUser([], [
+      'create profile',
+    ]);
     $test_profile1 = Profile::create([
       'type' => 'customer',
       'address' => [
@@ -478,6 +486,122 @@ class ProfileSelectTest extends CommerceKernelTestBase implements FormInterface 
   }
 
   /**
+   * Tests that the `_new` option is controlled by permission access.
+   */
+  public function testCreateAccess() {
+    // Create a user who has profiles, but does not have the ability to create
+    // new. This replicates sites where users have a set of profiles to select
+    // from based on custom logic but cannot create new ones.
+    $user = $this->createUser([], []);
+    $test_profile1 = Profile::create([
+      'type' => 'customer',
+      'address' => [
+        'organization' => '',
+        'country_code' => 'FR',
+        'postal_code' => '75002',
+        'locality' => 'Paris',
+        'address_line1' => 'A french street',
+        'given_name' => 'John',
+        'family_name' => 'LeSmith',
+      ],
+      'uid' => $user->id(),
+    ]);
+    $test_profile1->setDefault(TRUE);
+    $test_profile1->save();
+    $test_profile2 = Profile::create([
+      'type' => 'customer',
+      'address' => [
+        'country_code' => 'US',
+        'postal_code' => '53177',
+        'locality' => 'Milwaukee',
+        'address_line1' => 'Pabst Blue Ribbon Dr',
+        'administrative_area' => 'WI',
+        'given_name' => 'Frederick',
+        'family_name' => 'Pabst',
+      ],
+      'uid' => $user->id(),
+    ]);
+    $test_profile2->save();
+
+    $form = $this->buildTestForm([
+      'user' => $user,
+    ]);
+
+    $this->assertCount(2, $form['profile']['available_profiles']['#options']);
+    $this->assertEquals([
+      $test_profile1->id() => $test_profile1->label(),
+      $test_profile2->id() => $test_profile2->label(),
+    ], $form['profile']['available_profiles']['#options']);
+  }
+
+  /**
+   * Tests editing an available profile is based on permissions.
+   */
+  public function testEditAccess() {
+    // Create a user who has profiles, but does not have the ability to create
+    // new. This replicates sites where users have a set of profiles to select
+    // from based on custom logic but cannot create new ones.
+    $user = $this->createUser([], [
+      'create profile',
+    ]);
+    $test_profile1 = Profile::create([
+      'type' => 'customer',
+      'address' => [
+        'organization' => '',
+        'country_code' => 'FR',
+        'postal_code' => '75002',
+        'locality' => 'Paris',
+        'address_line1' => 'A french street',
+        'given_name' => 'John',
+        'family_name' => 'LeSmith',
+      ],
+      'uid' => $user->id(),
+    ]);
+    $test_profile1->setDefault(TRUE);
+    $test_profile1->save();
+    $test_profile2 = Profile::create([
+      'type' => 'customer',
+      'address' => [
+        'country_code' => 'US',
+        'postal_code' => '53177',
+        'locality' => 'Milwaukee',
+        'address_line1' => 'Pabst Blue Ribbon Dr',
+        'administrative_area' => 'WI',
+        'given_name' => 'Frederick',
+        'family_name' => 'Pabst',
+      ],
+      'uid' => $user->id(),
+    ]);
+    $test_profile2->save();
+
+    $form = $this->buildTestForm([
+      'user' => $user,
+      'profile' => $test_profile1,
+    ]);
+
+    $this->assertCount(3, $form['profile']['available_profiles']['#options']);
+    $this->assertEquals($test_profile1->id(), $form['profile']['available_profiles']['#default_value']);
+
+    $this->assertFalse($form['profile']['profile_view']['edit']['#access']);
+
+    $user = $this->createUser([], [
+      'create profile',
+      'update own profile',
+      'update own customer profile',
+    ]);
+    $test_profile1->setOwner($user);
+    $test_profile1->save();
+    $test_profile2->setOwner($user);
+    $test_profile2->save();
+
+    $form = $this->buildTestForm([
+      'user' => $user,
+      'profile' => $test_profile1,
+    ]);
+    $this->assertTrue($form['profile']['profile_view']['edit']['#access']);
+  }
+
+  /**
    * Tests the validation of the element.
    *
    * Assertions are made in this forms validate method. The main assertion
@@ -501,8 +625,12 @@ class ProfileSelectTest extends CommerceKernelTestBase implements FormInterface 
    * Tests the submission of the element.
    */
   public function testElementSubmission() {
+    $user = $this->createUser([], [
+      'create profile',
+    ]);
     $form_state = new FormState();
     $form_state->setFormState([
+      'user' => $user,
       'values' => [
         'profile' => [
           'available_profiles' => '_new',
