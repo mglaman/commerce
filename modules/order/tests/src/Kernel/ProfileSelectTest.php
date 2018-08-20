@@ -554,6 +554,62 @@ class ProfileSelectTest extends CommerceKernelTestBase implements FormInterface 
     $profile = $form_state->getValue(['profile', 'profile']);
     $this->assertInstanceOf(Profile::class, $profile);
     $this->assertFalse($profile->isNew());
+
+    $profile_storage = $this->container->get('entity_type.manager')->getStorage('profile');
+    /** @var \Drupal\profile\Entity\ProfileInterface $initial_profile_revision */
+    $initial_profile_revision = $profile_storage->loadRevision($profile->getRevisionId());
+
+    // Resubmit the form with the profile we created. However, we're going to
+    // modify the address. This should cause a new revision to be created.
+    $form_state = new FormState();
+    $form_state->setFormState([
+      'values' => [
+        'profile' => [
+          'available_profiles' => $profile->id(),
+          'address' => [
+            0 => [
+              'address' => [
+                'country_code' => 'US',
+                'postal_code' => '53177',
+                'locality' => 'Milwaukee',
+                'address_line1' => 'Pabst Blue Ribbon Dr',
+                'administrative_area' => 'WI',
+                'given_name' => 'Joseph',
+                'family_name' => 'Schlitz',
+              ],
+            ],
+          ],
+        ],
+      ],
+      'input' => [
+        'profile' => [
+          'available_profiles' => $profile->id(),
+          'address' => [
+            0 => [
+              'address' => [
+                'country_code' => 'US',
+                'postal_code' => '53177',
+                'locality' => 'Milwaukee',
+                'address_line1' => 'Pabst Blue Ribbon Dr',
+                'administrative_area' => 'WI',
+                'given_name' => 'Joseph',
+                'family_name' => 'Schlitz',
+              ],
+            ],
+          ],
+        ],
+      ],
+    ]);
+    $this->formBuilder->submitForm($this, $form_state);
+
+    /** @var \Drupal\profile\Entity\ProfileInterface $updated_profile */
+    $updated_profile = $form_state->getValue(['profile', 'profile']);
+    $this->assertInstanceOf(Profile::class, $updated_profile);
+    $this->assertEquals($initial_profile_revision->id(), $updated_profile->id());
+    $this->assertNotEquals(
+      $initial_profile_revision->getRevisionId(),
+      $updated_profile->getRevisionId()
+    );
   }
 
   /**

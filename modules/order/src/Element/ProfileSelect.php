@@ -338,7 +338,12 @@ class ProfileSelect extends RenderElement {
     // When the _existing option is chosen, there will be no changes reported
     // preventing an accidental flag for the revision.
     if ($selected_available_profile->hasTranslationChanges()) {
-      $selected_available_profile->setNewRevision();
+      // If this is an old revision, we want to save directly to it, and not
+      // a new revision. But if it is the latest revision, we want to ensure
+      // that changes don't affect references to it.
+      if ($selected_available_profile->isLatestRevision()) {
+        $selected_available_profile->setNewRevision(TRUE);
+      }
       $selected_available_profile->save();
     }
 
