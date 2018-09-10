@@ -206,7 +206,7 @@ class ProfileSelect extends RenderElement {
     $available_profiles_default_value = $default_profile->id() ?: '_new';
     $available_profiles_options = EntityHelper::extractLabels($available_profiles);
 
-    if ($owner->hasPermission('create profile')) {
+    if ($owner->hasPermission('create customer profile')) {
       $available_profiles_options += ['_new' => $element['#create_title']];
     }
 

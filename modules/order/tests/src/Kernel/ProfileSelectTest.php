@@ -181,7 +181,7 @@ class ProfileSelectTest extends CommerceKernelTestBase implements FormInterface 
 
     // Test that a user without previous profiles does not see the select list.
     $user = $this->createUser([], [
-      'create profile',
+      'create customer profile',
     ]);
     $form = $this->buildTestForm([
       'user' => $user,
@@ -310,7 +310,7 @@ class ProfileSelectTest extends CommerceKernelTestBase implements FormInterface 
    */
   public function testLatestRevision() {
     $user = $this->createUser([], [
-      'create profile',
+      'create customer profile',
     ]);
     $test_profile1 = Profile::create([
       'type' => 'customer',
@@ -542,7 +542,7 @@ class ProfileSelectTest extends CommerceKernelTestBase implements FormInterface 
     // new. This replicates sites where users have a set of profiles to select
     // from based on custom logic but cannot create new ones.
     $user = $this->createUser([], [
-      'create profile',
+      'create customer profile',
     ]);
     $test_profile1 = Profile::create([
       'type' => 'customer',
@@ -585,7 +585,7 @@ class ProfileSelectTest extends CommerceKernelTestBase implements FormInterface 
     $this->assertFalse($form['profile']['profile_view']['edit']['#access']);
 
     $user = $this->createUser([], [
-      'create profile',
+      'create customer profile',
       'update own profile',
       'update own customer profile',
     ]);
@@ -626,7 +626,7 @@ class ProfileSelectTest extends CommerceKernelTestBase implements FormInterface 
    */
   public function testElementSubmission() {
     $user = $this->createUser([], [
-      'create profile',
+      'create customer profile',
     ]);
     $form_state = new FormState();
     $form_state->setFormState([
