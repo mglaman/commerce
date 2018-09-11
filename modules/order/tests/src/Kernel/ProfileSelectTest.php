@@ -691,6 +691,8 @@ class ProfileSelectTest extends CommerceKernelTestBase implements FormInterface 
     // modify the address. This should cause a new revision to be created.
     $form_state = new FormState();
     $form_state->setFormState([
+      'user' => $user,
+      'profile' => $profile,
       'values' => [
         'profile' => [
           'available_profiles' => $profile->id(),
