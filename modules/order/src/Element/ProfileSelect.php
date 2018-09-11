@@ -12,6 +12,7 @@ use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Render\Element\RenderElement;
 use Drupal\Core\Session\AccountInterface;
 use Drupal\profile\Entity\ProfileInterface;
+use Drupal\user\Entity\User;
 
 /**
  * Provides a form element for selecting a customer profile.
@@ -145,7 +146,8 @@ class ProfileSelect extends RenderElement {
     // #profile_latest_revision flag.
     $default_value_is_latest_revision = $default_profile->isDefaultRevision() && $element['#profile_latest_revision'];
     $default_profile_label = $default_profile->label();
-    $owner = $default_profile->getOwner();
+    // @todo Remove ?: check after https://www.drupal.org/project/commerce/issues/2995325
+    $owner = $default_profile->getOwner() ?: User::getAnonymousUser();
     $profile_type = $default_profile->bundle();
 
     // If the owner is a registered user, load their other active profiles for

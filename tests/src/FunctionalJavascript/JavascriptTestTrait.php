@@ -2,7 +2,6 @@
 
 namespace Drupal\Tests\commerce\FunctionalJavascript;
 
-use Drupal\FunctionalJavascriptTests\DrupalSelenium2Driver;
 use Drupal\FunctionalJavascriptTests\JSWebAssert;
 use Zumba\Mink\Driver\PhantomJSDriver;
 
