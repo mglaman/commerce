@@ -141,6 +141,8 @@ class ProfileSelect extends RenderElement {
     /** @var \Drupal\profile\Entity\ProfileInterface $default_profile */
     $default_profile = $element['#default_value'];
 
+    $current_user = \Drupal::currentUser();
+
     // This is the latest revision if reports that is the default revision,
     // and the element allows editing the current revision through the
     // #profile_latest_revision flag.
@@ -208,7 +210,7 @@ class ProfileSelect extends RenderElement {
     $available_profiles_default_value = $default_profile->id() ?: '_new';
     $available_profiles_options = EntityHelper::extractLabels($available_profiles);
 
-    if ($owner->hasPermission('create customer profile')) {
+    if ($owner->hasPermission('create customer profile') || $current_user->hasPermission('create customer profile')) {
       $available_profiles_options += ['_new' => $element['#create_title']];
     }
 
@@ -250,7 +252,7 @@ class ProfileSelect extends RenderElement {
       '#attributes' => [
         'class' => ['edit-profile'],
       ],
-      '#access' => $default_profile->isDefaultRevision() && $default_profile->access('update', $owner),
+      '#access' => $default_profile->isDefaultRevision() && ($default_profile->access('update', $owner) || $default_profile->access('update', $current_user)),
       // Ensure this edit button shows below any other fields.
       '#weight' => 100,
     ];
