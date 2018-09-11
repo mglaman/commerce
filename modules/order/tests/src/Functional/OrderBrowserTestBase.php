@@ -36,6 +36,9 @@ abstract class OrderBrowserTestBase extends CommerceBrowserTestBase {
       'administer commerce_order',
       'administer commerce_order_type',
       'access commerce_order overview',
+      'administer profile',
+      'create customer profile',
+      'update own customer profile',
     ], parent::getAdministratorPermissions());
   }
 

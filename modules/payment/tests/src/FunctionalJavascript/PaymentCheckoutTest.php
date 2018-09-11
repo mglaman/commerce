@@ -373,8 +373,6 @@ class PaymentCheckoutTest extends CommerceBrowserTestBase {
     $radio_button = $this->getSession()->getPage()->findField('Example');
     $radio_button->click();
     $this->waitForAjaxToFinish();
-    $this->getSession()->getPage()->selectFieldOption('Select an address', '_new');
-    $this->waitForAjaxToFinish();
     $this->submitForm([
       'payment_information[billing_information][address][0][address][given_name]' => 'Johnny',
       'payment_information[billing_information][address][0][address][family_name]' => 'Appleseed',

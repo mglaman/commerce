@@ -104,7 +104,10 @@ class ProfileSelectTest extends CommerceBrowserTestBase {
    * Tests the profile select form element for anonymous user.
    */
   public function testAuthenticatedNoExistingProfiles() {
-    $account = $this->createUser();
+    $account = $this->createUser([
+      'create customer profile',
+      'update own customer profile',
+    ]);
     $this->drupalLogin($account);
     $address_fields = $this->address1;
     $this->drupalGet(Url::fromRoute('commerce_order_test.profile_select_form'));
@@ -137,7 +140,10 @@ class ProfileSelectTest extends CommerceBrowserTestBase {
    * Tests the profile select form element for authenticated user.
    */
   public function testProfileSelectAuthenticated() {
-    $account = $this->createUser();
+    $account = $this->createUser([
+      'create customer profile',
+      'update own customer profile',
+    ]);
     $profile_storage = $this->container->get('entity_type.manager')
       ->getStorage('profile');
     /** @var \Drupal\profile\Entity\ProfileInterface $profile_address1 */
@@ -183,7 +189,10 @@ class ProfileSelectTest extends CommerceBrowserTestBase {
    * Tests the profile select form element for authenticated user.
    */
   public function testProfileSelectAuthenticatedCreateNew() {
-    $account = $this->createUser();
+    $account = $this->createUser([
+      'create customer profile',
+      'update own customer profile',
+    ]);
     $address_fields = $this->address2;
     /** @var \Drupal\profile\Entity\ProfileInterface $profile_address1 */
     $profile_address1 = $this->profileStorage->create([
@@ -226,11 +235,12 @@ class ProfileSelectTest extends CommerceBrowserTestBase {
 
   /**
    * Tests the profile select form element for authenticated user.
-   *
-   * @group debug
    */
   public function testProfileSelectAuthenticatedEdit() {
-    $account = $this->createUser();
+    $account = $this->createUser([
+      'create customer profile',
+      'update own customer profile',
+    ]);
     /** @var \Drupal\profile\Entity\ProfileInterface $profile_address1 */
     $profile_address1 = $this->profileStorage->create([
       'type' => 'customer',
@@ -272,6 +282,45 @@ class ProfileSelectTest extends CommerceBrowserTestBase {
     $this->assertEquals('Andrássy út 22', $address->getAddressLine1());
     $this->assertEquals($this->address2['locality'], $address->getLocality());
     $this->assertEquals($this->address2['postal_code'], $address->getPostalCode());
+  }
+
+  /**
+   * Tests that editing and then canceling does not change data on save.
+   *
+   * @group debug
+   */
+  public function testEditThenCancelDataIntegrity() {
+    $account = $this->createUser([
+      'create customer profile',
+      'update own customer profile',
+    ]);
+    /** @var \Drupal\profile\Entity\ProfileInterface $profile_address1 */
+    $profile_address1 = $this->profileStorage->create([
+      'type' => 'customer',
+      'uid' => $account->id(),
+      'address' => $this->address1,
+    ]);
+    $profile_address1->save();
+    $this->drupalLogin($account);
+    $this->drupalGet(Url::fromRoute('commerce_order_test.profile_select_form'));
+    $this->getSession()->getPage()->pressButton('Edit');
+    $this->getSession()->getPage()->fillField('Street address', 'Andrássy út 22');
+    $this->getSession()->getPage()->pressButton('Cancel changes');
+    $this->getSession()->getPage()->pressButton('Submit');
+
+    $this->profileStorage->resetCache([$profile_address1->id()]);
+    $profile_address1 = $this->profileStorage->load($profile_address1->id());
+    /** @var \Drupal\address\Plugin\Field\FieldType\AddressItem $address */
+    $address = $profile_address1->get('address')->first();
+
+    // Assert that field values have not changed.
+    $this->assertEquals($this->address1['country_code'], $address->getCountryCode());
+    $this->assertEquals($this->address1['given_name'], $address->getGivenName());
+    $this->assertEquals($this->address1['family_name'], $address->getFamilyName());
+    $this->assertEquals($this->address1['address_line1'], $address->getAddressLine1());
+    $this->assertEquals($this->address1['locality'], $address->getLocality());
+    $this->assertEquals($this->address1['postal_code'], $address->getPostalCode());
+
   }
 
 }
