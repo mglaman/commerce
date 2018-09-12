@@ -199,7 +199,13 @@ class ProductVariationListBuilder extends EntityListBuilder implements FormInter
       $row = $this->buildRow($entity);
       $row['sku'] = ['#markup' => $row['sku']];
       $row['title'] = ['#markup' => $row['title']];
-      $row['price'] = ['#markup' => $row['price']];
+      $row['price'] = [
+        '#type' => 'inline_template',
+        '#template' => '{{ price|commerce_price_format }}',
+        '#context' => [
+          'price' => $row['price'],
+        ],
+      ];
       $row['status'] = ['#markup' => $row['status']];
       foreach ($this->getAttributeList() as $field_name => $label) {
         $row[$field_name] = ['#markup' => $row[$field_name]];
