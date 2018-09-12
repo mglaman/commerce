@@ -51,6 +51,13 @@ class ProductListBuilder extends EntityListBuilder {
         'url' => new Url('entity.commerce_product_variation.collection', [
           'commerce_product' => $entity->id(),
         ]),
+        // The entity_operations generates a destination query parameter that
+        // brings the user back to the products collection. This is a jarring
+        // UX experience if the user had just re-ordered the variations, saved
+        // the form, and then saw a list of all the products in their store.
+        // Setting this to null prevents EntityOperations::render from affecting
+        // the UX.
+        'query' => ['destination' => NULL],
       ];
     }
 

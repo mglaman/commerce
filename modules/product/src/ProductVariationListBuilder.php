@@ -11,6 +11,7 @@ use Drupal\Core\Form\FormInterface;
 use Drupal\Core\Form\FormBuilderInterface;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Routing\RouteMatchInterface;
+use Drupal\Core\Url;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 
 /**
@@ -263,6 +264,13 @@ class ProductVariationListBuilder extends EntityListBuilder implements FormInter
       $attributes[$field_name] = $attribute->label();
     }
     return $attributes;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  protected function ensureDestination(Url $url) {
+    return $url->mergeOptions(['query' => ['destination' => Url::fromRoute('<current>')->toString()]]);
   }
 
 }
