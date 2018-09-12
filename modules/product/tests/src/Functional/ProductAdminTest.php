@@ -19,12 +19,6 @@ class ProductAdminTest extends ProductBrowserTestBase {
   public function testCreateProduct() {
     $this->drupalGet('admin/commerce/products');
     $this->getSession()->getPage()->clickLink('Add product');
-    // Check the integrity of the add form.
-    $this->assertSession()->fieldExists('title[0][value]');
-    $this->assertSession()->fieldExists('variations[form][inline_entity_form][sku][0][value]');
-    $this->assertSession()->fieldExists('variations[form][inline_entity_form][price][0][number]');
-    $this->assertSession()->fieldExists('variations[form][inline_entity_form][status][value]');
-    $this->assertSession()->buttonExists('Create variation');
 
     $store_ids = EntityHelper::extractIds($this->stores);
     $title = $this->randomMachineName();
@@ -34,13 +28,7 @@ class ProductAdminTest extends ProductBrowserTestBase {
     foreach ($store_ids as $store_id) {
       $edit['stores[target_id][value][' . $store_id . ']'] = $store_id;
     }
-    $variation_sku = $this->randomMachineName();
-    $variations_edit = [
-      'variations[form][inline_entity_form][sku][0][value]' => $variation_sku,
-      'variations[form][inline_entity_form][price][0][number]' => '9.99',
-      'variations[form][inline_entity_form][status][value]' => 1,
-    ];
-    $this->submitForm($variations_edit, t('Create variation'));
+
     $this->submitForm($edit, t('Save'));
 
     $result = \Drupal::entityQuery('commerce_product')
@@ -59,13 +47,6 @@ class ProductAdminTest extends ProductBrowserTestBase {
     $this->assertSession()->statusCodeEquals(200);
     $this->assertSession()->pageTextContains($product->getTitle());
 
-    $variation = \Drupal::entityQuery('commerce_product_variation')
-      ->condition('sku', $variation_sku)
-      ->range(0, 1)
-      ->execute();
-
-    $variation = ProductVariation::load(current($variation));
-    $this->assertNotNull($variation, 'The new product variation has been created.');
   }
 
   /**
@@ -147,12 +128,6 @@ class ProductAdminTest extends ProductBrowserTestBase {
     $this->drupalGet($product->toUrl('edit-form'));
     $this->assertSession()->statusCodeEquals(200);
     $this->assertSession()->fieldExists('title[0][value]');
-    $this->assertSession()->buttonExists('edit-variations-entities-0-actions-ief-entity-edit');
-    $this->submitForm([], t('Edit'));
-    $this->assertSession()->fieldExists('variations[form][inline_entity_form][entities][0][form][sku][0][value]');
-    $this->assertSession()->fieldExists('variations[form][inline_entity_form][entities][0][form][price][0][number]');
-    $this->assertSession()->fieldExists('variations[form][inline_entity_form][entities][0][form][status][value]');
-    $this->assertSession()->buttonExists('Update variation');
 
     $title = $this->randomMachineName();
     $store_ids = EntityHelper::extractIds($this->stores);
@@ -162,20 +137,8 @@ class ProductAdminTest extends ProductBrowserTestBase {
     foreach ($store_ids as $store_id) {
       $edit['stores[target_id][value][' . $store_id . ']'] = $store_id;
     }
-    $new_sku = strtolower($this->randomMachineName());
-    $new_price_amount = '1.11';
-    $variations_edit = [
-      'variations[form][inline_entity_form][entities][0][form][sku][0][value]' => $new_sku,
-      'variations[form][inline_entity_form][entities][0][form][price][0][number]' => $new_price_amount,
-      'variations[form][inline_entity_form][entities][0][form][status][value]' => 1,
-    ];
-    $this->submitForm($variations_edit, 'Update variation');
     $this->submitForm($edit, 'Save');
 
-    \Drupal::service('entity_type.manager')->getStorage('commerce_product_variation')->resetCache([$variation->id()]);
-    $variation = ProductVariation::load($variation->id());
-    $this->assertEquals($variation->getSku(), $new_sku, 'The variation sku successfully updated.');
-    $this->assertEquals($variation->get('price')->number, $new_price_amount, 'The variation price successfully updated.');
     \Drupal::service('entity_type.manager')->getStorage('commerce_product')->resetCache([$product->id()]);
     $product = Product::load($product->id());
     $this->assertEquals($product->getTitle(), $title, 'The product title successfully updated.');
