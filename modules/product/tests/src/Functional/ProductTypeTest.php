@@ -34,14 +34,12 @@ class ProductTypeTest extends ProductBrowserTestBase {
       'label' => $this->randomMachineName(),
       'description' => 'My random product type',
       'variationType' => 'default',
-      'showVariationsTab' => FALSE,
     ];
     $this->createEntity('commerce_product_type', $values);
     $product_type = ProductType::load($values['id']);
     $this->assertEquals($product_type->label(), $values['label'], 'The new product type has the correct label.');
     $this->assertEquals($product_type->getDescription(), $values['description'], 'The new product type has the correct label.');
     $this->assertEquals($product_type->getVariationTypeId(), $values['variationType'], 'The new product type has the correct associated variation type.');
-    $this->assertEquals($product_type->shouldShowVariationsTab(), $values['showVariationsTab'], 'The new product type has the correct variation tab setting.');
 
     $this->drupalGet('product/add/' . $product_type->id());
     $this->assertSession()->statusCodeEquals(200);
@@ -55,7 +53,6 @@ class ProductTypeTest extends ProductBrowserTestBase {
       'label' => $this->randomMachineName(),
       'description' => 'My even more random product type',
       'variationType' => 'default',
-      'showVariationsTab' => TRUE,
     ];
     $this->submitForm($edit, t('Save'));
     $product_type = ProductType::load($edit['id']);
@@ -63,7 +60,6 @@ class ProductTypeTest extends ProductBrowserTestBase {
     $this->assertEquals($product_type->label(), $edit['label']);
     $this->assertEquals($product_type->getDescription(), $edit['description']);
     $this->assertEquals($product_type->getVariationTypeId(), $edit['variationType']);
-    $this->assertEquals($product_type->shouldShowVariationsTab(), $edit['showVariationsTab']);
 
     // Automatic variation type creation option.
     $this->drupalGet('admin/commerce/config/product-types/add');
@@ -148,13 +144,11 @@ class ProductTypeTest extends ProductBrowserTestBase {
     $edit = [
       'label' => 'Default2',
       'description' => 'New description.',
-      'showVariationsTab' => TRUE,
     ];
     $this->submitForm($edit, t('Save'));
     $product_type = ProductType::load('default');
     $this->assertEquals($product_type->label(), $edit['label'], 'The label of the product type has been changed.');
     $this->assertEquals($product_type->getDescription(), $edit['description'], 'The new product type has the correct label.');
-    $this->assertEquals($product_type->shouldShowVariationsTab(), $edit['showVariationsTab'], 'The new product type has the correct variation tab setting.');
   }
 
   /**

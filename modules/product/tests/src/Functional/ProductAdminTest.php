@@ -4,7 +4,6 @@ namespace Drupal\Tests\commerce_product\Functional;
 
 use Drupal\commerce\EntityHelper;
 use Drupal\commerce_product\Entity\Product;
-use Drupal\commerce_product\Entity\ProductType;
 use Drupal\commerce_product\Entity\ProductVariation;
 
 /**
@@ -73,15 +72,6 @@ class ProductAdminTest extends ProductBrowserTestBase {
    * Tests creating a product and variation with the variations tab enabled.
    */
   public function testCreateProductVariationsTab() {
-    // Modify default product type.
-    $product_type = ProductType::load('default');
-    $product_type->setShowVariationsTab(TRUE);
-    $product_type->save();
-    $form_display = commerce_get_entity_display('commerce_product', 'default', 'form');
-    $form_display->setComponent('variations', ['type' => 'hidden']);
-    $form_display->save();
-    $this->assertEquals($product_type->shouldShowVariationsTab(), TRUE, 'The new product type has the correct variation tab setting.');
-
     // Check the integrity of the product add form.
     $this->drupalGet('admin/commerce/products');
     $this->getSession()->getPage()->clickLink('Add product');

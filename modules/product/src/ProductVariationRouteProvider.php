@@ -44,7 +44,6 @@ class ProductVariationRouteProvider extends AdminHtmlRouteProvider {
     // Product variations can be viewed if the parent product can be updated.
     $requirements = $route->getRequirements();
     $requirements['_entity_access'] = 'commerce_product.update';
-    $requirements['_commerce_product_variation_collection_access'] = 'TRUE';
     $route->setRequirements($requirements);
 
     return $route;

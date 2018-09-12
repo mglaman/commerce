@@ -20,9 +20,3 @@ services:
   commerce_product.variation_attribute_mapper:
     class: Drupal\commerce_product\ProductVariationAttributeMapper
     arguments: ['@commerce_product.attribute_field_manager', '@entity_type.manager', '@entity.repository']
-
-  commerce_product.variation_collection_access:
-    class: Drupal\commerce_product\Access\ProductVariationCollectionAccess
-    arguments: ['@current_user']
-    tags:
-      - { name: access_check, applies_to: _commerce_product_variation_collection_access }

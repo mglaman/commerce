@@ -3,7 +3,6 @@
 namespace Drupal\commerce_product\Entity;
 
 use Drupal\commerce\Entity\CommerceBundleEntityBase;
-use Drupal\Core\Entity\EntityStorageInterface;
 
 /**
  * Defines the product type entity class.
@@ -44,7 +43,6 @@ use Drupal\Core\Entity\EntityStorageInterface;
  *     "description",
  *     "variationType",
  *     "injectVariationFields",
- *     "showVariationsTab",
  *     "traits",
  *     "locked",
  *   },
@@ -78,13 +76,6 @@ class ProductType extends CommerceBundleEntityBase implements ProductTypeInterfa
    * @var bool
    */
   protected $injectVariationFields = TRUE;
-
-  /**
-   * Indicates whether variations tab should be provided for edit form.
-   *
-   * @var bool
-   */
-  protected $showVariationsTab = FALSE;
 
   /**
    * {@inheritdoc}
@@ -129,33 +120,6 @@ class ProductType extends CommerceBundleEntityBase implements ProductTypeInterfa
   public function setInjectVariationFields($inject) {
     $this->injectVariationFields = (bool) $inject;
     return $this;
-  }
-
-  /**
-   * {@inheritdoc}
-   */
-  public function shouldShowVariationsTab() {
-    return $this->showVariationsTab;
-  }
-
-  /**
-   * {@inheritdoc}
-   */
-  public function setShowVariationsTab($show) {
-    $this->showVariationsTab = (bool) $show;
-    return $this;
-  }
-
-  /**
-   * {@inheritdoc}
-   */
-  public function postSave(EntityStorageInterface $storage, $update = TRUE) {
-    parent::postSave($storage, $update);
-
-    // Rebuild caches when variations tab is shown or hidden.
-    if ($update && $this->original->showVariationsTab !== $this->showVariationsTab) {
-      \Drupal::service('cache.render')->invalidateAll();
-    }
   }
 
 }

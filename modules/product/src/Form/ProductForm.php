@@ -2,7 +2,6 @@
 
 namespace Drupal\commerce_product\Form;
 
-use Drupal\commerce_product\Access\ProductVariationCollectionAccess;
 use Drupal\Core\Datetime\DateFormatterInterface;
 use Drupal\Component\Datetime\TimeInterface;
 use Drupal\Core\Entity\ContentEntityForm;
@@ -29,11 +28,8 @@ class ProductForm extends ContentEntityForm {
   protected $dateFormatter;
 
   /**
-   * @var \Drupal\commerce_product\Access\ProductVariationCollectionAccess
-   */
-  protected $variationCollectionAccess;
-
-  /**
+   * The current user.
+   *
    * @var \Drupal\Core\Session\AccountInterface
    */
   protected $currentUser;
@@ -49,16 +45,13 @@ class ProductForm extends ContentEntityForm {
    *   The time.
    * @param \Drupal\Core\Datetime\DateFormatterInterface $date_formatter
    *   The date formatter.
-   * @param \Drupal\commerce_product\Access\ProductVariationCollectionAccess $variation_collection_access
-   *   The access controller for the variation collection route.
    * @param \Drupal\Core\Session\AccountInterface $current_user
    *   The current user.
    */
-  public function __construct(EntityManagerInterface $entity_manager, EntityTypeBundleInfoInterface $entity_type_bundle_info, TimeInterface $time, DateFormatterInterface $date_formatter, ProductVariationCollectionAccess $variation_collection_access, AccountInterface $current_user) {
+  public function __construct(EntityManagerInterface $entity_manager, EntityTypeBundleInfoInterface $entity_type_bundle_info, TimeInterface $time, DateFormatterInterface $date_formatter, AccountInterface $current_user) {
     parent::__construct($entity_manager, $entity_type_bundle_info, $time);
 
     $this->dateFormatter = $date_formatter;
-    $this->variationCollectionAccess = $variation_collection_access;
     $this->currentUser = $current_user;
   }
 
@@ -71,7 +64,6 @@ class ProductForm extends ContentEntityForm {
       $container->get('entity_type.bundle.info'),
       $container->get('datetime.time'),
       $container->get('date.formatter'),
-      $container->get('commerce_product.variation_collection_access'),
       $container->get('current_user')
     );
   }
@@ -230,7 +222,7 @@ class ProductForm extends ContentEntityForm {
   protected function actions(array $form, FormStateInterface $form_state) {
     $actions = parent::actions($form, $form_state);
 
-    if ($this->entity->isNew() && $this->variationCollectionAccess->access($this->currentUser, $this->entity)->isAllowed()) {
+    if ($this->entity->isNew()) {
       $actions['submit_continue'] = [
         '#type' => 'submit',
         '#value' => $this->t('Save and add variations'),

@@ -44,9 +44,7 @@ class ProductListBuilder extends EntityListBuilder {
    */
   protected function getDefaultOperations(EntityInterface $entity) {
     $operations = parent::getDefaultOperations($entity);
-    /** @var \Drupal\commerce_product\Access\ProductVariationCollectionAccess $collection_access */
-    $collection_access = \Drupal::service('commerce_product.variation_collection_access');
-    if ($collection_access->access(\Drupal::currentUser(), $entity)->isAllowed()) {
+    if ($entity->access('update')) {
       $operations['variations'] = [
         'title' => $this->t('Variations'),
         'weight' => 20,

@@ -3,32 +3,45 @@
 namespace Drupal\commerce_product;
 
 use Drupal\Core\Access\AccessResult;
-use Drupal\Core\Entity\EntityAccessControlHandler;
+use Drupal\Core\Entity\EntityAccessControlHandler as CoreEntityAccessControlHandler;
 use Drupal\Core\Entity\EntityInterface;
 use Drupal\Core\Session\AccountInterface;
 
 /**
- * Controls product variation access based on the parent product.
+ * Provides an access control handler for product variations.
+ *
+ * Product variations are always managed in the scope of their parent
+ * (the product), so they have a simplified permission set, and rely on
+ * parent access when possible:
+ * - A product variation can be viewed if the parent product can be viewed.
+ * - A product variation can be created, updated or deleted if the user has the
+ *   "manage $bundle commerce_product_variation" permission.
+ *
+ * The "administer commerce_product" permission is also respected.
  */
-class ProductVariationAccessControlHandler extends EntityAccessControlHandler {
+class ProductVariationAccessControlHandler extends CoreEntityAccessControlHandler {
 
   /**
    * {@inheritdoc}
    */
-  public function checkAccess(EntityInterface $entity, $operation, AccountInterface $account) {
-    /** @var \Drupal\Core\Access\AccessResult $result */
-    $result = parent::checkAccess($entity, $operation, $account);
+  protected function checkAccess(EntityInterface $entity, $operation, AccountInterface $account) {
+    if ($account->hasPermission($this->entityType->getAdminPermission())) {
+      return AccessResult::allowed()->cachePerPermissions();
+    }
 
-    if ($result->isNeutral()) {
-      /** @var \Drupal\commerce_product\Entity\ProductInterface $product */
-      $product = $entity->getProduct();
-      if ($product) {
-        $result = $product->access($operation, $account, TRUE);
-      }
-      else {
-        // Assumes the product access control handling has already happened.
-        $result = AccessResult::allowed();
-      }
+    /** @var \Drupal\commerce_product\Entity\ProductVariationInterface $entity */
+    $product = $entity->getProduct();
+    if (!$product) {
+      // The product variation is malformed.
+      return AccessResult::forbidden()->addCacheableDependency($entity);
+    }
+
+    if ($operation == 'view') {
+      $result = $product->access('view', $account, TRUE);
+    }
+    else {
+      $bundle = $entity->bundle();
+      $result = AccessResult::allowedIfHasPermission($account, "manage $bundle commerce_product_variation");
     }
 
     return $result;
@@ -37,11 +50,15 @@ class ProductVariationAccessControlHandler extends EntityAccessControlHandler {
   /**
    * {@inheritdoc}
    */
-  public function checkCreateAccess(AccountInterface $account, array $context, $entity_bundle = NULL) {
-    return AccessResult::allowedIfHasPermissions($account, [
-      'administer commerce_product',
-      'update commerce_product',
+  protected function checkCreateAccess(AccountInterface $account, array $context, $entity_bundle = NULL) {
+    // Create access depends on the "manage" permission because the full entity
+    // is not passed, making it impossible to determine the parent product.
+    $result = AccessResult::allowedIfHasPermissions($account, [
+      $this->entityType->getAdminPermission(),
+      "manage $entity_bundle commerce_product_variation",
     ], 'OR');
+
+    return $result;
   }
 
 }

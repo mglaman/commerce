@@ -6,6 +6,5 @@ label: Default
 description: ''
 variationType: default
 injectVariationFields: true
-showVariationsTab: false
 traits: {  }
 locked: false

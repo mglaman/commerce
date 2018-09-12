@@ -28,7 +28,6 @@ class ProductVariationAttributeMapperTest extends CommerceKernelTestBase {
   public static $modules = [
     'path',
     'commerce_product',
-    'commerce_product_test',
   ];
 
   /**

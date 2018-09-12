@@ -97,8 +97,11 @@ class ProductVariationListBuilder extends EntityListBuilder implements FormInter
 
   /**
    * {@inheritdoc}
+   *
+   * @todo Why not getVariations, delta is not field delta but variation ID?
    */
   public function load() {
+    /** @var \Drupal\commerce_product\Entity\ProductInterface $product */
     $product = $this->routeMatch->getParameter('commerce_product');
     $variations = $product->get('variations')->referencedEntities();
     foreach ($variations as $delta => $variation) {
