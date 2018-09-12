@@ -33,9 +33,15 @@ use Drupal\user\UserInterface;
  *     "access" = "Drupal\commerce_product\ProductVariationAccessControlHandler",
  *     "permission_provider" = "Drupal\commerce_product\ProductVariationPermissionProvider",
  *     "view_builder" = "Drupal\Core\Entity\EntityViewBuilder",
+ *     "list_builder" = "Drupal\commerce_product\ProductVariationListBuilder",
  *     "views_data" = "Drupal\commerce\CommerceEntityViewsData",
  *     "form" = {
- *       "default" = "Drupal\Core\Entity\ContentEntityForm",
+ *       "add" = "Drupal\commerce_product\Form\ProductVariationForm",
+ *       "edit" = "Drupal\commerce_product\Form\ProductVariationForm",
+ *       "delete" = "Drupal\Core\Entity\ContentEntityDeleteForm",
+ *     },
+ *     "route_provider" = {
+ *       "default" = "Drupal\commerce_product\ProductVariationRouteProvider",
  *     },
  *     "inline_form" = "Drupal\commerce_product\Form\ProductVariationInlineForm",
  *     "translation" = "Drupal\content_translation\ContentTranslationHandler"
@@ -53,6 +59,12 @@ use Drupal\user\UserInterface;
  *     "label" = "title",
  *     "status" = "status",
  *   },
+ *   links = {
+ *     "add-form" = "/product/{commerce_product}/variations/add",
+ *     "edit-form" = "/product/{commerce_product}/variations/{commerce_product_variation}/edit",
+ *     "delete-form" = "/product/{commerce_product}/variations/{commerce_product_variation}/delete",
+ *     "collection" = "/product/{commerce_product}/variations",
+ *   },
  *   bundle_entity_type = "commerce_product_variation_type",
  *   field_ui_base_route = "entity.commerce_product_variation_type.edit_form",
  * )
@@ -60,6 +72,15 @@ use Drupal\user\UserInterface;
 class ProductVariation extends CommerceContentEntityBase implements ProductVariationInterface {
 
   use EntityChangedTrait;
+
+  /**
+   * {@inheritdoc}
+   */
+  protected function urlRouteParameters($rel) {
+    $uri_route_parameters = parent::urlRouteParameters($rel);
+    $uri_route_parameters['commerce_product'] = $this->getProductId();
+    return $uri_route_parameters;
+  }
 
   /**
    * {@inheritdoc}
@@ -349,6 +370,36 @@ class ProductVariation extends CommerceContentEntityBase implements ProductVaria
     if ($variation_type->shouldGenerateTitle()) {
       $title = $this->generateTitle();
       $this->setTitle($title);
+    }
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function postSave(EntityStorageInterface $storage, $update = TRUE) {
+    parent::postSave($storage, $update);
+
+    // Ensure there's a reference on the related product.
+    $product = $this->getProduct();
+    if ($product && !$product->hasVariation($this)) {
+      $product->addVariation($this);
+      $product->save();
+    }
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public static function postDelete(EntityStorageInterface $storage, array $entities) {
+    parent::postDelete($storage, $entities);
+
+    foreach ($entities as $variation) {
+      // Remove the reference on the related product.
+      $product = $variation->getProduct();
+      if ($product && $product->hasVariation($variation)) {
+        $product->removeVariation($variation);
+        $product->save();
+      }
     }
   }
 

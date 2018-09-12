@@ -5,6 +5,7 @@ namespace Drupal\commerce_product;
 use Drupal\commerce_product\Entity\ProductType;
 use Drupal\Core\Entity\EntityInterface;
 use Drupal\Core\Entity\EntityListBuilder;
+use Drupal\Core\Url;
 
 /**
  * Defines the list builder for products.
@@ -36,6 +37,26 @@ class ProductListBuilder extends EntityListBuilder {
     $row['status'] = $entity->isPublished() ? $this->t('Published') : $this->t('Unpublished');
 
     return $row + parent::buildRow($entity);
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  protected function getDefaultOperations(EntityInterface $entity) {
+    $operations = parent::getDefaultOperations($entity);
+    /** @var \Drupal\commerce_product\Access\ProductVariationCollectionAccess $collection_access */
+    $collection_access = \Drupal::service('commerce_product.variation_collection_access');
+    if ($collection_access->access(\Drupal::currentUser(), $entity)->isAllowed()) {
+      $operations['variations'] = [
+        'title' => $this->t('Variations'),
+        'weight' => 20,
+        'url' => new Url('entity.commerce_product_variation.collection', [
+          'commerce_product' => $entity->id(),
+        ]),
+      ];
+    }
+
+    return $operations;
   }
 
 }

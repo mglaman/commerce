@@ -47,4 +47,23 @@ interface ProductTypeInterface extends CommerceBundleEntityInterface, EntityDesc
    */
   public function setInjectVariationFields($inject);
 
+  /**
+   * Gets whether the variations tab should be shown for this product type.
+   *
+   * @return bool
+   *   TRUE if the variations tab is shown for this product type,
+   *   FALSE otherwise.
+   */
+  public function shouldShowVariationsTab();
+
+  /**
+   * Sets whether the variations tab should be shown with the edit form.
+   *
+   * @param bool $show
+   *   Whether the variations tab should be shown with the edit form.
+   *
+   * @return $this
+   */
+  public function setShowVariationsTab($show);
+
 }

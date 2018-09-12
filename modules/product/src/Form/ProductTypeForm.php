@@ -111,6 +111,12 @@ class ProductTypeForm extends CommerceBundleEntityFormBase {
       '#title' => $this->t('Inject product variation fields into the rendered product.'),
       '#default_value' => $product_type->shouldInjectVariationFields(),
     ];
+    $form['showVariationsTab'] = [
+      '#type' => 'checkbox',
+      '#title' => $this->t('Use a separate tab for editing product variations.'),
+      '#description' => $this->t('For products with multiple variations, we suggest using the variations tab for data entry and disabling the variations field using Manage Form Display.'),
+      '#default_value' => $product_type->shouldShowVariationsTab(),
+    ];
     $form['product_status'] = [
       '#type' => 'checkbox',
       '#title' => t('Publish new products of this type by default.'),

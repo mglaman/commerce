@@ -69,6 +69,9 @@ commerce_product.commerce_product_type.*:
     injectVariationFields:
       type: boolean
       label: 'Inject product variation fields into the rendered product'
+    showVariationsTab:
+      type: boolean
+      label: 'Show product variations in a separate tab'
 
 commerce_product.commerce_product_variation_type.*:
   type: commerce_config_entity_bundle

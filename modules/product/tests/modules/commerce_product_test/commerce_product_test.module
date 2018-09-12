@@ -5,6 +5,7 @@
  * Test module for Commerce Product.
  */
 
+use Drupal\commerce_product\Entity\ProductInterface;
 use Drupal\commerce_product\Entity\ProductVariationInterface;
 use Drupal\Core\Access\AccessResult;
 use Drupal\Core\Entity\EntityInterface;
@@ -17,6 +18,11 @@ function commerce_product_test_entity_access(EntityInterface $entity, $operation
   if ($entity instanceof ProductVariationInterface) {
     if ($operation == 'view') {
       return AccessResult::forbiddenIf(strpos($entity->getSku(), 'DENY') !== FALSE);
+    }
+  }
+  if ($entity instanceof ProductInterface) {
+    if ($operation == 'view') {
+      return AccessResult::allowed();
     }
   }
   return AccessResult::neutral();

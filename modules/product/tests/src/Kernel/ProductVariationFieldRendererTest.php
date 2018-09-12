@@ -53,6 +53,7 @@ class ProductVariationFieldRendererTest extends CommerceKernelTestBase {
     'commerce_product',
     'language',
     'content_translation',
+    'commerce_product_test',
   ];
 
   /**

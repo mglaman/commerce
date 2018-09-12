@@ -2,6 +2,7 @@
 
 namespace Drupal\commerce_product\Form;
 
+use Drupal\commerce_product\Access\ProductVariationCollectionAccess;
 use Drupal\Core\Datetime\DateFormatterInterface;
 use Drupal\Component\Datetime\TimeInterface;
 use Drupal\Core\Entity\ContentEntityForm;
@@ -10,6 +11,7 @@ use Drupal\Core\Entity\EntityTypeBundleInfoInterface;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Link;
 use Drupal\Core\Render\Element;
+use Drupal\Core\Session\AccountInterface;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 
 /**
@@ -27,6 +29,16 @@ class ProductForm extends ContentEntityForm {
   protected $dateFormatter;
 
   /**
+   * @var \Drupal\commerce_product\Access\ProductVariationCollectionAccess
+   */
+  protected $variationCollectionAccess;
+
+  /**
+   * @var \Drupal\Core\Session\AccountInterface
+   */
+  protected $currentUser;
+
+  /**
    * Constructs a new ProductForm object.
    *
    * @param \Drupal\Core\Entity\EntityManagerInterface $entity_manager
@@ -37,11 +49,17 @@ class ProductForm extends ContentEntityForm {
    *   The time.
    * @param \Drupal\Core\Datetime\DateFormatterInterface $date_formatter
    *   The date formatter.
+   * @param \Drupal\commerce_product\Access\ProductVariationCollectionAccess $variation_collection_access
+   *   The access controller for the variation collection route.
+   * @param \Drupal\Core\Session\AccountInterface $current_user
+   *   The current user.
    */
-  public function __construct(EntityManagerInterface $entity_manager, EntityTypeBundleInfoInterface $entity_type_bundle_info, TimeInterface $time, DateFormatterInterface $date_formatter) {
+  public function __construct(EntityManagerInterface $entity_manager, EntityTypeBundleInfoInterface $entity_type_bundle_info, TimeInterface $time, DateFormatterInterface $date_formatter, ProductVariationCollectionAccess $variation_collection_access, AccountInterface $current_user) {
     parent::__construct($entity_manager, $entity_type_bundle_info, $time);
 
     $this->dateFormatter = $date_formatter;
+    $this->variationCollectionAccess = $variation_collection_access;
+    $this->currentUser = $current_user;
   }
 
   /**
@@ -52,7 +70,9 @@ class ProductForm extends ContentEntityForm {
       $container->get('entity.manager'),
       $container->get('entity_type.bundle.info'),
       $container->get('datetime.time'),
-      $container->get('date.formatter')
+      $container->get('date.formatter'),
+      $container->get('commerce_product.variation_collection_access'),
+      $container->get('current_user')
     );
   }
 
@@ -207,12 +227,36 @@ class ProductForm extends ContentEntityForm {
   /**
    * {@inheritdoc}
    */
+  protected function actions(array $form, FormStateInterface $form_state) {
+    $actions = parent::actions($form, $form_state);
+
+    if ($this->entity->isNew() && $this->variationCollectionAccess->access($this->currentUser, $this->entity)->isAllowed()) {
+      $actions['submit_continue'] = [
+        '#type' => 'submit',
+        '#value' => $this->t('Save and add variations'),
+        '#continue' => TRUE,
+        '#submit' => ['::submitForm', '::save'],
+      ];
+    }
+
+    return $actions;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
   public function save(array $form, FormStateInterface $form_state) {
     /** @var \Drupal\commerce_product\Entity\ProductInterface $product */
     $product = $this->getEntity();
     $product->save();
     $this->messenger()->addMessage($this->t('The product %label has been successfully saved.', ['%label' => $product->label()]));
-    $form_state->setRedirect('entity.commerce_product.canonical', ['commerce_product' => $product->id()]);
+
+    if (!empty($form_state->getTriggeringElement()['#continue'])) {
+      $form_state->setRedirect('entity.commerce_product_variation.collection', ['commerce_product' => $product->id()]);
+    }
+    else {
+      $form_state->setRedirect('entity.commerce_product.canonical', ['commerce_product' => $product->id()]);
+    }
   }
 
 }
