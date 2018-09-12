@@ -118,8 +118,8 @@ class ProductAdminTest extends ProductBrowserTestBase {
     $this->getSession()->getPage()->fillField('price[0][number]', '9.99');
     $this->submitForm([], t('Save'));
     $this->assertSession()->pageTextContains("Saved the $title variation.");
-    $variation_count = $this->getSession()->getPage()->find('xpath', '//table/tbody/tr/td[text()="' . $variation_sku . '"]');
-    $this->assertEquals(count($variation_count), 1, 'Variation exists in the table.');
+    $variation_in_table = $this->getSession()->getPage()->find('xpath', '//table/tbody/tr/td[text()="' . $variation_sku . '"]');
+    $this->assertNotEmpty($variation_in_table);
 
     $variation = ProductVariation::load(1);
     $this->assertEquals($product->id(), $variation->getProductId());

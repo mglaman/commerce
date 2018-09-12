@@ -172,7 +172,7 @@ function commerce_product_post_update_7() {
   $product_types = $entity_type_manager->getStorage('commerce_product_type')->loadMultiple();
   foreach ($product_types as $product_type) {
     $form_display = commerce_get_entity_display('commerce_product', $product_type->id(), 'form');
-    $form_display->setComponent('variations', ['region' => 'hidden']);
+    $form_display->removeComponent('variations');
     $form_display->save();
   }
 }
