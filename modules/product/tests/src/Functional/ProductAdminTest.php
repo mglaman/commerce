@@ -50,9 +50,9 @@ class ProductAdminTest extends ProductBrowserTestBase {
   }
 
   /**
-   * Tests creating a product and variation with the variations tab enabled.
+   * Tests creating a product and variations.
    */
-  public function testCreateProductVariationsTab() {
+  public function testProductVariationsTab() {
     // Check the integrity of the product add form.
     $this->drupalGet('admin/commerce/products');
     $this->getSession()->getPage()->clickLink('Add product');
