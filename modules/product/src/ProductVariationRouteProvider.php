@@ -42,6 +42,9 @@ class ProductVariationRouteProvider extends AdminHtmlRouteProvider {
     return $route;
   }
 
+  /**
+   * {@inheritdoc}
+   */
   protected function getDeleteFormRoute(EntityTypeInterface $entity_type) {
     $route = parent::getDeleteFormRoute($entity_type);
     $route->setOption('parameters', [
