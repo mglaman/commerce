@@ -184,36 +184,29 @@ class ProductVariationAccessTest extends CommerceKernelTestBase {
 
     $account = $this->createUser([], ['manage default commerce_product_variation']);
     $this->assertFalse($variation->toUrl('collection')->access($account));
-    $this->assertFalse($variation->toUrl('add-form')->access($account));
-    $this->assertFalse($variation->toUrl('edit-form')->access($account));
-    $this->assertFalse($variation->toUrl('delete-form')->access($account));
+    $this->assertTrue($variation->toUrl('add-form')->access($account));
+    $this->assertTrue($variation->toUrl('edit-form')->access($account));
+    $this->assertTrue($variation->toUrl('delete-form')->access($account));
 
     $account = $this->createUser([], [
-      'update any default commerce_product',
-      'delete any default commerce_product',
       'manage default commerce_product_variation',
       'access commerce_product overview',
     ]);
-    $this->assertTrue($variation->access('update', $account));
-    $this->assertTrue($product->access('update', $account));
     $this->assertTrue($variation->toUrl('collection')->access($account));
     $this->assertTrue($variation->toUrl('add-form')->access($account));
     $this->assertTrue($variation->toUrl('edit-form')->access($account));
     $this->assertTrue($variation->toUrl('delete-form')->access($account));
 
     $account = $this->createUser([], [
-      'update own default commerce_product',
       'manage default commerce_product_variation',
       'access commerce_product overview',
     ]);
     $this->assertTrue($variation->toUrl('collection')->access($account));
-    $this->assertFalse($variation->toUrl('add-form')->access($account));
-    $this->assertFalse($variation->toUrl('edit-form')->access($account));
-    $this->assertFalse($variation->toUrl('delete-form')->access($account));
+    $this->assertTrue($variation->toUrl('add-form')->access($account));
+    $this->assertTrue($variation->toUrl('edit-form')->access($account));
+    $this->assertTrue($variation->toUrl('delete-form')->access($account));
 
     $account = $this->createUser([], [
-      'update own default commerce_product',
-      'delete own default commerce_product',
       'manage default commerce_product_variation',
       'access commerce_product overview',
     ]);
