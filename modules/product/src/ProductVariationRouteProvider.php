@@ -29,6 +29,35 @@ class ProductVariationRouteProvider extends AdminHtmlRouteProvider {
   /**
    * {@inheritdoc}
    */
+  protected function getEditFormRoute(EntityTypeInterface $entity_type) {
+    $route = parent::getEditFormRoute($entity_type);
+    $route->setOption('parameters', [
+      'commerce_product' => [
+        'type' => 'entity:commerce_product',
+      ],
+    ]);
+    // Ensure access to the update the product as well.
+    $route->addRequirements(['_entity_access' => 'commerce_product.update']);
+
+    return $route;
+  }
+
+  protected function getDeleteFormRoute(EntityTypeInterface $entity_type) {
+    $route = parent::getDeleteFormRoute($entity_type);
+    $route->setOption('parameters', [
+      'commerce_product' => [
+        'type' => 'entity:commerce_product',
+      ],
+    ]);
+    // Ensure access to the update the product as well.
+    $route->addRequirements(['_entity_access' => 'commerce_product.update']);
+
+    return $route;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
   protected function getCollectionRoute(EntityTypeInterface $entity_type) {
     $route = parent::getCollectionRoute($entity_type);
 

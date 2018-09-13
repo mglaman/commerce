@@ -41,8 +41,7 @@ class ProductVariationAccessControlHandler extends CoreEntityAccessControlHandle
     }
     else {
       $bundle = $entity->bundle();
-      $result = AccessResult::allowedIfHasPermission($account, "manage $bundle commerce_product_variation")
-        ->andIf($product->access($operation, $account, TRUE));
+      $result = AccessResult::allowedIfHasPermission($account, "manage $bundle commerce_product_variation");
     }
 
     return $result;
