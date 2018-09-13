@@ -38,8 +38,11 @@ class ProductVariationRouteProvider extends AdminHtmlRouteProvider {
       ],
     ]);
     $route->setOption('_admin_route', TRUE);
-    // Ensure access to the update the product as well.
-    $route->addRequirements(['_entity_access' => 'commerce_product.update']);
+    // If a user has the ability to see the product overview, they should also
+    // be able to view the variations that belong to a product.
+    $route->addRequirements([
+      '_permission' => 'access commerce_product overview',
+    ]);
 
     return $route;
   }

@@ -60,7 +60,8 @@ use Drupal\user\UserInterface;
  *     "status" = "status",
  *   },
  *   links = {
- *     "add-form" = "/product/{commerce_product}/variations/add",
+ *     "add-page" = "/product/{commerce_product}/variations/add",
+ *     "add-form" = "/product/{commerce_product}/variations/add/{commerce_product_variation_type}",
  *     "edit-form" = "/product/{commerce_product}/variations/{commerce_product_variation}/edit",
  *     "delete-form" = "/product/{commerce_product}/variations/{commerce_product_variation}/delete",
  *     "collection" = "/product/{commerce_product}/variations",

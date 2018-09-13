@@ -192,6 +192,7 @@ class ProductVariationAccessTest extends CommerceKernelTestBase {
       'update any default commerce_product',
       'delete any default commerce_product',
       'manage default commerce_product_variation',
+      'access commerce_product overview',
     ]);
     $this->assertTrue($variation->access('update', $account));
     $this->assertTrue($product->access('update', $account));
@@ -203,8 +204,9 @@ class ProductVariationAccessTest extends CommerceKernelTestBase {
     $account = $this->createUser([], [
       'update own default commerce_product',
       'manage default commerce_product_variation',
+      'access commerce_product overview',
     ]);
-    $this->assertFalse($variation->toUrl('collection')->access($account));
+    $this->assertTrue($variation->toUrl('collection')->access($account));
     $this->assertFalse($variation->toUrl('add-form')->access($account));
     $this->assertFalse($variation->toUrl('edit-form')->access($account));
     $this->assertFalse($variation->toUrl('delete-form')->access($account));
@@ -213,6 +215,7 @@ class ProductVariationAccessTest extends CommerceKernelTestBase {
       'update own default commerce_product',
       'delete own default commerce_product',
       'manage default commerce_product_variation',
+      'access commerce_product overview',
     ]);
     $product->setOwner($account)->save();
     $this->assertTrue($variation->toUrl('collection')->access($account));
