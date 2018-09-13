@@ -21,9 +21,7 @@ class ProductVariationRouteProvider extends AdminHtmlRouteProvider {
       ],
     ]);
     // Ensure access to the update the product as well.
-    $requirements = $route->getRequirements();
-    $requirements['_entity_access'] = 'commerce_product.update';
-    $route->setRequirements($requirements);
+    $route->addRequirements(['_entity_access' => 'commerce_product.update']);
 
     return $route;
   }
@@ -41,9 +39,7 @@ class ProductVariationRouteProvider extends AdminHtmlRouteProvider {
     ]);
     $route->setOption('_admin_route', TRUE);
     // Ensure access to the update the product as well.
-    $requirements = $route->getRequirements();
-    $requirements['_entity_access'] = 'commerce_product.update';
-    $route->setRequirements($requirements);
+    $route->addRequirements(['_entity_access' => 'commerce_product.update']);
 
     return $route;
   }
