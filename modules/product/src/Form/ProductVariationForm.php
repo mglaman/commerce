@@ -14,16 +14,6 @@ class ProductVariationForm extends ContentEntityForm {
   /**
    * {@inheritdoc}
    */
-  protected function prepareEntity() {
-    if ($this->entity->isNew()) {
-      $product = $this->getRouteMatch()->getParameter('commerce_product');
-      $this->entity->set('product_id', $product);
-    }
-  }
-
-  /**
-   * {@inheritdoc}
-   */
   public function save(array $form, FormStateInterface $form_state) {
     $this->entity->save();
     $this->messenger()->addMessage($this->t('Saved the %label variation.', ['%label' => $this->entity->label()]));
@@ -38,9 +28,15 @@ class ProductVariationForm extends ContentEntityForm {
       $entity = $route_match->getParameter($entity_type_id);
     }
     else {
+      /** @var \Drupal\commerce_product\Entity\ProductInterface $product */
       $product = $route_match->getParameter('commerce_product');
+      /** @var \Drupal\commerce_product\Entity\ProductTypeInterface $product_type */
       $product_type = $this->entityTypeManager->getStorage('commerce_product_type')->load($product->bundle());
       $values['type'] = $product_type->getVariationTypeId();
+      $values = [
+        'type' => $product_type->getVariationTypeId(),
+        'product_id' => $product->id(),
+      ];
       $entity = $this->entityTypeManager->getStorage($entity_type_id)->create($values);
     }
     return $entity;

@@ -215,6 +215,15 @@ class ProductVariationAccessTest extends CommerceKernelTestBase {
     $this->assertTrue($variation->toUrl('add-form')->access($account));
     $this->assertTrue($variation->toUrl('edit-form')->access($account));
     $this->assertTrue($variation->toUrl('delete-form')->access($account));
+
+
+    $account = $this->createUser([], [
+      'administer commerce_product',
+    ]);
+    $this->assertTrue($variation->toUrl('collection')->access($account));
+    $this->assertTrue($variation->toUrl('add-form')->access($account));
+    $this->assertTrue($variation->toUrl('edit-form')->access($account));
+    $this->assertTrue($variation->toUrl('delete-form')->access($account));
   }
 
 }

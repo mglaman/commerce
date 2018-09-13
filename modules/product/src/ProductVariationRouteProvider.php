@@ -70,7 +70,7 @@ class ProductVariationRouteProvider extends AdminHtmlRouteProvider {
     // If a user has the ability to see the product overview, they should also
     // be able to view the variations that belong to a product.
     $route->addRequirements([
-      '_permission' => 'access commerce_product overview',
+      '_permission' => 'access commerce_product overview+' . $entity_type->getAdminPermission(),
     ]);
 
     return $route;
