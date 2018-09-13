@@ -20,8 +20,13 @@ class ProductVariationRouteProvider extends AdminHtmlRouteProvider {
         'type' => 'entity:commerce_product',
       ],
     ]);
+    $requirements = $route->getRequirements();
+    // Use our custom create access check.
+    unset($requirements['_entity_create_access']);
+    $requirements['_product_variation_create_access'] = 'TRUE';
     // Ensure access to the update the product as well.
-    $route->addRequirements(['_entity_access' => 'commerce_product.update']);
+    $requirements['_entity_access'] = 'commerce_product.update';
+    $route->setRequirements($requirements);
 
     return $route;
   }

@@ -20,3 +20,9 @@ services:
   commerce_product.variation_attribute_mapper:
     class: Drupal\commerce_product\ProductVariationAttributeMapper
     arguments: ['@commerce_product.attribute_field_manager', '@entity_type.manager', '@entity.repository']
+
+  access_check.product_variation_create:
+    class: Drupal\commerce_product\Access\ProductVariationCreateAccessCheck
+    arguments: ['@entity_type.manager']
+    tags:
+    - { name: access_check, applies_to: _product_variation_create_access }
