@@ -6,10 +6,18 @@ use Drupal\Core\Url;
 use Drupal\Tests\commerce\FunctionalJavascript\JavascriptTestTrait;
 use Drupal\Tests\commerce_order\Functional\OrderBrowserTestBase;
 
+/**
+ * JavaScript test of the order admin form.
+ *
+ * @group commerce
+ */
 class OrderAdminTest extends OrderBrowserTestBase {
 
   use JavascriptTestTrait;
 
+  /**
+   * Tests creating an order for a new customer.
+   */
   public function testManageOrderForNewCustomer() {
     $this->drupalGet(Url::fromRoute('entity.commerce_order.add_page'));
     $this->getSession()->getPage()->checkField('New customer');
