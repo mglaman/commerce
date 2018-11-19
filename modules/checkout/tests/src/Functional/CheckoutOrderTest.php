@@ -301,7 +301,7 @@ class CheckoutOrderTest extends CommerceBrowserTestBase {
       ->load('default');
     /** @var \Drupal\commerce_checkout\Plugin\Commerce\CheckoutFlow\CheckoutFlowInterface $checkout_flow_plugin */
     $checkout_flow_plugin = $checkout_flow->getPlugin();
-    /** @var \Drupal\commerce_checkout\Plugin\Commerce\CheckoutPane\CompletionRegistration $pane */
+    /** @var \Drupal\commerce_checkout\Plugin\Commerce\CheckoutPane\CompletionRegister $pane */
     $pane = $checkout_flow_plugin->getPane('completion_register');
     $pane->setConfiguration([]);
     $pane->setStepId('complete');
@@ -353,7 +353,9 @@ class CheckoutOrderTest extends CommerceBrowserTestBase {
     // Log out and try to login again with the chosen password.
     $this->drupalLogout();
     $accounts = \Drupal::service('entity_type.manager')->getStorage('user')->loadByProperties(['mail' => 'guest@example.com']);
+    /** @var \Drupal\user\UserInterface $account */
     $account = reset($accounts);
+    $this->assertTrue($account->isActive());
     $account->passRaw = 'pass';
     $this->drupalLogin($account);
 
@@ -446,7 +448,7 @@ class CheckoutOrderTest extends CommerceBrowserTestBase {
       ->load('default');
     /** @var \Drupal\commerce_checkout\Plugin\Commerce\CheckoutFlow\CheckoutFlowInterface $checkout_flow_plugin */
     $checkout_flow_plugin = $checkout_flow->getPlugin();
-    /** @var \Drupal\commerce_checkout\Plugin\Commerce\CheckoutPane\CompletionRegistration $pane */
+    /** @var \Drupal\commerce_checkout\Plugin\Commerce\CheckoutPane\CompletionRegister $pane */
     $pane = $checkout_flow_plugin->getPane('completion_register');
     $pane->setConfiguration([]);
     $pane->setStepId('complete');
@@ -509,6 +511,7 @@ class CheckoutOrderTest extends CommerceBrowserTestBase {
       ->loadByProperties(['mail' => 'guest@example.com']);
     /** @var \Drupal\user\UserInterface $account */
     $account = reset($accounts);
+    $this->assertTrue($account->isActive());
     $this->assertEquals('test_user_field_value', $account->get('test_user_field')->value);
   }
 
@@ -529,7 +532,7 @@ class CheckoutOrderTest extends CommerceBrowserTestBase {
       ->load('default');
     /** @var \Drupal\commerce_checkout\Plugin\Commerce\CheckoutFlow\CheckoutFlowInterface $checkout_flow_plugin */
     $checkout_flow_plugin = $checkout_flow->getPlugin();
-    /** @var \Drupal\commerce_checkout\Plugin\Commerce\CheckoutPane\CompletionRegistration $pane */
+    /** @var \Drupal\commerce_checkout\Plugin\Commerce\CheckoutPane\CompletionRegister $pane */
     $pane = $checkout_flow_plugin->getPane('completion_register');
     $pane->setConfiguration([]);
     $pane->setStepId('complete');

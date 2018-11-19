@@ -28,7 +28,7 @@ use Symfony\Component\HttpFoundation\RequestStack;
  *   wrapper_element = "fieldset",
  * )
  */
-class CompletionRegistration extends CheckoutPaneBase implements CheckoutPaneInterface, ContainerFactoryPluginInterface {
+class CompletionRegister extends CheckoutPaneBase implements CheckoutPaneInterface, ContainerFactoryPluginInterface {
 
   /**
    * The credentials check flood controller.
@@ -200,6 +200,7 @@ class CompletionRegistration extends CheckoutPaneBase implements CheckoutPaneInt
       'pass' => $values['password'],
       'mail' => $this->order->getEmail(),
       'name' => $values['name'],
+      'status' => TRUE,
     ]);
 
     $form_display = EntityFormDisplay::collectRenderDisplay($account, 'register');
@@ -227,6 +228,7 @@ class CompletionRegistration extends CheckoutPaneBase implements CheckoutPaneInt
       'pass' => $values['password'],
       'mail' => $this->order->getEmail(),
       'name' => $values['name'],
+      'status' => TRUE,
     ]);
     $form_display = EntityFormDisplay::collectRenderDisplay($account, 'register');
     $form_display->extractFormValues($account, $pane_form, $form_state);
