@@ -407,8 +407,8 @@ class Login extends CheckoutPaneBase implements CheckoutPaneInterface, Container
    *   FALSE otherwise.
    */
   protected function isRegistrationPaneAvailable() {
-    $completion_registration_pane = $this->checkoutFlow->getPane('completion_registration');
-    return $completion_registration_pane->getStepId() != '_disabled';
+    $completion_register_pane = $this->checkoutFlow->getPane('completion_register');
+    return $completion_register_pane->getStepId() != '_disabled';
   }
 
 }

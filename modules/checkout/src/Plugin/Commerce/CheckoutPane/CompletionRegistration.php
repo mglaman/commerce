@@ -11,7 +11,6 @@ use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Messenger\MessengerInterface;
 use Drupal\Core\Plugin\ContainerFactoryPluginInterface;
-use Drupal\Core\Render\Element;
 use Drupal\Core\Session\AccountInterface;
 use Drupal\user\UserAuthInterface;
 use Drupal\user\UserInterface;
@@ -23,8 +22,10 @@ use Symfony\Component\HttpFoundation\RequestStack;
  * Provides the registration pane.
  *
  * @CommerceCheckoutPane(
- *   id = "completion_registration",
+ *   id = "completion_register",
  *   label = @Translation("Guest registration after checkout"),
+ *   display_label = @Translation("Account information"),
+ *   wrapper_element = "fieldset",
  * )
  */
 class CompletionRegistration extends CheckoutPaneBase implements CheckoutPaneInterface, ContainerFactoryPluginInterface {
@@ -42,13 +43,6 @@ class CompletionRegistration extends CheckoutPaneBase implements CheckoutPaneInt
    * @var \Drupal\Core\Session\AccountInterface
    */
   protected $currentUser;
-
-  /**
-   * The entity type manager.
-   *
-   * @var \Drupal\Core\Entity\EntityTypeManagerInterface
-   */
-  protected $entityTypeManager;
 
   /**
    * The user authentication object.
@@ -154,12 +148,7 @@ class CompletionRegistration extends CheckoutPaneBase implements CheckoutPaneInt
    * {@inheritdoc}
    */
   public function buildPaneForm(array $pane_form, FormStateInterface $form_state, array &$complete_form) {
-    $pane_form['register'] = [
-      '#type' => 'fieldset',
-      '#title' => $this->t('Account information'),
-    ];
-
-    $pane_form['register']['name'] = [
+    $pane_form['name'] = [
       '#type' => 'textfield',
       '#title' => $this->t('Username'),
       '#maxlength' => UserInterface::USERNAME_MAX_LENGTH,
@@ -174,28 +163,27 @@ class CompletionRegistration extends CheckoutPaneBase implements CheckoutPaneInt
       '#default_value' => '',
     ];
 
-    $pane_form['register']['password'] = [
+    $pane_form['password'] = [
       '#type' => 'password_confirm',
       '#size' => 60,
       '#description' => $this->t('Provide a password for the new account.'),
       '#required' => TRUE,
     ];
 
-    $pane_form['register']['actions'] = ['#type' => 'actions'];
-    $pane_form['register']['actions']['register'] = [
+    $pane_form['actions'] = ['#type' => 'actions'];
+    $pane_form['actions']['register'] = [
       '#type' => 'submit',
       '#value' => $this->t('Create my account'),
-      '#name' => 'commerce_checkout_completion_registration_submit',
+      '#name' => 'commerce_checkout_completion_register_submit',
     ];
 
     // Additional fields.
-    $pane_form['register']['fields'] = [];
     $user = $this->userStorage->create([]);
     $form_display = EntityFormDisplay::collectRenderDisplay($user, 'register');
-    $form_display->buildForm($user, $pane_form['register']['fields'], $form_state);
+    $form_display->buildForm($user, $pane_form, $form_state);
 
     return [
-      '#theme' => 'commerce_checkout_completion_registration',
+      '#theme' => 'commerce_checkout_completion_register',
       'form' => $pane_form,
     ];
   }
@@ -209,28 +197,23 @@ class CompletionRegistration extends CheckoutPaneBase implements CheckoutPaneInt
     // a non-existent email, but users can modify the email for their account.
     $values = $form_state->getValue($pane_form['#parents']);
     $account = $this->userStorage->create([
-      'pass' => $values['register']['password'],
+      'pass' => $values['password'],
       'mail' => $this->order->getEmail(),
-      'name' => $values['register']['name'],
+      'name' => $values['name'],
     ]);
 
-    if (!empty($pane_form['register']['fields'])) {
-      $form_display = EntityFormDisplay::collectRenderDisplay($account, 'register');
-      $form_display->extractFormValues($account, $pane_form['register']['fields'], $form_state);
-      $form_display->validateFormValues($account, $pane_form['register']['fields'], $form_state);
-    }
+    $form_display = EntityFormDisplay::collectRenderDisplay($account, 'register');
+    $form_display->extractFormValues($account, $pane_form, $form_state);
+    $form_display->validateFormValues($account, $pane_form, $form_state);
 
-    $form_state->setTemporaryValue('new_account', $account);
-
+    // Manually flag violations of fields not handled by the form display. This
+    // is necessary as entity form displays only flag violations for fields
+    // contained in the display.
+    // @see \Drupal\user\AccountForm::flagViolations
     $violations = $account->validate();
-    foreach ($violations->getByFields(['name']) as $violation) {
+    foreach ($violations->getByFields(['name', 'pass', 'mail']) as $violation) {
       list($field_name) = explode('.', $violation->getPropertyPath(), 2);
-      if (isset($values['fields'][$field_name])) {
-        $form_state->setError($pane_form['form']['register']['fields'][$field_name], $violation->getMessage());
-      }
-      else {
-        $form_state->setError($pane_form['form']['register'][$field_name], $violation->getMessage());
-      }
+      $form_state->setError($pane_form['form'][$field_name], $violation->getMessage());
     }
   }
 
@@ -238,15 +221,17 @@ class CompletionRegistration extends CheckoutPaneBase implements CheckoutPaneInt
    * {@inheritdoc}
    */
   public function submitPaneForm(array &$pane_form, FormStateInterface $form_state, array &$complete_form) {
-    /** @var \Drupal\user\User $user */
-    $user = $form_state->getTemporaryValue('new_account');
-    $user->enforceIsNew();
-    $user->activate();
-    $user->save();
-
-    // Load the new user account.
     /** @var \Drupal\user\UserInterface $account */
-    $account = $this->userStorage->load($user->id());
+    $values = $form_state->getValue($pane_form['#parents']);
+    $account = $this->userStorage->create([
+      'pass' => $values['password'],
+      'mail' => $this->order->getEmail(),
+      'name' => $values['name'],
+    ]);
+    $form_display = EntityFormDisplay::collectRenderDisplay($account, 'register');
+    $form_display->extractFormValues($account, $pane_form, $form_state);
+    $account->activate();
+    $account->save();
 
     user_login_finalize($account);
     $this->messenger->addStatus($this->t('Registration successful. You are now logged in.'));
