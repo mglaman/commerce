@@ -1,0 +1,5 @@
+services:
+  commerce_checkout_account_create_event_test.account_create:
+    class: Drupal\commerce_checkout_account_create_event_test\EventSubscriber\AccountCreate
+    tags:
+      - {name: event_subscriber}

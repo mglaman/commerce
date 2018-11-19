@@ -233,7 +233,7 @@ class Login extends CheckoutPaneBase implements CheckoutPaneInterface, Container
     $pane_form['guest']['text'] = [
       '#prefix' => '<p>',
       '#suffix' => '</p>',
-      '#markup' => $this->t('Proceed to checkout. You can optionally create an account at the end.'),
+      '#markup' => $this->isRegistrationPaneAvailable() ? $this->t('Proceed to checkout. You can optionally create an account at the end.') : $this->t('Proceed to checkout.'),
     ];
     $pane_form['guest']['continue'] = [
       '#type' => 'submit',
@@ -292,7 +292,8 @@ class Login extends CheckoutPaneBase implements CheckoutPaneInterface, Container
   public function validatePaneForm(array &$pane_form, FormStateInterface $form_state, array &$complete_form) {
     $values = $form_state->getValue($pane_form['#parents']);
     $triggering_element = $form_state->getTriggeringElement();
-    switch ($triggering_element['#op']) {
+    $trigger = !empty($triggering_element['#op']) ? $triggering_element['#op'] : 'continue';
+    switch ($trigger) {
       case 'continue':
         return;
 
@@ -376,7 +377,8 @@ class Login extends CheckoutPaneBase implements CheckoutPaneInterface, Container
    */
   public function submitPaneForm(array &$pane_form, FormStateInterface $form_state, array &$complete_form) {
     $triggering_element = $form_state->getTriggeringElement();
-    switch ($triggering_element['#op']) {
+    $trigger = !empty($triggering_element['#op']) ? $triggering_element['#op'] : 'continue';
+    switch ($trigger) {
       case 'continue':
         break;
 
@@ -395,6 +397,18 @@ class Login extends CheckoutPaneBase implements CheckoutPaneInterface, Container
       'commerce_order' => $this->order->id(),
       'step' => $this->checkoutFlow->getNextStepId($this->getStepId()),
     ]);
+  }
+
+  /**
+   * Checks if guests can register at the end of the process.
+   *
+   * @return bool
+   *   TRUE if guests may create an account.
+   *   FALSE otherwise.
+   */
+  protected function isRegistrationPaneAvailable() {
+    $completion_registration_pane = $this->checkoutFlow->getPane('completion_registration');
+    return $completion_registration_pane->getStepId() != '_disabled';
   }
 
 }

@@ -1,0 +1,5 @@
+name: Commerce Checkout Account Create Event Test
+type: module
+description: 'Helper module for testing creating an account after checkout.'
+package: Testing
+core: 8.x

@@ -2,6 +2,9 @@
 
 namespace Drupal\Tests\commerce_checkout\Functional;
 
+use Drupal\Core\Url;
+use Drupal\field\Entity\FieldConfig;
+use Drupal\field\Entity\FieldStorageConfig;
 use Drupal\Tests\commerce\Functional\CommerceBrowserTestBase;
 
 /**
@@ -80,7 +83,7 @@ class CheckoutOrderTest extends CommerceBrowserTestBase {
    */
   public function testCacheMetadata() {
     $this->drupalLogout();
-    $this->drupalGet($this->product->toUrl()->toString());
+    $this->drupalGet($this->product->toUrl());
     $this->submitForm([], 'Add to cart');
     $this->assertSession()->pageTextContains('1 item');
     $cart_link = $this->getSession()->getPage()->findLink('your cart');
@@ -135,7 +138,7 @@ class CheckoutOrderTest extends CommerceBrowserTestBase {
    */
   public function testGuestOrderCheckout() {
     $this->drupalLogout();
-    $this->drupalGet($this->product->toUrl()->toString());
+    $this->drupalGet($this->product->toUrl());
     $this->submitForm([], 'Add to cart');
     $this->assertSession()->pageTextContains('1 item');
     $cart_link = $this->getSession()->getPage()->findLink('your cart');
@@ -165,7 +168,7 @@ class CheckoutOrderTest extends CommerceBrowserTestBase {
     $this->assertSession()->pageTextContains('Your order number is 1. You can view your order on your account page when logged in.');
     $this->assertSession()->pageTextContains('0 items');
     // Test second order.
-    $this->drupalGet($this->product->toUrl()->toString());
+    $this->drupalGet($this->product->toUrl());
     $this->submitForm([], 'Add to cart');
     $this->assertSession()->pageTextContains('1 item');
     $cart_link = $this->getSession()->getPage()->findLink('your cart');
@@ -203,7 +206,9 @@ class CheckoutOrderTest extends CommerceBrowserTestBase {
   }
 
   /**
-   * Tests that you can register from the checkout pane.
+   * Tests that you can register from the login checkout pane.
+   *
+   * This checkout pane usually appears on the "login" step.
    */
   public function testRegisterOrderCheckout() {
     $config = \Drupal::configFactory()->getEditable('commerce_checkout.commerce_checkout_flow.default');
@@ -212,7 +217,7 @@ class CheckoutOrderTest extends CommerceBrowserTestBase {
     $config->save();
 
     $this->drupalLogout();
-    $this->drupalGet($this->product->toUrl()->toString());
+    $this->drupalGet($this->product->toUrl());
     $this->submitForm([], 'Add to cart');
     $cart_link = $this->getSession()->getPage()->findLink('your cart');
     $cart_link->click();
@@ -228,7 +233,7 @@ class CheckoutOrderTest extends CommerceBrowserTestBase {
 
     // Test account validation.
     $this->drupalLogout();
-    $this->drupalGet($this->product->toUrl()->toString());
+    $this->drupalGet($this->product->toUrl());
     $this->submitForm([], 'Add to cart');
     $cart_link = $this->getSession()->getPage()->findLink('your cart');
     $cart_link->click();
@@ -285,10 +290,305 @@ class CheckoutOrderTest extends CommerceBrowserTestBase {
   }
 
   /**
+   * Tests that you can register after completing the order as a guest.
+   */
+  public function testRegistrationAfterGuestOrderCheckout() {
+    // Enable the completion_registration pane.
+    /** @var \Drupal\commerce_checkout\Entity\CheckoutFlowInterface $checkout_flow */
+    $checkout_flow = $this->container
+      ->get('entity_type.manager')
+      ->getStorage('commerce_checkout_flow')
+      ->load('default');
+    /** @var \Drupal\commerce_checkout\Plugin\Commerce\CheckoutFlow\CheckoutFlowInterface $checkout_flow_plugin */
+    $checkout_flow_plugin = $checkout_flow->getPlugin();
+    /** @var \Drupal\commerce_checkout\Plugin\Commerce\CheckoutPane\CompletionRegistration $pane */
+    $pane = $checkout_flow_plugin->getPane('completion_registration');
+    $pane->setConfiguration([]);
+    $pane->setStepId('complete');
+    $checkout_flow_plugin_configuration = $checkout_flow_plugin->getConfiguration();
+    $checkout_flow_plugin_configuration['panes']['completion_registration'] = $pane->getConfiguration();
+    $checkout_flow_plugin->setConfiguration($checkout_flow_plugin_configuration);
+    $checkout_flow->save();
+
+    $this->drupalLogout();
+    $this->drupalGet($this->product->toUrl());
+    $this->submitForm([], 'Add to cart');
+    $cart_link = $this->getSession()->getPage()->findLink('your cart');
+    $cart_link->click();
+    $this->submitForm([], 'Checkout');
+
+    // Checkout as guest.
+    $this->assertCheckoutProgressStep('Login');
+    $this->submitForm([], 'Continue as Guest');
+    $this->assertCheckoutProgressStep('Order information');
+    $this->submitForm([
+      'contact_information[email]' => 'guest@example.com',
+      'contact_information[email_confirm]' => 'guest@example.com',
+      'billing_information[profile][address][0][address][given_name]' => $this->randomString(),
+      'billing_information[profile][address][0][address][family_name]' => $this->randomString(),
+      'billing_information[profile][address][0][address][organization]' => $this->randomString(),
+      'billing_information[profile][address][0][address][address_line1]' => $this->randomString(),
+      'billing_information[profile][address][0][address][postal_code]' => '94043',
+      'billing_information[profile][address][0][address][locality]' => 'Mountain View',
+      'billing_information[profile][address][0][address][administrative_area]' => 'CA',
+    ], 'Continue to review');
+    $this->assertCheckoutProgressStep('Review');
+    $this->assertSession()->pageTextContains('Contact information');
+    $this->assertSession()->pageTextContains('Billing information');
+    $this->assertSession()->pageTextContains('Order Summary');
+    $this->submitForm([], 'Complete checkout');
+    $this->assertSession()->pageTextContains('Your order number is 1. You can view your order on your account page when logged in.');
+
+    // Assert that the completion_registration checkout pane is shown.
+    $this->assertSession()->pageTextContains('Create an account?');
+    // Register.
+    $this->submitForm([
+      'completion_registration[register][name]' => 'User name',
+      'completion_registration[register][password][pass1]' => 'pass',
+      'completion_registration[register][password][pass2]' => 'pass',
+    ], 'Create my account');
+    // Assert that the account was created successfully.
+    $this->assertSession()->pageTextContains('Registration successful. You are now logged in.');
+
+    // Log out and try to login again with the chosen password.
+    $this->drupalLogout();
+    $accounts = \Drupal::service('entity_type.manager')->getStorage('user')->loadByProperties(['mail' => 'guest@example.com']);
+    $account = reset($accounts);
+    $account->passRaw = 'pass';
+    $this->drupalLogin($account);
+
+    // Checkout again as guest to test account validation.
+    $this->drupalLogout();
+    $this->drupalGet($this->product->toUrl());
+    $this->submitForm([], 'Add to cart');
+    $cart_link = $this->getSession()->getPage()->findLink('your cart');
+    $cart_link->click();
+    $this->submitForm([], 'Checkout');
+    $this->assertCheckoutProgressStep('Login');
+    $this->submitForm([], 'Continue as Guest');
+    $this->assertCheckoutProgressStep('Order information');
+    $this->submitForm([
+      'contact_information[email]' => 'guest2@example.com',
+      'contact_information[email_confirm]' => 'guest2@example.com',
+      'billing_information[profile][address][0][address][given_name]' => $this->randomString(),
+      'billing_information[profile][address][0][address][family_name]' => $this->randomString(),
+      'billing_information[profile][address][0][address][organization]' => $this->randomString(),
+      'billing_information[profile][address][0][address][address_line1]' => $this->randomString(),
+      'billing_information[profile][address][0][address][postal_code]' => '94043',
+      'billing_information[profile][address][0][address][locality]' => 'Mountain View',
+      'billing_information[profile][address][0][address][administrative_area]' => 'CA',
+    ], 'Continue to review');
+    $this->assertCheckoutProgressStep('Review');
+    $this->assertSession()->pageTextContains('Contact information');
+    $this->assertSession()->pageTextContains('Billing information');
+    $this->assertSession()->pageTextContains('Order Summary');
+    $this->submitForm([], 'Complete checkout');
+    $this->assertSession()->pageTextContains('Your order number is 2. You can view your order on your account page when logged in.');
+
+    $this->submitForm([
+      'completion_registration[register][name]' => '',
+      'completion_registration[register][password][pass1]' => 'pass',
+      'completion_registration[register][password][pass2]' => 'pass',
+    ], 'Create my account');
+    $this->assertSession()->pageTextContains('You must enter a username.');
+
+    $this->submitForm([
+      'completion_registration[register][name]' => 'User name',
+      'completion_registration[register][password][pass1]' => '',
+      'completion_registration[register][password][pass2]' => '',
+    ], 'Create my account');
+    $this->assertSession()->pageTextContains('Password field is required.');
+
+    $this->submitForm([
+      'completion_registration[register][name]' => 'User @#.``^ ù % name invalid',
+      'completion_registration[register][password][pass1]' => 'pass',
+      'completion_registration[register][password][pass2]' => 'pass',
+    ], 'Create my account');
+    $this->assertSession()->pageTextContains('The username contains an illegal character.');
+
+    $this->submitForm([
+      'completion_registration[register][name]' => 'User name',
+      'completion_registration[register][password][pass1]' => 'pass',
+      'completion_registration[register][password][pass2]' => 'pass',
+    ], 'Create my account');
+    $this->assertSession()->pageTextContains('The username User name is already taken.');
+  }
+
+  /**
+   * Tests custom user fields are respected on registration after checkout.
+   *
+   * @group debug
+   */
+  public function testRegistrationAfterGuestOrderCheckoutWithCustomUserFields() {
+    // Create a field on 'user' entity type.
+    $field_storage = FieldStorageConfig::create([
+      'field_name' => 'test_user_field',
+      'entity_type' => 'user',
+      'type' => 'string',
+      'cardinality' => 1,
+    ]);
+    $field_storage->save();
+    $field = FieldConfig::create([
+      'field_storage' => $field_storage,
+      'label' => 'Custom user field',
+      'bundle' => 'user',
+      'required' => TRUE,
+    ]);
+    $field->save();
+
+    commerce_get_entity_display('user', 'user', 'form')
+      ->setComponent('test_user_field', ['type' => 'string_textfield'])
+      ->save();
+
+    // Enable the completion_registration pane.
+    /** @var \Drupal\commerce_checkout\Entity\CheckoutFlowInterface $checkout_flow */
+    $checkout_flow = $this->container
+      ->get('entity_type.manager')
+      ->getStorage('commerce_checkout_flow')
+      ->load('default');
+    /** @var \Drupal\commerce_checkout\Plugin\Commerce\CheckoutFlow\CheckoutFlowInterface $checkout_flow_plugin */
+    $checkout_flow_plugin = $checkout_flow->getPlugin();
+    /** @var \Drupal\commerce_checkout\Plugin\Commerce\CheckoutPane\CompletionRegistration $pane */
+    $pane = $checkout_flow_plugin->getPane('completion_registration');
+    $pane->setConfiguration([]);
+    $pane->setStepId('complete');
+    $checkout_flow_plugin_configuration = $checkout_flow_plugin->getConfiguration();
+    $checkout_flow_plugin_configuration['panes']['completion_registration'] = $pane->getConfiguration();
+    $checkout_flow_plugin->setConfiguration($checkout_flow_plugin_configuration);
+    $checkout_flow->save();
+
+    $this->drupalLogout();
+    $this->drupalGet($this->product->toUrl());
+    $this->submitForm([], 'Add to cart');
+    $cart_link = $this->getSession()->getPage()->findLink('your cart');
+    $cart_link->click();
+    $this->submitForm([], 'Checkout');
+
+    // Checkout as guest.
+    $this->assertCheckoutProgressStep('Login');
+    $this->submitForm([], 'Continue as Guest');
+    $this->assertCheckoutProgressStep('Order information');
+    $this->submitForm([
+      'contact_information[email]' => 'guest@example.com',
+      'contact_information[email_confirm]' => 'guest@example.com',
+      'billing_information[profile][address][0][address][given_name]' => $this->randomString(),
+      'billing_information[profile][address][0][address][family_name]' => $this->randomString(),
+      'billing_information[profile][address][0][address][organization]' => $this->randomString(),
+      'billing_information[profile][address][0][address][address_line1]' => $this->randomString(),
+      'billing_information[profile][address][0][address][postal_code]' => '94043',
+      'billing_information[profile][address][0][address][locality]' => 'Mountain View',
+      'billing_information[profile][address][0][address][administrative_area]' => 'CA',
+    ], 'Continue to review');
+    $this->assertCheckoutProgressStep('Review');
+    $this->assertSession()->pageTextContains('Contact information');
+    $this->assertSession()->pageTextContains('Billing information');
+    $this->assertSession()->pageTextContains('Order Summary');
+    $this->submitForm([], 'Complete checkout');
+    $this->assertSession()->pageTextContains('Your order number is 1. You can view your order on your account page when logged in.');
+
+    // Assert that the completion_registration checkout pane is shown.
+    $this->assertSession()->pageTextContains('Create an account?');
+    // Register.
+    $this->submitForm([
+      'completion_registration[register][name]' => 'User name',
+      'completion_registration[register][password][pass1]' => 'pass',
+      'completion_registration[register][password][pass2]' => 'pass',
+    ], 'Create my account');
+    $this->assertSession()->pageTextNotContains('Registration successful. You are now logged in.');
+    $this->assertSession()->pageTextContains('Custom user field');
+
+    $this->submitForm([
+      'completion_registration[register][name]' => 'User name',
+      'completion_registration[register][password][pass1]' => 'pass',
+      'completion_registration[register][password][pass2]' => 'pass',
+      'test_user_field[0][value]' => 'test_user_field_value',
+    ], 'Create my account');
+    // Assert that the account was created successfully.
+    $this->assertSession()->pageTextContains('Registration successful. You are now logged in.');
+
+    $accounts = $this->container->get('entity_type.manager')
+      ->getStorage('user')
+      ->loadByProperties(['mail' => 'guest@example.com']);
+    /** @var \Drupal\user\UserInterface $account */
+    $account = reset($accounts);
+    $this->assertEquals('test_user_field_value', $account->get('test_user_field')->value);
+  }
+
+  /**
+   * Tests that you can get redirected after registering at the end of checkout.
+   */
+  public function testRedirectAfterRegistrationOnCheckout() {
+    // Enable the test module 'commerce_checkout_account_create_event_test'.
+    $this->container
+      ->get('module_installer')
+      ->install(['commerce_checkout_account_create_event_test']);
+
+    // Enable the completion_registration pane.
+    /** @var \Drupal\commerce_checkout\Entity\CheckoutFlowInterface $checkout_flow */
+    $checkout_flow = $this->container
+      ->get('entity_type.manager')
+      ->getStorage('commerce_checkout_flow')
+      ->load('default');
+    /** @var \Drupal\commerce_checkout\Plugin\Commerce\CheckoutFlow\CheckoutFlowInterface $checkout_flow_plugin */
+    $checkout_flow_plugin = $checkout_flow->getPlugin();
+    /** @var \Drupal\commerce_checkout\Plugin\Commerce\CheckoutPane\CompletionRegistration $pane */
+    $pane = $checkout_flow_plugin->getPane('completion_registration');
+    $pane->setConfiguration([]);
+    $pane->setStepId('complete');
+    $checkout_flow_plugin_configuration = $checkout_flow_plugin->getConfiguration();
+    $checkout_flow_plugin_configuration['panes']['completion_registration'] = $pane->getConfiguration();
+    $checkout_flow_plugin->setConfiguration($checkout_flow_plugin_configuration);
+    $checkout_flow->save();
+
+    $this->drupalLogout();
+    $this->drupalGet($this->product->toUrl());
+    $this->submitForm([], 'Add to cart');
+    $cart_link = $this->getSession()->getPage()->findLink('your cart');
+    $cart_link->click();
+    $this->submitForm([], 'Checkout');
+
+    // Checkout as guest.
+    $this->assertCheckoutProgressStep('Login');
+    $this->submitForm([], 'Continue as Guest');
+    $this->assertCheckoutProgressStep('Order information');
+    $this->submitForm([
+      'contact_information[email]' => 'guest@example.com',
+      'contact_information[email_confirm]' => 'guest@example.com',
+      'billing_information[profile][address][0][address][given_name]' => $this->randomString(),
+      'billing_information[profile][address][0][address][family_name]' => $this->randomString(),
+      'billing_information[profile][address][0][address][organization]' => $this->randomString(),
+      'billing_information[profile][address][0][address][address_line1]' => $this->randomString(),
+      'billing_information[profile][address][0][address][postal_code]' => '94043',
+      'billing_information[profile][address][0][address][locality]' => 'Mountain View',
+      'billing_information[profile][address][0][address][administrative_area]' => 'CA',
+    ], 'Continue to review');
+    $this->assertCheckoutProgressStep('Review');
+    $this->assertSession()->pageTextContains('Contact information');
+    $this->assertSession()->pageTextContains('Billing information');
+    $this->assertSession()->pageTextContains('Order Summary');
+    $this->submitForm([], 'Complete checkout');
+    $this->assertSession()->pageTextContains('Your order number is 1. You can view your order on your account page when logged in.');
+
+    // Assert that the completion_registration checkout pane is shown.
+    $this->assertSession()->pageTextContains('Create an account?');
+    // Register.
+    $this->submitForm([
+      'completion_registration[register][name]' => 'User name',
+      'completion_registration[register][password][pass1]' => 'pass',
+      'completion_registration[register][password][pass2]' => 'pass',
+    ], 'Create my account');
+    // Assert that the account was created successfully.
+    $this->assertSession()->pageTextContains('Registration successful. You are now logged in.');
+
+    // Assert that a redirect had taken place.
+    $this->assertUrl(Url::fromRoute('entity.user.edit_form', ['user' => 3], ['absolute' => TRUE]));
+  }
+
+  /**
    * Tests checkout behaviour after a cart update.
    */
   public function testCheckoutFlowOnCartUpdate() {
-    $this->drupalGet($this->product->toUrl()->toString());
+    $this->drupalGet($this->product->toUrl());
     $this->submitForm([], 'Add to cart');
     $this->getSession()->getPage()->findLink('your cart')->click();
     // Submit the form until review.
@@ -325,7 +625,7 @@ class CheckoutOrderTest extends CommerceBrowserTestBase {
       'stores' => [$this->store],
     ]);
     // Adding a new product to the cart resets the checkout step.
-    $this->drupalGet($product2->toUrl()->toString());
+    $this->drupalGet($product2->toUrl());
     $this->submitForm([], 'Add to cart');
     $this->getSession()->getPage()->findLink('your cart')->click();
     $this->submitForm([], 'Checkout');
