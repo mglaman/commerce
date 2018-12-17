@@ -4,6 +4,8 @@ namespace Drupal\commerce_payment;
 
 use Drupal\commerce\EntityHelper;
 use Drupal\commerce_order\Entity\OrderInterface;
+use Drupal\commerce_payment\Entity\PaymentGatewayInterface;
+use Drupal\commerce_payment\Plugin\Commerce\PaymentGateway\OffsitePaymentGatewayInterface;
 use Drupal\commerce_payment\Plugin\Commerce\PaymentGateway\SupportsStoredPaymentMethodsInterface;
 use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\Core\StringTranslation\StringTranslationTrait;
@@ -42,10 +44,13 @@ class PaymentOptionsBuilder implements PaymentOptionsBuilderInterface {
       $payment_gateway_storage = $this->entityTypeManager->getStorage('commerce_payment_gateway');
       $payment_gateways = $payment_gateway_storage->loadMultipleForOrder($order);
     }
-    /** @var \Drupal\commerce_payment\Entity\PaymentGatewayInterface[] $payment_gateways_with_payment_methods */
-    $payment_gateways_with_payment_methods = array_filter($payment_gateways, function ($payment_gateway) {
-      /** @var \Drupal\commerce_payment\Entity\PaymentGatewayInterface $payment_gateway */
+    /** @var \Drupal\commerce_payment\Entity\PaymentGatewayInterface[] $payment_gateways_with_stored_payment_methods */
+    $payment_gateways_with_stored_payment_methods = array_filter($payment_gateways, function (PaymentGatewayInterface $payment_gateway) {
       return $payment_gateway->getPlugin() instanceof SupportsStoredPaymentMethodsInterface;
+    });
+    /** @var \Drupal\commerce_payment\Entity\PaymentGatewayInterface[] $payment_gateways_with_offsite */
+    $payment_gateways_with_offsite = array_filter($payment_gateways, function (PaymentGatewayInterface $payment_gateway) {
+      return $payment_gateway->getPlugin() instanceof OffsitePaymentGatewayInterface;
     });
 
     $options = [];
@@ -56,7 +61,7 @@ class PaymentOptionsBuilder implements PaymentOptionsBuilderInterface {
       /** @var \Drupal\commerce_payment\PaymentMethodStorageInterface $payment_method_storage */
       $payment_method_storage = $this->entityTypeManager->getStorage('commerce_payment_method');
 
-      foreach ($payment_gateways_with_payment_methods as $payment_gateway) {
+      foreach ($payment_gateways_with_stored_payment_methods as $payment_gateway) {
         $payment_methods = $payment_method_storage->loadReusable($customer, $payment_gateway, $billing_countries);
 
         foreach ($payment_methods as $payment_method_id => $payment_method) {
@@ -77,9 +82,9 @@ class PaymentOptionsBuilder implements PaymentOptionsBuilderInterface {
       $order_payment_method_id = $order_payment_method->id();
       // Make sure that the payment method's gateway is still available.
       $payment_gateway_id = $order_payment_method->getPaymentGatewayId();
-      $payment_gateway_ids = EntityHelper::extractIds($payment_gateways_with_payment_methods);
+      $payment_gateway_ids = EntityHelper::extractIds($payment_gateways_with_stored_payment_methods);
 
-      if (in_array($payment_gateway_id, $payment_gateway_ids) && !isset($options[$order_payment_method_id])) {
+      if (!isset($options[$order_payment_method_id]) && in_array($payment_gateway_id, $payment_gateway_ids, TRUE)) {
         $options[$order_payment_method_id] = new PaymentOption([
           'id' => $order_payment_method_id,
           'label' => $order_payment_method->label(),
@@ -91,8 +96,10 @@ class PaymentOptionsBuilder implements PaymentOptionsBuilderInterface {
 
     // 3) Add options to create new stored payment methods of supported types.
     $payment_method_type_counts = [];
+    /** @var \Drupal\commerce_payment\Entity\PaymentGatewayInterface[] $payment_method_type_gateways */
+    $payment_method_type_gateways = array_merge($payment_gateways_with_stored_payment_methods, $payment_gateways_with_offsite);
     // Count how many new payment method options will be built per gateway.
-    foreach ($payment_gateways_with_payment_methods as $payment_gateway) {
+    foreach ($payment_method_type_gateways as $payment_gateway) {
       $payment_method_types = $payment_gateway->getPlugin()->getPaymentMethodTypes();
 
       foreach ($payment_method_types as $payment_method_type_id => $payment_method_type) {
@@ -105,7 +112,7 @@ class PaymentOptionsBuilder implements PaymentOptionsBuilderInterface {
       }
     }
 
-    foreach ($payment_gateways_with_payment_methods as $payment_gateway) {
+    foreach ($payment_method_type_gateways as $payment_gateway) {
       $payment_gateway_plugin = $payment_gateway->getPlugin();
       $payment_method_types = $payment_gateway_plugin->getPaymentMethodTypes();
 
@@ -130,9 +137,9 @@ class PaymentOptionsBuilder implements PaymentOptionsBuilderInterface {
       }
     }
 
-    // 4) Add options for the remaining gateways (off-site, manual, etc).
+    // 4) Add options for the remaining gateways (manual, etc).
     /** @var \Drupal\commerce_payment\Entity\PaymentGatewayInterface[] $other_payment_gateways */
-    $other_payment_gateways = array_diff_key($payment_gateways, $payment_gateways_with_payment_methods);
+    $other_payment_gateways = array_diff_key($payment_gateways, $payment_gateways_with_stored_payment_methods, $payment_gateways_with_offsite);
     foreach ($other_payment_gateways as $payment_gateway) {
       $payment_gateway_id = $payment_gateway->id();
       $options[$payment_gateway_id] = new PaymentOption([

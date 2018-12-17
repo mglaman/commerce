@@ -87,10 +87,10 @@ class PaymentOptionsBuilderTest extends CommerceKernelTestBase {
     $payment_gateway = PaymentGateway::create([
       'id' => 'offsite',
       'label' => 'Off-site',
-      'plugin' => 'example_offsite_redirect',
+      'plugin' => 'test_offsite_redirect',
       'configuration' => [
         'redirect_method' => 'post',
-        'payment_method_types' => ['credit_card'],
+        'payment_method_types' => ['credit_card', 'paypal'],
       ],
     ]);
     $payment_gateway->save();
@@ -219,7 +219,7 @@ class PaymentOptionsBuilderTest extends CommerceKernelTestBase {
     $options = $this->paymentOptionsBuilder->buildOptions($this->order);
     /** @var \Drupal\commerce_payment\PaymentOption[] $options */
     $options = array_values($options);
-    $this->assertCount(5, $options);
+    $this->assertCount(6, $options);
 
     // Stored payment methods.
     $this->assertEquals('1', $options[0]->getId());
@@ -237,24 +237,30 @@ class PaymentOptionsBuilderTest extends CommerceKernelTestBase {
 
     // Add new payment method.
     $this->assertEquals('new--credit_card--onsite', $options[2]->getId());
-    $this->assertEquals('Credit card', $options[2]->getLabel());
+    $this->assertEquals('Credit card (Example)', $options[2]->getLabel());
     $this->assertEquals('onsite', $options[2]->getPaymentGatewayId());
     $this->assertNull($options[2]->getPaymentMethodId());
     $this->assertEquals('credit_card', $options[2]->getPaymentMethodTypeId());
 
     // Offsite gateways.
-    $this->assertEquals('offsite', $options[3]->getId());
-    $this->assertEquals('Example', $options[3]->getLabel());
+    $this->assertEquals('new--credit_card--offsite', $options[3]->getId());
+    $this->assertEquals('Credit card (Test Offsite)', $options[3]->getLabel());
     $this->assertEquals('offsite', $options[3]->getPaymentGatewayId());
     $this->assertNull($options[3]->getPaymentMethodId());
-    $this->assertNull($options[3]->getPaymentMethodTypeId());
+    $this->assertEquals('credit_card', $options[3]->getPaymentMethodTypeId());
+
+    $this->assertEquals('new--paypal--offsite', $options[4]->getId());
+    $this->assertEquals('PayPal', $options[4]->getLabel());
+    $this->assertEquals('offsite', $options[4]->getPaymentGatewayId());
+    $this->assertNull($options[4]->getPaymentMethodId());
+    $this->assertEquals('paypal', $options[4]->getPaymentMethodTypeId());
 
     // Manual gateways.
-    $this->assertEquals('cash_on_delivery', $options[4]->getId());
-    $this->assertEquals('Cash on delivery', $options[4]->getLabel());
-    $this->assertEquals('cash_on_delivery', $options[4]->getPaymentGatewayId());
-    $this->assertNull($options[4]->getPaymentMethodId());
-    $this->assertNull($options[4]->getPaymentMethodTypeId());
+    $this->assertEquals('cash_on_delivery', $options[5]->getId());
+    $this->assertEquals('Cash on delivery', $options[5]->getLabel());
+    $this->assertEquals('cash_on_delivery', $options[5]->getPaymentGatewayId());
+    $this->assertNull($options[5]->getPaymentMethodId());
+    $this->assertNull($options[5]->getPaymentMethodTypeId());
   }
 
   /**
