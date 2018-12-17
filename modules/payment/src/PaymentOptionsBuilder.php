@@ -5,7 +5,6 @@ namespace Drupal\commerce_payment;
 use Drupal\commerce\EntityHelper;
 use Drupal\commerce_order\Entity\OrderInterface;
 use Drupal\commerce_payment\Entity\PaymentGatewayInterface;
-use Drupal\commerce_payment\Plugin\Commerce\PaymentGateway\OffsitePaymentGatewayInterface;
 use Drupal\commerce_payment\Plugin\Commerce\PaymentGateway\SupportsStoredPaymentMethodsInterface;
 use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\Core\StringTranslation\StringTranslationTrait;
@@ -92,16 +91,15 @@ class PaymentOptionsBuilder implements PaymentOptionsBuilderInterface {
 
     // 3) Add options to create new stored payment methods of supported types.
     $payment_method_type_counts = [];
-    /** @var \Drupal\commerce_payment\Entity\PaymentGatewayInterface[] $payment_gateways_with_offsite_and_multiple_payment_types */
-    // @todo horribly long and descriptive name, here.
-    // Find offsite payment gateways that have multiple payment method types. We
-    // want to expose each type as a payment option.
-    $payment_gateways_with_offsite_and_multiple_payment_types = array_filter($payment_gateways, function (PaymentGatewayInterface $payment_gateway) {
+    /** @var \Drupal\commerce_payment\Entity\PaymentGatewayInterface[] $payment_gateways_with_multiple_payment_types */
+    // Find payment gateways that have multiple payment method types. We want
+    // to expose each type as a payment option.
+    $payment_gateways_with_multiple_payment_types = array_filter($payment_gateways, function (PaymentGatewayInterface $payment_gateway) {
       $plugin = $payment_gateway->getPlugin();
-      return $plugin instanceof OffsitePaymentGatewayInterface && count($plugin->getPaymentMethodTypes()) > 1;
+      return count($plugin->getPaymentMethodTypes()) > 1;
     });
     /** @var \Drupal\commerce_payment\Entity\PaymentGatewayInterface[] $payment_method_type_gateways */
-    $payment_method_type_gateways = array_merge($payment_gateways_with_stored_payment_methods, $payment_gateways_with_offsite_and_multiple_payment_types);
+    $payment_method_type_gateways = array_merge($payment_gateways_with_stored_payment_methods, $payment_gateways_with_multiple_payment_types);
     // Count how many new payment method options will be built per gateway.
     foreach ($payment_method_type_gateways as $payment_gateway) {
       $payment_method_types = $payment_gateway->getPlugin()->getPaymentMethodTypes();
@@ -141,12 +139,12 @@ class PaymentOptionsBuilder implements PaymentOptionsBuilderInterface {
       }
     }
 
-    // 4) Add options for the remaining gateways (off-site, manual, etc).
+    // 4) Add options for the remaining gateways (single method, manual, etc).
     /** @var \Drupal\commerce_payment\Entity\PaymentGatewayInterface[] $other_payment_gateways */
     $other_payment_gateways = array_diff_key(
       $payment_gateways,
       $payment_gateways_with_stored_payment_methods,
-      $payment_gateways_with_offsite_and_multiple_payment_types
+      $payment_gateways_with_multiple_payment_types
     );
     foreach ($other_payment_gateways as $payment_gateway) {
       $payment_gateway_id = $payment_gateway->id();
@@ -154,7 +152,6 @@ class PaymentOptionsBuilder implements PaymentOptionsBuilderInterface {
         'id' => $payment_gateway_id,
         'label' => $payment_gateway->getPlugin()->getDisplayLabel(),
         'payment_gateway_id' => $payment_gateway_id,
-        'payment_method_type_id' => $payment_gateway->getPlugin()->getDefaultPaymentMethodType(),
       ]);
     }
 
@@ -174,8 +171,17 @@ class PaymentOptionsBuilder implements PaymentOptionsBuilderInterface {
     if ($order_payment_method) {
       $default_option_id = $order_payment_method->id();
     }
-    elseif ($order_payment_gateway && !($order_payment_gateway instanceof SupportsStoredPaymentMethodsInterface)) {
-      $default_option_id = $order_payment_gateway->id();
+    elseif ($order_payment_gateway) {
+      $order_payment_gateway_plugin = $order_payment_gateway->getPlugin();
+      if (!($order_payment_gateway_plugin instanceof SupportsStoredPaymentMethodsInterface)) {
+        if (count($order_payment_gateway_plugin->getPaymentMethodTypes()) === 1) {
+          $default_option_id = $order_payment_gateway->id();
+        }
+        else {
+          $payment_method_type_id = $order->getData('payment_method_type', $order_payment_gateway_plugin->getDefaultPaymentMethodType()->getPluginId());
+          $default_option_id = 'new--' . $payment_method_type_id . '--' . $order_payment_gateway->id();
+        }
+      }
     }
     // The order doesn't have a payment method/gateway specified, or it has, but it is no longer available.
     if (!$default_option_id || !isset($options[$default_option_id])) {

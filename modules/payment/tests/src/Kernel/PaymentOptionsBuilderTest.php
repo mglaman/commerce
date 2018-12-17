@@ -402,14 +402,27 @@ class PaymentOptionsBuilderTest extends CommerceKernelTestBase {
     $offsite_payment_gateway_configuration['payment_method_types'][] = 'paypal';
     $offsite_payment_gateway->setPluginConfiguration($offsite_payment_gateway_configuration);
     $offsite_payment_gateway->save();
+    $options = $this->paymentOptionsBuilder->buildOptions($this->order);
 
-    // The order payment gateway is selected second.
+    // When there is no order data flag, fallback to the default method type.
     $this->order->set('payment_method', NULL);
     $this->order->set('payment_gateway', 'offsite');
     $default_option = $this->paymentOptionsBuilder->selectDefaultOption($this->order, $options);
-    $this->assertEquals($options['offsite'], $default_option);
+    $this->assertEquals($options['new--credit_card--offsite'], $default_option);
 
-    $this->fail('Need to assert test that off-site w/ PayPal is reselected as default option');
+    // When there is an order data flag, ensure proper method type.
+    $this->order->setData('payment_method_type', 'paypal');
+    $this->order->set('payment_method', NULL);
+    $this->order->set('payment_gateway', 'offsite');
+    $default_option = $this->paymentOptionsBuilder->selectDefaultOption($this->order, $options);
+    $this->assertEquals($options['new--paypal--offsite'], $default_option);
+
+    // When there is an order data flag, ensure proper method type.
+    $this->order->setData('payment_method_type', 'credit_card');
+    $this->order->set('payment_method', NULL);
+    $this->order->set('payment_gateway', 'offsite');
+    $default_option = $this->paymentOptionsBuilder->selectDefaultOption($this->order, $options);
+    $this->assertEquals($options['new--credit_card--offsite'], $default_option);
   }
 
 }

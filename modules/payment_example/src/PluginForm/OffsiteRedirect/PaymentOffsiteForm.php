@@ -30,7 +30,8 @@ class PaymentOffsiteForm extends BasePaymentOffsiteForm {
       $payment_method_type = $order->getData('payment_method_type');
       $redirect_url = Url::fromRoute('commerce_payment_example.dummy_redirect_post', [], [
         'query' => [
-          'payment_method_type' => $payment_method_type
+          'payment_method_type' => $payment_method_type,
+          'order_id' => $order->id(),
         ]
       ])->toString();
       $redirect_method = 'post';
