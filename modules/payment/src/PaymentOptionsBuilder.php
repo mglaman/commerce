@@ -48,10 +48,6 @@ class PaymentOptionsBuilder implements PaymentOptionsBuilderInterface {
     $payment_gateways_with_stored_payment_methods = array_filter($payment_gateways, function (PaymentGatewayInterface $payment_gateway) {
       return $payment_gateway->getPlugin() instanceof SupportsStoredPaymentMethodsInterface;
     });
-    /** @var \Drupal\commerce_payment\Entity\PaymentGatewayInterface[] $payment_gateways_with_offsite */
-    $payment_gateways_with_offsite = array_filter($payment_gateways, function (PaymentGatewayInterface $payment_gateway) {
-      return $payment_gateway->getPlugin() instanceof OffsitePaymentGatewayInterface;
-    });
 
     $options = [];
     // 1) Add options to reuse stored payment methods for known customers.
@@ -96,8 +92,16 @@ class PaymentOptionsBuilder implements PaymentOptionsBuilderInterface {
 
     // 3) Add options to create new stored payment methods of supported types.
     $payment_method_type_counts = [];
+    /** @var \Drupal\commerce_payment\Entity\PaymentGatewayInterface[] $payment_gateways_with_offsite_and_multiple_payment_types */
+    // @todo horribly long and descriptive name, here.
+    // Find offsite payment gateways that have multiple payment method types. We
+    // want to expose each type as a payment option.
+    $payment_gateways_with_offsite_and_multiple_payment_types = array_filter($payment_gateways, function (PaymentGatewayInterface $payment_gateway) {
+      $plugin = $payment_gateway->getPlugin();
+      return $plugin instanceof OffsitePaymentGatewayInterface && count($plugin->getPaymentMethodTypes()) > 1;
+    });
     /** @var \Drupal\commerce_payment\Entity\PaymentGatewayInterface[] $payment_method_type_gateways */
-    $payment_method_type_gateways = array_merge($payment_gateways_with_stored_payment_methods, $payment_gateways_with_offsite);
+    $payment_method_type_gateways = array_merge($payment_gateways_with_stored_payment_methods, $payment_gateways_with_offsite_and_multiple_payment_types);
     // Count how many new payment method options will be built per gateway.
     foreach ($payment_method_type_gateways as $payment_gateway) {
       $payment_method_types = $payment_gateway->getPlugin()->getPaymentMethodTypes();
@@ -137,9 +141,13 @@ class PaymentOptionsBuilder implements PaymentOptionsBuilderInterface {
       }
     }
 
-    // 4) Add options for the remaining gateways (manual, etc).
+    // 4) Add options for the remaining gateways (off-site, manual, etc).
     /** @var \Drupal\commerce_payment\Entity\PaymentGatewayInterface[] $other_payment_gateways */
-    $other_payment_gateways = array_diff_key($payment_gateways, $payment_gateways_with_stored_payment_methods, $payment_gateways_with_offsite);
+    $other_payment_gateways = array_diff_key(
+      $payment_gateways,
+      $payment_gateways_with_stored_payment_methods,
+      $payment_gateways_with_offsite_and_multiple_payment_types
+    );
     foreach ($other_payment_gateways as $payment_gateway) {
       $payment_gateway_id = $payment_gateway->id();
       $options[$payment_gateway_id] = new PaymentOption([

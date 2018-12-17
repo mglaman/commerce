@@ -17,7 +17,7 @@ use Symfony\Component\HttpFoundation\Request;
  *   forms = {
  *     "offsite-payment" = "Drupal\commerce_payment_example\PluginForm\OffsiteRedirect\PaymentOffsiteForm",
  *   },
- *   payment_method_types = {"credit_card"},
+ *   payment_method_types = {"credit_card", "paypal"},
  *   credit_card_types = {
  *     "amex", "dinersclub", "discover", "jcb", "maestro", "mastercard", "visa",
  *   },
