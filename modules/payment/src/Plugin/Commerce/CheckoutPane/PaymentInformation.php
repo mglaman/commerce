@@ -364,6 +364,9 @@ class PaymentInformation extends CheckoutPaneBase {
       $this->order->set('payment_gateway', $payment_gateway);
       $this->order->set('payment_method', NULL);
       $this->order->setBillingProfile($billing_profile);
+      // Store the selected payment method type in the order's data array so
+      // that the payment gateway can use that to build its redirect URL.
+      $this->order->setData('payment_method_type', $selected_option->getPaymentMethodTypeId());
     }
   }
 

@@ -22,7 +22,17 @@ class PaymentOffsiteForm extends BasePaymentOffsiteForm {
     $redirect_method = $payment_gateway_plugin->getConfiguration()['redirect_method'];
     $remove_js = ($redirect_method == 'post_manual');
     if (in_array($redirect_method, ['post', 'post_manual'])) {
-      $redirect_url = Url::fromRoute('commerce_payment_example.dummy_redirect_post')->toString();
+      // If an off-site payment gateway supports multiple payment methods types,
+      // the payment method type selected will be stored in the order data.
+      // This allows passing additional parameters to the payment gateway
+      // service when generating the redirect URL.
+      $order = $payment->getOrder();
+      $payment_method_type = $order->getData('payment_method_type');
+      $redirect_url = Url::fromRoute('commerce_payment_example.dummy_redirect_post', [], [
+        'query' => [
+          'payment_method_type' => $payment_method_type
+        ]
+      ])->toString();
       $redirect_method = 'post';
     }
     else {

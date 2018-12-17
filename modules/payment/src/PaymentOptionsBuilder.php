@@ -154,6 +154,7 @@ class PaymentOptionsBuilder implements PaymentOptionsBuilderInterface {
         'id' => $payment_gateway_id,
         'label' => $payment_gateway->getPlugin()->getDisplayLabel(),
         'payment_gateway_id' => $payment_gateway_id,
+        'payment_method_type_id' => $payment_gateway->getPlugin()->getDefaultPaymentMethodType(),
       ]);
     }
 

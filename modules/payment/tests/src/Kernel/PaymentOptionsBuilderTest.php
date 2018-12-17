@@ -338,14 +338,14 @@ class PaymentOptionsBuilderTest extends CommerceKernelTestBase {
     $this->assertNull($options[2]->getPaymentMethodId());
     $this->assertEquals('credit_card', $options[2]->getPaymentMethodTypeId());
 
-    // Offsite gateway credit card
+    // Offsite gateway credit card.
     $this->assertEquals('new--credit_card--offsite', $options[3]->getId());
     $this->assertEquals('Credit card (Test Offsite)', $options[3]->getLabel());
     $this->assertEquals('offsite', $options[3]->getPaymentGatewayId());
     $this->assertNull($options[3]->getPaymentMethodId());
     $this->assertEquals('credit_card', $options[3]->getPaymentMethodTypeId());
 
-    // Offsite gateway PayPal
+    // Offsite gateway PayPal.
     $this->assertEquals('new--paypal--offsite', $options[4]->getId());
     $this->assertEquals('PayPal', $options[4]->getLabel());
     $this->assertEquals('offsite', $options[4]->getPaymentGatewayId());
@@ -394,6 +394,22 @@ class PaymentOptionsBuilderTest extends CommerceKernelTestBase {
     $this->order->set('payment_gateway', 'card_on_delivery');
     $default_option = $this->paymentOptionsBuilder->selectDefaultOption($this->order, $options);
     $this->assertEquals(reset($options), $default_option);
+
+    // Test default when off-site has two payment method types.
+    /** @var \Drupal\commerce_payment\Entity\PaymentGateway $offsite_payment_gateway */
+    $offsite_payment_gateway = PaymentGateway::load('offsite');
+    $offsite_payment_gateway_configuration = $offsite_payment_gateway->getPluginConfiguration();
+    $offsite_payment_gateway_configuration['payment_method_types'][] = 'paypal';
+    $offsite_payment_gateway->setPluginConfiguration($offsite_payment_gateway_configuration);
+    $offsite_payment_gateway->save();
+
+    // The order payment gateway is selected second.
+    $this->order->set('payment_method', NULL);
+    $this->order->set('payment_gateway', 'offsite');
+    $default_option = $this->paymentOptionsBuilder->selectDefaultOption($this->order, $options);
+    $this->assertEquals($options['offsite'], $default_option);
+
+    $this->fail('Need to assert test that off-site w/ PayPal is reselected as default option');
   }
 
 }
