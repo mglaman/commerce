@@ -42,7 +42,7 @@ class OrderPaidTestSubscriber implements EventSubscriberInterface {
    */
   public function onPaid(OrderEvent $event) {
     $order = $event->getOrder();
-    $this->state->set('order_paid_test_subscriner_ran', true);
+    $this->state->set('order_paid_test_subscriber_ran', true);
 
     if ($order->getState()->getId() != 'draft') {
       // The order has already been placed.

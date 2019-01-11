@@ -8,3 +8,8 @@ services:
     arguments: ['@state']
     tags:
       - { name: event_subscriber }
+  commerce_payment_test.order_place_test_subscriber:
+    class: Drupal\commerce_payment_test\EventSubscriber\OrderPlaceTestSubscriber
+    arguments: ['@state']
+    tags:
+      - { name: event_subscriber }
