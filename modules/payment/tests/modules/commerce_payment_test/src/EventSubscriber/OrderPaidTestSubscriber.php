@@ -42,19 +42,21 @@ class OrderPaidTestSubscriber implements EventSubscriberInterface {
    */
   public function onPaid(OrderEvent $event) {
     $order = $event->getOrder();
-    $this->state->set('order_paid_test_subscriber_ran', true);
 
     if ($order->getState()->getId() != 'draft') {
       // The order has already been placed.
+      $this->state->set('order_paid_test_subscriber_ran', 'order_not_draft');
       return;
     }
     /** @var \Drupal\commerce_payment\Entity\PaymentGateway $payment_gateway */
     $payment_gateway = $order->get('payment_gateway')->entity;
     if (!$payment_gateway) {
       // The payment gateway is unknown.
+      $this->state->set('order_paid_test_subscriber_ran', 'unknown_payment_gateway');
       return;
     }
 
+    $this->state->set('order_paid_test_subscriber_ran', true);
     $state_key = 'order_paid_test_subscriber_' . $order->id();
     $existing_count = $this->state->get($state_key, 0);
     $existing_count++;

@@ -35,11 +35,20 @@ class TestDoubleSaveOffsiteRedirect extends OffsiteRedirect {
    * @link https://www.drupal.org/project/commerce/issues/3011667
    */
   public function onReturn(OrderInterface $order, Request $request) {
-    $order->setData('test_double_save_offsite_redirect', [
-      'test' => TRUE,
-    ]);
-    $order->save();
+    $state = \Drupal::state();
+
+    $order->setData('test_double_save_offsite_redirect', ['test' => TRUE]);
+
+    // Check if testing save _before_ a payment is added.
+    if ($state->get('test_double_save_offsite_redirect_when_to_save') === 'before') {
+      $order->save();
+    }
     parent::onReturn($order, $request);
+
+    // Check if testing save _after_ a payment is added.
+    if ($state->get('test_double_save_offsite_redirect_when_to_save') === 'after') {
+      $order->save();
+    }
   }
 
 }

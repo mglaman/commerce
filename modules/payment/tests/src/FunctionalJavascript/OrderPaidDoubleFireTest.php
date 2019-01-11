@@ -77,8 +77,14 @@ class OrderPaidDoubleFireTest extends CommerceWebDriverTestBase {
 
   /**
    * Tests checkout with an off-site gateway (POST redirect method).
+   *
+   * @dataProvider providerForWhenToSaveOrder
    */
-  public function testCheckoutWithOffsiteRedirectPost() {
+  public function testCheckoutWithOffsiteRedirectPost($when_to_save) {
+    $state = $this->container->get('state');
+    $state->set('test_double_save_offsite_redirect_when_to_save', $when_to_save);
+
+
     $this->drupalGet($this->product->toUrl()->toString());
     $this->submitForm([], 'Add to cart');
     $this->drupalGet('checkout/1');
@@ -111,24 +117,39 @@ class OrderPaidDoubleFireTest extends CommerceWebDriverTestBase {
       'test' => TRUE,
     ]);
 
+    // The order should be marked as paid, a payment was added and
+    // commerce_payment.order_manager updated the order's total paid amount.
+    // @see \Drupal\commerce_payment\Entity\Payment::postSave
+    //
+    // @NOTE: When the order is saved by the gateway _before_ a payment is added
+    // this fails.
+    //
+    // @NOTE: \Drupal\commerce_payment\PaymentOrderManager::updateTotalPaid saves the order.
+    $this->assertTrue($order->isPaid());
+
     // Test the paid_event was dispatched.
-    // @todo this is not set to TRUE.
-    $this->assertFalse($order->getData('paid_event_dispatched'));
+    $this->assertTrue($order->getData('paid_event_dispatched'));
 
-    // Why is this failing?
-    // @todo this should be TRUE.
-    $this->assertFalse($order->isPaid());
-
-    $state = $this->container->get('state');
-
-    // Paid ran..
-    $this->assertTrue($state->get('order_paid_test_subscriber_ran'));
-    // @todo This should not be null, but it is.
+    // Paid ran event ran, see if our subscriber executed.
+    //
+    // This actually does not run, because the order had its "place" transition
+    // ran at the end of the checkout. Nothing caused the order payment event
+    // to have to trigger while a draft. (ie: IPN.)
+    $this->assertEquals('order_not_draft', $state->get('order_paid_test_subscriber_ran'));
     $this->assertEquals(null, $state->get('order_paid_test_subscriber_' . $order->id()));
 
-    // @todo this should be 1.
-    $this->assertEquals(2, $state->get('order_place_test_pre_transition_' . $order->id()));
-    $this->assertEquals(2, $state->get('order_place_test_post_transition_' . $order->id()));
+    // Verify the place transition did not execute twice.
+    // Unsure why or how this is possibly happening as the paid_event does
+    // not seem to dispatch when there is a double execution.
+    $this->assertEquals(1, $state->get('order_place_test_pre_transition_' . $order->id()));
+    $this->assertEquals(1, $state->get('order_place_test_post_transition_' . $order->id()));
+  }
+
+  public function providerForWhenToSaveOrder() {
+    return [
+      ['before'],
+      ['after'],
+    ];
   }
 
 }
