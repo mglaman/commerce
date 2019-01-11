@@ -49,7 +49,7 @@ class DummyRedirectController implements ContainerInjectionInterface {
     $total = $this->currentRequest->request->get('total');
 
     if ($total > 20) {
-      return new TrustedRedirectResponse($return);
+      return new TrustedRedirectResponse($return, 303);
     }
 
     return new TrustedRedirectResponse($cancel);

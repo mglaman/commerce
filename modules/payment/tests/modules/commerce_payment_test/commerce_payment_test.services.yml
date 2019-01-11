@@ -3,3 +3,8 @@ services:
     class: Drupal\commerce_payment_test\EventSubscriber\FilterPaymentGatewaysSubscriber
     tags:
       - { name: event_subscriber }
+  commerce_payment_test.order_paid_test_subscriber:
+    class: Drupal\commerce_payment_test\EventSubscriber\OrderPaidTestSubscriber
+    arguments: ['@state']
+    tags:
+      - { name: event_subscriber }
