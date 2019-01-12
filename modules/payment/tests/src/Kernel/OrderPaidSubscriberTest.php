@@ -106,7 +106,9 @@ class OrderPaidSubscriberTest extends CommerceKernelTestBase {
     ]);
     $payment->save();
 
-    $this->order = $this->reloadEntity($this->order);
+    // Requiring a reload of the order proves the the order modifications made
+    // on savnig a payment to trigger "order is paid" break references.
+    // $this->order = $this->reloadEntity($this->order);
     $this->assertEquals('draft', $this->order->getState()->getId());
     $this->assertEmpty($this->order->getOrderNumber());
     $this->assertEmpty($this->order->getPlacedTime());
@@ -115,8 +117,10 @@ class OrderPaidSubscriberTest extends CommerceKernelTestBase {
 
   /**
    * Confirms that off-site payments result in the order getting placed.
+   *
+   * @dataProvider providerPassOrderAsObject
    */
-  public function testOffsiteGateway() {
+  public function testOffsiteGateway($pass_order_as_object) {
     /** @var \Drupal\commerce_payment\Entity\PaymentGateway $gateway */
     $offsite_gateway = PaymentGateway::create([
       'id' => 'offsite',
@@ -135,18 +139,33 @@ class OrderPaidSubscriberTest extends CommerceKernelTestBase {
     $payment = Payment::create([
       'type' => 'payment_default',
       'payment_gateway' => $offsite_gateway->id(),
-      'order_id' => $this->order->id(),
+      'order_id' => $pass_order_as_object ? $this->order : $this->order->id(),
       'amount' => $this->order->getTotalPrice(),
       'state' => 'completed',
     ]);
     $payment->save();
 
-    $this->order = $this->reloadEntity($this->order);
+    // Requiring a reload of the order proves the the order modifications made
+    // on savnig a payment to trigger "order is paid" break references.
+    // $this->order = $this->reloadEntity($this->order);
     $this->assertEquals('completed', $this->order->getState()->getId());
     $this->assertFalse($this->order->isLocked());
     $this->assertNotEmpty($this->order->getOrderNumber());
     $this->assertNotEmpty($this->order->getPlacedTime());
     $this->assertNotEmpty($this->order->getCompletedTime());
+  }
+
+  /**
+   * Data provider.
+   *
+   * @return array
+   *   Data provider values.
+   */
+  public function providerPassOrderAsObject() {
+    return [
+      [FALSE],
+      [TRUE],
+    ];
   }
 
 }
