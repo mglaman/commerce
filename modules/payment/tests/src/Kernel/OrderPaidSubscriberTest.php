@@ -97,10 +97,12 @@ class OrderPaidSubscriberTest extends CommerceKernelTestBase {
     $this->order->set('payment_gateway', $onsite_gateway);
     $this->order->save();
 
-    $payment = Payment::create([
+    /** @var \Drupal\commerce_payment\PaymentStorageInterface $payment_storage */
+    $payment_storage = $this->container->get('entity_type.manager')->getStorage('commerce_payment');
+
+    $payment = $payment_storage->createForOrder($this->order, [
       'type' => 'payment_default',
       'payment_gateway' => $onsite_gateway->id(),
-      'order_id' => $this->order->id(),
       'amount' => $this->order->getTotalPrice(),
       'state' => 'completed',
     ]);
@@ -136,7 +138,11 @@ class OrderPaidSubscriberTest extends CommerceKernelTestBase {
     $this->order->lock();
     $this->order->save();
 
-    $payment = Payment::create([
+    /** @var \Drupal\commerce_payment\PaymentStorageInterface $payment_storage */
+    $payment_storage = $this->container->get('entity_type.manager')->getStorage('commerce_payment');
+
+
+    $payment = $payment_storage->createForOrder($this->order, [
       'type' => 'payment_default',
       'payment_gateway' => $offsite_gateway->id(),
       'order_id' => $pass_order_as_object ? $this->order : $this->order->id(),

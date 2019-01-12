@@ -11,6 +11,20 @@ use Drupal\Core\Entity\ContentEntityStorageInterface;
 interface PaymentStorageInterface extends ContentEntityStorageInterface {
 
   /**
+   * Constructs a new payment entity for an order.
+   *
+   * @param \Drupal\commerce_order\Entity\OrderInterface $order
+   *   The order.
+   * @param array $values
+   *   (optional) An array of values to set, keyed by property name. If the
+   *   entity type has bundles, the bundle key has to be specified.
+   *
+   * @return \Drupal\Core\Entity\EntityInterface
+   *   A new entity object.
+   */
+  public function createForOrder(OrderInterface $order, array $values = []);
+
+  /**
    * Loads the payment for the given remote ID.
    *
    * @param string $remote_id

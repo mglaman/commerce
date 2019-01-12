@@ -14,6 +14,15 @@ class PaymentStorage extends CommerceContentEntityStorage implements PaymentStor
   /**
    * {@inheritdoc}
    */
+  public function createForOrder(OrderInterface $order, array $values = []) {
+    return $this->create([
+      'order_id' => $order,
+    ] + $values);
+  }
+
+  /**
+   * {@inheritdoc}
+   */
   public function loadByRemoteId($remote_id) {
     $payments = $this->loadByProperties(['remote_id' => $remote_id]);
     $payment = reset($payments);

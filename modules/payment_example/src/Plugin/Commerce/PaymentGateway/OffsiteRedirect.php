@@ -72,12 +72,12 @@ class OffsiteRedirect extends OffsitePaymentGatewayBase {
    */
   public function onReturn(OrderInterface $order, Request $request) {
     // @todo Add examples of request validation.
+    /** @var \Drupal\commerce_payment\PaymentStorageInterface $payment_storage */
     $payment_storage = $this->entityTypeManager->getStorage('commerce_payment');
-    $payment = $payment_storage->create([
+    $payment = $payment_storage->createForOrder($order, [
       'state' => 'completed',
       'amount' => $order->getBalance(),
       'payment_gateway' => $this->entityId,
-      'order_id' => $order->id(),
       'remote_id' => $request->query->get('txn_id'),
       'remote_state' => $request->query->get('payment_status'),
     ]);
