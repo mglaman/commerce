@@ -72,28 +72,13 @@ class OrderItemTest extends CommerceKernelTestBase {
    * @covers ::setData
    * @covers ::getCreatedTime
    * @covers ::setCreatedTime
-   * @covers ::postSave
-   * @covers ::postDelete
    */
   public function testOrderItem() {
-    /** @var \Drupal\commerce_order\Entity\OrderInterface $order */
-    $order = Order::create([
-      'type' => 'default',
-      'state' => 'canceled',
-    ]);
-    $order->save();
-
     /** @var \Drupal\commerce_order\Entity\OrderItemInterface $order_item */
     $order_item = OrderItem::create([
       'type' => 'test',
-      'order_id' => $order->id(),
     ]);
     $order_item->save();
-    $order = $this->reloadEntity($order);
-    $order_item = $this->reloadEntity($order_item);
-
-    // Confirm that postSave() added the reference on the parent order.
-    $this->assertTrue($order->hasItem($order_item));
 
     $order_item->setTitle('My order item');
     $this->assertEquals('My order item', $order_item->getTitle());
@@ -147,11 +132,6 @@ class OrderItemTest extends CommerceKernelTestBase {
 
     $order_item->setCreatedTime(635879700);
     $this->assertEquals(635879700, $order_item->getCreatedTime());
-
-    // Confirm that deleting the order item deletes the reference.
-    $order_item->delete();
-    $order = $this->reloadEntity($order);
-    $this->assertFalse($order->hasItem($order_item));
   }
 
   /**
