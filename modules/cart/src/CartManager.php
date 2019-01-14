@@ -113,7 +113,10 @@ class CartManager implements CartManagerInterface {
       $saved_order_item = $matching_order_item;
     }
     else {
-      $order_item->set('order_id', $cart->id());
+      // Providing the order ID now causes the order item to attach itself to
+      // the order before we explicitly do, causing a background save.
+      // @see \Drupal\commerce_order\Entity\OrderItem::postSave
+      // $order_item->set('order_id', $cart->id());
       $order_item->save();
       $cart->addItem($order_item);
       $saved_order_item = $order_item;

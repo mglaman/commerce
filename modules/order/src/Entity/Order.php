@@ -606,13 +606,10 @@ class Order extends CommerceContentEntityBase implements OrderInterface {
   public function preSave(EntityStorageInterface $storage) {
     parent::preSave($storage);
 
-    if (isset($this->original) && !$this->isNew()) {
-      // A change to the order version must add an exception.
-      if ($this->original->getVersion() > $this->getVersion()) {
-        throw new OrderVersionMismatchException('The order has either been modified by another user, or you have already submitted modifications. As a result, your changes cannot be saved.');
-      }
-      $this->setVersion($this->getVersion() + 1);
+    if (isset($this->original) && !$this->isNew() && $this->original->getVersion() > $this->getVersion()) {
+      throw new OrderVersionMismatchException('The order has either been modified by another user, or you have already submitted modifications. As a result, your changes cannot be saved.');
     }
+    $this->setVersion($this->getVersion() + 1);
 
     if ($this->isNew() && !$this->getIpAddress()) {
       $this->setIpAddress(\Drupal::request()->getClientIp());
@@ -693,7 +690,8 @@ class Order extends CommerceContentEntityBase implements OrderInterface {
       ->setDescription(t('The order version number, it gets incremented on each save.'))
       ->setReadOnly(TRUE)
       ->setSetting('unsigned', TRUE)
-      ->setDefaultValue(1);
+      // Default to zero, so that the first save is version one.
+      ->setDefaultValue(0);
 
     $fields['store_id'] = BaseFieldDefinition::create('entity_reference')
       ->setLabel(t('Store'))
