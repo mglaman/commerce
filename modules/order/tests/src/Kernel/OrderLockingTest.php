@@ -8,6 +8,11 @@ use Drupal\commerce_order\Entity\OrderItemType;
 use Drupal\commerce_price\Price;
 use Drupal\Tests\commerce\Kernel\CommerceKernelTestBase;
 
+/**
+ * Tests optimistic locking for orders.
+ *
+ * @group commerce
+ */
 class OrderLockingTest extends CommerceKernelTestBase {
 
   /**
