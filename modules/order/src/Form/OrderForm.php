@@ -69,6 +69,11 @@ class OrderForm extends ContentEntityForm {
       '#type' => 'hidden',
       '#default_value' => $order->getChangedTime(),
     ];
+    // Version must be sent to the client, for later overwrite error checking.
+    $form['version'] = [
+      '#type' => 'hidden',
+      '#default_value' => $order->getVersion(),
+    ];
 
     $last_saved = $this->dateFormatter->format($order->getChangedTime(), 'short');
     $form['advanced'] = [
@@ -156,6 +161,19 @@ class OrderForm extends ContentEntityForm {
       ],
       '#markup' => '<h4 class="label inline">' . $label . '</h4> ' . $value,
     ];
+  }
+
+  /**
+   * {@inheritdoc}
+   *
+   * Orders do not implement EntityChangedInterface, ensure that the changed
+   * time is updated.
+   *
+   * @see \Drupal\Core\Entity\ContentEntityForm::updateChangedTime
+   */
+  public function submitForm(array &$form, FormStateInterface $form_state) {
+    parent::submitForm($form, $form_state);
+    $this->entity->setChangedTime($this->time->getRequestTime());
   }
 
   /**
