@@ -283,6 +283,9 @@ class OrderAdminTest extends OrderBrowserTestBase {
     $this->assertSession()->buttonNotExists('Place order');
     $this->assertSession()->buttonNotExists('Cancel order');
 
+    // The order was modified and needs to be reloaded.
+    $order = $this->reloadEntity($order);
+
     // Add an order item, confirm that it is displayed.
     $order_item = $this->createEntity('commerce_order_item', [
       'type' => 'default',
