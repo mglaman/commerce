@@ -3,7 +3,6 @@
 namespace Drupal\Tests\commerce_order\Kernel\Entity;
 
 use Drupal\commerce_order\Adjustment;
-use Drupal\commerce_order\Entity\Order;
 use Drupal\commerce_order\Entity\OrderItem;
 use Drupal\commerce_order\Entity\OrderItemType;
 use Drupal\commerce_price\Price;
@@ -74,7 +73,6 @@ class OrderItemTest extends CommerceKernelTestBase {
    * @covers ::setCreatedTime
    */
   public function testOrderItem() {
-    /** @var \Drupal\commerce_order\Entity\OrderItemInterface $order_item */
     $order_item = OrderItem::create([
       'type' => 'test',
     ]);
