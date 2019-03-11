@@ -92,6 +92,10 @@ class CustomerProfile extends EntityInlineFormBase {
     $form_display = EntityFormDisplay::collectRenderDisplay($this->entity, 'default');
     $form_display->buildForm($this->entity, $inline_form, $form_state);
     $inline_form = $this->prepareProfileForm($inline_form, $form_state);
+    $inline_form['add_to_addressbook'] = [
+      '#type' => 'checkbox',
+      '#title' => $this->t('Add this address to my address book'),
+    ];
 
     return $inline_form;
   }
@@ -117,6 +121,14 @@ class CustomerProfile extends EntityInlineFormBase {
     assert($this->entity instanceof ProfileInterface);
     $form_display = EntityFormDisplay::collectRenderDisplay($this->entity, 'default');
     $form_display->extractFormValues($this->entity, $inline_form, $form_state);
+
+    // @todo replace with methods available on the Profile entity.
+    // Set a flag to convert the profile to the addressbook.
+    $add_to_addressbook = $form_state->getValue($inline_form['add_to_addressbook']['#parents']);
+    if ($add_to_addressbook) {
+      $this->entity->get('data')->__set('add_to_addressbook', $add_to_addressbook);
+    }
+
     $this->entity->save();
   }
 

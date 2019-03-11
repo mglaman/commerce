@@ -125,4 +125,46 @@ class CheckoutProfileReuseTest extends CommerceBrowserTestBase {
     $this->assertEquals(0, $order_billing_profile->getOwnerId());
   }
 
+  public function testProfileAddToAddressbook() {
+    /** @var \Drupal\profile\ProfileStorageInterface $profile_storage */
+    $profile_storage = $this->container->get('entity_type.manager')->getStorage('profile');
+
+    $this->drupalGet($this->product->toUrl());
+    $this->submitForm([], 'Add to cart');
+    $this->drupalGet(Url::fromRoute('commerce_cart.page'));
+    $this->submitForm([], 'Checkout');
+    // Verify billing_information is empty.
+    $this->assertSession()->fieldValueEquals('billing_information[profile][address][0][address][given_name]', '');
+    $this->assertSession()->fieldValueEquals('billing_information[profile][address][0][address][family_name]', '');
+    $this->assertSession()->fieldValueEquals('billing_information[profile][address][0][address][address_line1]', '');
+    $this->assertSession()->fieldValueEquals('billing_information[profile][address][0][address][postal_code]', '');
+    $this->assertSession()->fieldValueEquals('billing_information[profile][address][0][address][locality]', '');
+    $this->assertSession()->fieldValueEquals('billing_information[profile][address][0][address][administrative_area]', '');
+    $this->submitForm([
+      'billing_information[profile][address][0][address][given_name]' => 'Frederick',
+      'billing_information[profile][address][0][address][family_name]' => 'Pabst',
+      'billing_information[profile][address][0][address][address_line1]' => 'Pabst Blue Ribbon Dr',
+      'billing_information[profile][address][0][address][postal_code]' => '53177',
+      'billing_information[profile][address][0][address][locality]' => 'Milwaukee',
+      'billing_information[profile][address][0][address][administrative_area]' => 'WI',
+      'billing_information[profile][add_to_addressbook]' => 1,
+    ], 'Continue to review');
+    $this->assertSession()->pageTextContains('Billing information');
+    $this->assertSession()->pageTextContains('Frederick Pabst');
+    $this->assertSession()->pageTextContains('Pabst Blue Ribbon Dr');
+    $this->submitForm([], 'Complete checkout');
+    $this->assertSession()->pageTextContains('Your order number is 1. You can view your order on your account page when logged in.');
+
+    // The user should not have any profiles in their addressbook.
+    $profiles = $profile_storage->loadMultipleByUser($this->account, 'customer', TRUE);
+    $this->assertCount(1, $profiles);
+
+    $order = Order::load(1);
+    /** @var \Drupal\profile\Entity\ProfileInterface $order_billing_profile */
+    $order_billing_profile = $order->getBillingProfile();
+
+    // The order's billing address should have no owner.
+    $this->assertEquals(0, $order_billing_profile->getOwnerId());
+  }
+
 }

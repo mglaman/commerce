@@ -17,6 +17,20 @@ use Drupal\field\FieldStorageConfigInterface;
 use Drupal\profile\Entity\ProfileTypeInterface;
 
 /**
+ * Implements hook_entity_base_field_info().
+ *
+ * @TODO Remove when Profile patched. Stub for mean time.
+ */
+function commerce_order_entity_base_field_info(\Drupal\Core\Entity\EntityTypeInterface $entity_type) {
+  if ($entity_type->id() === 'profile') {
+    $fields['data'] = \Drupal\Core\Field\BaseFieldDefinition::create('map')
+      ->setLabel(t('Data'))
+      ->setDescription(t('A serialized array of additional data.'));
+    return $fields;
+  }
+}
+
+/**
  * Implements hook_theme().
  */
 function commerce_order_theme($existing, $type, $theme, $path) {

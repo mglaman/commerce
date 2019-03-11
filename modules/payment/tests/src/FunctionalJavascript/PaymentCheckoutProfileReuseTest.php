@@ -164,6 +164,52 @@ class PaymentCheckoutProfileReuseTest extends CommerceWebDriverTestBase {
   }
 
   /**
+   * Tests that the billing information is copied to the addressbook.
+   */
+  public function testProfileCopiedToAddressbookPaymentMethodAddForm() {
+    /** @var \Drupal\profile\ProfileStorageInterface $profile_storage */
+    $profile_storage = $this->container->get('entity_type.manager')->getStorage('profile');
+
+    $this->drupalGet($this->product->toUrl());
+    $this->submitForm([], 'Add to cart');
+    $this->drupalGet(Url::fromRoute('commerce_checkout.form', ['commerce_order' => 1]));
+
+    // Verify billing_information is empty.
+    $this->assertSession()->fieldValueEquals('payment_information[add_payment_method][billing_information][address][0][address][given_name]', '');
+    $this->assertSession()->fieldValueEquals('payment_information[add_payment_method][billing_information][address][0][address][family_name]', '');
+    $this->assertSession()->fieldValueEquals('payment_information[add_payment_method][billing_information][address][0][address][address_line1]', '');
+    $this->assertSession()->fieldValueEquals('payment_information[add_payment_method][billing_information][address][0][address][postal_code]', '');
+    $this->assertSession()->fieldValueEquals('payment_information[add_payment_method][billing_information][address][0][address][locality]', '');
+    $this->assertSession()->fieldValueEquals('payment_information[add_payment_method][billing_information][address][0][address][administrative_area]', '');
+    $this->submitForm([
+      'payment_information[add_payment_method][payment_details][number]' => '4012888888881881',
+      'payment_information[add_payment_method][payment_details][expiration][month]' => '02',
+      'payment_information[add_payment_method][payment_details][expiration][year]' => '2020',
+      'payment_information[add_payment_method][payment_details][security_code]' => '123',
+      'payment_information[add_payment_method][billing_information][address][0][address][given_name]' => 'Johnny',
+      'payment_information[add_payment_method][billing_information][address][0][address][family_name]' => 'Appleseed',
+      'payment_information[add_payment_method][billing_information][address][0][address][address_line1]' => '123 New York Drive',
+      'payment_information[add_payment_method][billing_information][address][0][address][locality]' => 'New York City',
+      'payment_information[add_payment_method][billing_information][address][0][address][administrative_area]' => 'NY',
+      'payment_information[add_payment_method][billing_information][address][0][address][postal_code]' => '10001',
+      'payment_information[add_payment_method][billing_information][add_to_addressbook]' => 1,
+    ], 'Continue to review');
+    $this->submitForm([], 'Pay and complete purchase');
+    $this->assertSession()->pageTextContains('Your order number is 1. You can view your order on your account page when logged in.');
+
+    // The user should not have any profiles in their addressbook.
+    $profiles = $profile_storage->loadMultipleByUser($this->account, 'customer', TRUE);
+    $this->assertCount(1, $profiles);
+
+    $order = Order::load(1);
+    /** @var \Drupal\profile\Entity\ProfileInterface $order_billing_profile */
+    $order_billing_profile = $order->getBillingProfile();
+
+    // The order's billing address should have no owner.
+    $this->assertEquals(0, $order_billing_profile->getOwnerId());
+  }
+
+  /**
    * Tests that the billing information is not copied to the addressbook.
    */
   public function testProfileNotCopiedToAddressbookPaymentInformationForm() {
@@ -197,6 +243,50 @@ class PaymentCheckoutProfileReuseTest extends CommerceWebDriverTestBase {
     // The user should not have any profiles in their addressbook.
     $profiles = $profile_storage->loadMultipleByUser($this->account, 'customer', TRUE);
     $this->assertCount(0, $profiles);
+
+    $order = Order::load(1);
+    /** @var \Drupal\profile\Entity\ProfileInterface $order_billing_profile */
+    $order_billing_profile = $order->getBillingProfile();
+
+    // The order's billing address should have no owner.
+    $this->assertEquals(0, $order_billing_profile->getOwnerId());
+  }
+
+  /**
+   * Tests that the billing information is not copied to the addressbook.
+   */
+  public function testProfileCopiedToAddressbookPaymentInformationForm() {
+    /** @var \Drupal\profile\ProfileStorageInterface $profile_storage */
+    $profile_storage = $this->container->get('entity_type.manager')->getStorage('profile');
+
+    $this->drupalGet($this->product->toUrl());
+    $this->submitForm([], 'Add to cart');
+    $this->drupalGet(Url::fromRoute('commerce_checkout.form', ['commerce_order' => 1]));
+    $radio_button = $this->getSession()->getPage()->findField('Example');
+    $radio_button->click();
+    $this->waitForAjaxToFinish();
+    // Verify billing_information is empty.
+    $this->assertSession()->fieldValueEquals('payment_information[billing_information][address][0][address][given_name]', '');
+    $this->assertSession()->fieldValueEquals('payment_information[billing_information][address][0][address][family_name]', '');
+    $this->assertSession()->fieldValueEquals('payment_information[billing_information][address][0][address][address_line1]', '');
+    $this->assertSession()->fieldValueEquals('payment_information[billing_information][address][0][address][postal_code]', '');
+    $this->assertSession()->fieldValueEquals('payment_information[billing_information][address][0][address][locality]', '');
+    $this->assertSession()->fieldValueEquals('payment_information[billing_information][address][0][address][administrative_area]', '');
+    $this->submitForm([
+      'payment_information[billing_information][address][0][address][given_name]' => 'Johnny',
+      'payment_information[billing_information][address][0][address][family_name]' => 'Appleseed',
+      'payment_information[billing_information][address][0][address][address_line1]' => '123 New York Drive',
+      'payment_information[billing_information][address][0][address][locality]' => 'New York City',
+      'payment_information[billing_information][address][0][address][administrative_area]' => 'NY',
+      'payment_information[billing_information][address][0][address][postal_code]' => '10001',
+      'payment_information[billing_information][add_to_addressbook]' => 1,
+    ], 'Continue to review');
+    $this->submitForm([], 'Pay and complete purchase');
+    $this->assertSession()->pageTextContains('Your order number is 1. You can view your order on your account page when logged in.');
+
+    // The user should not have any profiles in their addressbook.
+    $profiles = $profile_storage->loadMultipleByUser($this->account, 'customer', TRUE);
+    $this->assertCount(1, $profiles);
 
     $order = Order::load(1);
     /** @var \Drupal\profile\Entity\ProfileInterface $order_billing_profile */

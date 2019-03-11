@@ -57,6 +57,11 @@ services:
     tags:
       - { name: 'event_subscriber' }
 
+  commerce_order.order_billing_profile_convert:
+    class: Drupal\commerce_order\EventSubscriber\BillingProfileConvertSubscriber
+    tags:
+      - { name: event_subscriber }
+
   commerce_order.order_receipt_mail:
     class: Drupal\commerce_order\Mail\OrderReceiptMail
     arguments: ['@entity_type.manager', '@commerce.mail_handler', '@commerce_order.order_total_summary']
