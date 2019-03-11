@@ -42,13 +42,6 @@ class PaymentMethodAddForm extends PaymentGatewayFormBase implements ContainerIn
   protected $storeStorage;
 
   /**
-   * The profile storage.
-   *
-   * @var \Drupal\profile\ProfileStorageInterface
-   */
-  protected $profileStorage;
-
-  /**
    * The logger.
    *
    * @var \Psr\Log\LoggerInterface
