@@ -4,6 +4,7 @@ namespace Drupal\commerce_checkout\Plugin\Commerce\CheckoutPane;
 
 use Drupal\commerce\InlineFormManager;
 use Drupal\commerce_checkout\Plugin\Commerce\CheckoutFlow\CheckoutFlowInterface;
+use Drupal\commerce_order\CustomerBillingProfileTrait;
 use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\user\Entity\User;
@@ -20,6 +21,8 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
  * )
  */
 class BillingInformation extends CheckoutPaneBase implements CheckoutPaneInterface {
+
+  use CustomerBillingProfileTrait;
 
   /**
    * The inline form manager.
@@ -80,25 +83,7 @@ class BillingInformation extends CheckoutPaneBase implements CheckoutPaneInterfa
    * {@inheritdoc}
    */
   public function buildPaneForm(array $pane_form, FormStateInterface $form_state, array &$complete_form) {
-    // @todo make this logic reusable.
-    // @see \Drupal\commerce_payment\Plugin\Commerce\CheckoutPane\PaymentInformation::buildBillingProfileForm
-    // @see \Drupal\commerce_payment\PluginForm\PaymentMethodAddForm::buildConfigurationForm
-    $profile = $this->order->getBillingProfile();
-    if (!$profile) {
-      /** @var \Drupal\profile\ProfileStorageInterface $profile_storage */
-      $profile_storage = $this->entityTypeManager->getStorage('profile');
-
-      $existing_profile = $profile_storage->loadDefaultByUser($this->order->getCustomer(), 'customer');
-      if (!$existing_profile) {
-        $existing_profile = $profile_storage->create([
-          'type' => 'customer',
-          'uid' => $this->order->getCustomerId(),
-        ]);
-      }
-
-      $profile = $existing_profile->createDuplicate();
-      $profile->setOwner(User::getAnonymousUser());
-    }
+    $profile = $this->ensureParentProfileCopy('customer', $this->order->getCustomer(), $this->order->getBillingProfile());
     $inline_form = $this->inlineFormManager->createInstance('customer_profile', [
       'available_countries' => $this->order->getStore()->getBillingCountries(),
     ], $profile);

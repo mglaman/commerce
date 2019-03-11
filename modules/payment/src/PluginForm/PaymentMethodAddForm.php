@@ -3,6 +3,7 @@
 namespace Drupal\commerce_payment\PluginForm;
 
 use Drupal\commerce\InlineFormManager;
+use Drupal\commerce_order\CustomerBillingProfileTrait;
 use Drupal\commerce_payment\CreditCard;
 use Drupal\commerce_payment\Exception\DeclineException;
 use Drupal\commerce_payment\Exception\PaymentGatewayException;
@@ -16,6 +17,8 @@ use Psr\Log\LoggerInterface;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 
 class PaymentMethodAddForm extends PaymentGatewayFormBase implements ContainerInjectionInterface {
+
+  use CustomerBillingProfileTrait;
 
   /**
    * The inline form manager.
@@ -112,20 +115,7 @@ class PaymentMethodAddForm extends PaymentGatewayFormBase implements ContainerIn
       $form['payment_details'] = $this->buildPayPalForm($form['payment_details'], $form_state);
     }
 
-    // @todo this duplicates logic in \Drupal\commerce_checkout\Plugin\Commerce\CheckoutPane\BillingInformation
-    $billing_profile = $payment_method->getBillingProfile();
-    if (!$billing_profile) {
-      $existing_profile = $this->profileStorage->loadDefaultByUser($payment_method->getOwner(), 'customer');
-      if (!$existing_profile) {
-        $existing_profile = $this->profileStorage->create([
-          'type' => 'customer',
-          'uid' => $payment_method->getOwnerId(),
-        ]);
-      }
-
-      $billing_profile = $existing_profile->createDuplicate();
-      $billing_profile->setOwner(User::getAnonymousUser());
-    }
+    $billing_profile = $this->ensureParentProfileCopy('customer', $payment_method->getOwner(), $payment_method->getBillingProfile());
 
     if ($order = $this->routeMatch->getParameter('commerce_order')) {
       $store = $order->getStore();

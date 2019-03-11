@@ -5,6 +5,7 @@ namespace Drupal\commerce_payment\Plugin\Commerce\CheckoutPane;
 use Drupal\commerce\InlineFormManager;
 use Drupal\commerce_checkout\Plugin\Commerce\CheckoutFlow\CheckoutFlowInterface;
 use Drupal\commerce_checkout\Plugin\Commerce\CheckoutPane\CheckoutPaneBase;
+use Drupal\commerce_order\CustomerBillingProfileTrait;
 use Drupal\commerce_payment\PaymentOption;
 use Drupal\commerce_payment\PaymentOptionsBuilderInterface;
 use Drupal\commerce_payment\Plugin\Commerce\PaymentGateway\SupportsStoredPaymentMethodsInterface;
@@ -32,6 +33,8 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
  * )
  */
 class PaymentInformation extends CheckoutPaneBase {
+
+  use CustomerBillingProfileTrait;
 
   /**
    * The current user.
@@ -266,23 +269,7 @@ class PaymentInformation extends CheckoutPaneBase {
    *   The modified pane form.
    */
   protected function buildBillingProfileForm(array $pane_form, FormStateInterface $form_state) {
-    // @todo this duplicates logic in \Drupal\commerce_checkout\Plugin\Commerce\CheckoutPane\BillingInformation
-    $billing_profile = $this->order->getBillingProfile();
-    if (!$billing_profile) {
-      /** @var \Drupal\profile\ProfileStorageInterface $profile_storage */
-      $profile_storage = $this->entityTypeManager->getStorage('profile');
-
-      $existing_profile = $profile_storage->loadDefaultByUser($this->order->getCustomer(), 'customer');
-      if (!$existing_profile) {
-        $existing_profile = $profile_storage->create([
-          'type' => 'customer',
-          'uid' => $this->order->getCustomerId(),
-        ]);
-      }
-
-      $billing_profile = $existing_profile->createDuplicate();
-      $billing_profile->setOwner(User::getAnonymousUser());
-    }
+    $billing_profile = $this->ensureParentProfileCopy('customer', $this->order->getCustomer(), $this->order->getBillingProfile());
     $inline_form = $this->inlineFormManager->createInstance('customer_profile', [
       'available_countries' => $this->order->getStore()->getBillingCountries(),
     ], $billing_profile);
