@@ -95,6 +95,7 @@ class CustomerProfile extends EntityInlineFormBase {
     $inline_form['add_to_addressbook'] = [
       '#type' => 'checkbox',
       '#title' => $this->t('Add this address to my address book'),
+      '#default_value' => $this->entity->get('data')->__isset('add_to_addressbook'),
     ];
 
     return $inline_form;
