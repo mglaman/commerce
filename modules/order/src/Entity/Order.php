@@ -594,6 +594,12 @@ class Order extends CommerceContentEntityBase implements OrderInterface {
       $this->setEmail($customer->getEmail());
     }
 
+    $billing_profile = $this->getBillingProfile();
+    if ($billing_profile && $billing_profile->getOwnerId() !== 0) {
+      $billing_profile->setOwnerId(0);
+      $billing_profile->save();
+    }
+
     if ($this->getState()->getId() == 'draft') {
       // Refresh draft orders on every save.
       if (empty($this->getRefreshState())) {

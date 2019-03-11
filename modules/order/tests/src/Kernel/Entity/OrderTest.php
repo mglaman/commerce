@@ -580,4 +580,33 @@ class OrderTest extends CommerceKernelTestBase {
     $this->assertEquals(1, $another_order->getData('order_test_called'));
   }
 
+  /**
+   * @covers ::preSave
+   */
+  public function testBillingProfileOwner() {
+    $customer = $this->createUser();
+    $profile = Profile::create([
+      'type' => 'customer',
+      'uid' => $customer->id(),
+    ]);
+    $profile->save();
+    $profile = $this->reloadEntity($profile);
+
+    /** @var \Drupal\commerce_order\Entity\OrderInterface $order */
+    $order = Order::create([
+      'type' => 'default',
+      'state' => 'completed',
+      'store_id' => $this->store->id(),
+      'uid' => $customer->id(),
+    ]);
+    $order->save();
+
+    $order->setBillingProfile($profile);
+    $this->assertEquals($profile, $order->getBillingProfile());
+    $order->save();
+    /** @var \Drupal\profile\Entity\ProfileInterface $profile */
+    $profile = $this->reloadEntity($profile);
+    $this->assertEquals(0, $profile->getOwnerId());
+  }
+
 }

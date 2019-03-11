@@ -143,4 +143,33 @@ class PaymentMethodTest extends CommerceKernelTestBase {
     $this->assertEquals(635879700, $payment_method->getCreatedTime());
   }
 
+  /**
+   * @covers ::preSave
+   */
+  public function testBillingProfileOwner() {
+    $customer = $this->createUser();
+    /** @var \Drupal\profile\Entity\ProfileInterface $profile */
+    $profile = Profile::create([
+      'type' => 'customer',
+      'uid' => $customer->id(),
+    ]);
+    $profile->save();
+    $profile = $this->reloadEntity($profile);
+
+
+    /** @var \Drupal\commerce_payment\Entity\PaymentMethodInterface $payment_method */
+    $payment_method = PaymentMethod::create([
+      'type' => 'credit_card',
+      'payment_gateway' => 'example',
+    ]);
+    $payment_method->save();
+
+    $payment_method->setBillingProfile($profile);
+    $this->assertEquals($profile, $payment_method->getBillingProfile());
+    $payment_method->save();
+
+    $profile = $this->reloadEntity($profile);
+    $this->assertEquals(0, $profile->getOwnerId());
+  }
+
 }

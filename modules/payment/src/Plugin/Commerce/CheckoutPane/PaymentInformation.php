@@ -268,8 +268,8 @@ class PaymentInformation extends CheckoutPaneBase {
     $billing_profile = $this->order->getBillingProfile();
     if (!$billing_profile) {
       $billing_profile = $this->entityTypeManager->getStorage('profile')->create([
-        'uid' => $this->order->getCustomerId(),
         'type' => 'customer',
+        'uid' => 0,
       ]);
     }
     $inline_form = $this->inlineFormManager->createInstance('customer_profile', [

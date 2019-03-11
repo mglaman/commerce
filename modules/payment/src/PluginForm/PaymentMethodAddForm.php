@@ -109,7 +109,7 @@ class PaymentMethodAddForm extends PaymentGatewayFormBase implements ContainerIn
       /** @var \Drupal\profile\Entity\ProfileInterface $billing_profile */
       $billing_profile = Profile::create([
         'type' => 'customer',
-        'uid' => $payment_method->getOwnerId(),
+        'uid' => 0,
       ]);
     }
 

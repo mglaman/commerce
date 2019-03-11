@@ -44,12 +44,6 @@ class OrderAssignment implements OrderAssignmentInterface {
   public function assign(OrderInterface $order, UserInterface $account) {
     $order->setCustomer($account);
     $order->setEmail($account->getEmail());
-    // Update the referenced billing profile.
-    $billing_profile = $order->getBillingProfile();
-    if ($billing_profile && empty($billing_profile->getOwnerId())) {
-      $billing_profile->setOwner($account);
-      $billing_profile->save();
-    }
     // Notify other modules.
     $event = new OrderAssignEvent($order, $account);
     $this->eventDispatcher->dispatch(OrderEvents::ORDER_ASSIGN, $event);
