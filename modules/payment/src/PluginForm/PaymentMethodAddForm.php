@@ -11,6 +11,7 @@ use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Routing\RouteMatchInterface;
 use Drupal\profile\Entity\Profile;
+use Drupal\user\Entity\User;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 
@@ -38,6 +39,13 @@ class PaymentMethodAddForm extends PaymentGatewayFormBase implements ContainerIn
   protected $storeStorage;
 
   /**
+   * The profile storage.
+   *
+   * @var \Drupal\profile\ProfileStorageInterface
+   */
+  protected $profileStorage;
+
+  /**
    * The logger.
    *
    * @var \Psr\Log\LoggerInterface
@@ -60,6 +68,7 @@ class PaymentMethodAddForm extends PaymentGatewayFormBase implements ContainerIn
     $this->inlineFormManager = $inline_form_manager;
     $this->routeMatch = $route_match;
     $this->storeStorage = $entity_type_manager->getStorage('commerce_store');
+    $this->profileStorage = $entity_type_manager->getStorage('profile');
     $this->logger = $logger;
   }
 
@@ -103,14 +112,19 @@ class PaymentMethodAddForm extends PaymentGatewayFormBase implements ContainerIn
       $form['payment_details'] = $this->buildPayPalForm($form['payment_details'], $form_state);
     }
 
-    /** @var \Drupal\profile\Entity\ProfileInterface $billing_profile */
+    // @todo this duplicates logic in \Drupal\commerce_checkout\Plugin\Commerce\CheckoutPane\BillingInformation
     $billing_profile = $payment_method->getBillingProfile();
     if (!$billing_profile) {
-      /** @var \Drupal\profile\Entity\ProfileInterface $billing_profile */
-      $billing_profile = Profile::create([
-        'type' => 'customer',
-        'uid' => $payment_method->getOwnerId(),
-      ]);
+      $existing_profile = $this->profileStorage->loadDefaultByUser($payment_method->getOwner(), 'customer');
+      if (!$existing_profile) {
+        $existing_profile = $this->profileStorage->create([
+          'type' => 'customer',
+          'uid' => $payment_method->getOwnerId(),
+        ]);
+      }
+
+      $billing_profile = $existing_profile->createDuplicate();
+      $billing_profile->setOwner(User::getAnonymousUser());
     }
 
     if ($order = $this->routeMatch->getParameter('commerce_order')) {

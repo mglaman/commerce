@@ -13,6 +13,7 @@ use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Session\AccountInterface;
 use Drupal\Core\Url;
+use Drupal\user\Entity\User;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 
 /**
@@ -265,12 +266,22 @@ class PaymentInformation extends CheckoutPaneBase {
    *   The modified pane form.
    */
   protected function buildBillingProfileForm(array $pane_form, FormStateInterface $form_state) {
+    // @todo this duplicates logic in \Drupal\commerce_checkout\Plugin\Commerce\CheckoutPane\BillingInformation
     $billing_profile = $this->order->getBillingProfile();
     if (!$billing_profile) {
-      $billing_profile = $this->entityTypeManager->getStorage('profile')->create([
-        'uid' => $this->order->getCustomerId(),
-        'type' => 'customer',
-      ]);
+      /** @var \Drupal\profile\ProfileStorageInterface $profile_storage */
+      $profile_storage = $this->entityTypeManager->getStorage('profile');
+
+      $existing_profile = $profile_storage->loadDefaultByUser($this->order->getCustomer(), 'customer');
+      if (!$existing_profile) {
+        $existing_profile = $profile_storage->create([
+          'type' => 'customer',
+          'uid' => $this->order->getCustomerId(),
+        ]);
+      }
+
+      $billing_profile = $existing_profile->createDuplicate();
+      $billing_profile->setOwner(User::getAnonymousUser());
     }
     $inline_form = $this->inlineFormManager->createInstance('customer_profile', [
       'available_countries' => $this->order->getStore()->getBillingCountries(),
