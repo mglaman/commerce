@@ -85,4 +85,5 @@ class QueryAccessSubscriber implements EventSubscriberInterface {
     // Prevent loading locked orders.
     $conditions->addCondition('locked', FALSE);
   }
+
 }
