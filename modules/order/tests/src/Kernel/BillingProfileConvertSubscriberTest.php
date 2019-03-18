@@ -148,6 +148,11 @@ class BillingProfileConvertSubscriberTest extends CommerceKernelTestBase {
     }
   }
 
+  /**
+   * Data for billing profile conversion test.
+   *
+   * @return \Generator
+   */
   public function dataForBillingProfileConversion() {
     // Anonymous, do not convert.
     yield [FALSE, FALSE];

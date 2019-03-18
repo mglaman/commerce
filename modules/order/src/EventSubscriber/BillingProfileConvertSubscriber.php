@@ -6,7 +6,6 @@ use Drupal\commerce_order\Entity\OrderInterface;
 use Drupal\commerce_order\Event\OrderAssignEvent;
 use Drupal\Core\Field\BaseFieldDefinition;
 use Drupal\profile\Entity\Profile;
-use Drupal\profile\Entity\ProfileInterface;
 use Drupal\state_machine\Event\WorkflowTransitionEvent;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 
@@ -39,7 +38,12 @@ class BillingProfileConvertSubscriber implements EventSubscriberInterface {
     }
   }
 
-
+  /**
+   * Converts the order's billing profile.
+   *
+   * @param \Drupal\commerce_order\Event\OrderAssignEvent $event
+   *   The event.
+   */
   public function convertProfilesOnOrderAssignment(OrderAssignEvent $event) {
     /** @var \Drupal\commerce_order\Entity\OrderInterface $order */
     $order = $event->getOrder();
@@ -48,6 +52,15 @@ class BillingProfileConvertSubscriber implements EventSubscriberInterface {
     }
   }
 
+  /**
+   * Checks if the order's billing profile should be converted.
+   *
+   * @param \Drupal\commerce_order\Entity\OrderInterface $order
+   *   The order.
+   *
+   * @return bool
+   *   Returns TRUE if the profile should be converted, FALSE otherwise.
+   */
   protected function shouldConvertProfile(OrderInterface $order) {
     // Skip anonymous users.
     if ($order->getCustomerId() === 0) {
@@ -63,10 +76,15 @@ class BillingProfileConvertSubscriber implements EventSubscriberInterface {
   }
 
   /**
+   * Converts the order's billing profile.
+   *
+   * @todo refactor params to be source profile and target user.
+   *
    * @param \Drupal\commerce_order\Entity\OrderInterface $order
+   *   The order.
    *
    * @return \Drupal\Core\Entity\EntityInterface|\Drupal\profile\Entity\Profile
-   * @throws \Drupal\Core\Entity\EntityStorageException
+   *   The converted profile.
    */
   protected function convertProfile(OrderInterface $order) {
     $profile_to_copy = $order->getBillingProfile();

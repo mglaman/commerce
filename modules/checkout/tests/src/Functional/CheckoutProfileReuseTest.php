@@ -118,6 +118,9 @@ class CheckoutProfileReuseTest extends CommerceBrowserTestBase {
     $this->assertEquals(0, $order_billing_profile->getOwnerId());
   }
 
+  /**
+   * Test copying to addressbook.
+   */
   public function testProfileAddToAddressbook() {
     /** @var \Drupal\profile\ProfileStorageInterface $profile_storage */
     $profile_storage = $this->container->get('entity_type.manager')->getStorage('profile');

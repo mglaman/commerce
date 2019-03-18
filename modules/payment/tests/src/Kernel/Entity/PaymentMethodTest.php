@@ -156,7 +156,6 @@ class PaymentMethodTest extends CommerceKernelTestBase {
     $profile->save();
     $profile = $this->reloadEntity($profile);
 
-
     /** @var \Drupal\commerce_payment\Entity\PaymentMethodInterface $payment_method */
     $payment_method = PaymentMethod::create([
       'type' => 'credit_card',
