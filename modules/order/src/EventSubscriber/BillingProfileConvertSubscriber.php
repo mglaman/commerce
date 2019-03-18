@@ -31,7 +31,7 @@ class BillingProfileConvertSubscriber implements EventSubscriberInterface {
     $billing_profile = $order->getBillingProfile();
 
     // @todo when Profile has data field + methods, use those.
-    if ($billing_profile->get('data')->isEmpty()) {
+    if (!$billing_profile || $billing_profile->get('data')->isEmpty()) {
       return;
     }
 
