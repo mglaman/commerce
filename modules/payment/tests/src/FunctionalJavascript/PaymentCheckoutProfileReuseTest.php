@@ -189,6 +189,7 @@ class PaymentCheckoutProfileReuseTest extends CommerceWebDriverTestBase {
     $profiles = $profile_storage->loadMultipleByUser($this->account, 'customer', TRUE);
     $this->assertCount(1, $profiles);
     $profile = reset($profiles);
+
     /** @var \Drupal\address\Plugin\Field\FieldType\AddressItem $address */
     $address = $profile->get('address')->first();
     $this->assertEquals('Johnny', $address->getGivenName());

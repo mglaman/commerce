@@ -72,7 +72,7 @@ class BillingProfileConvertSubscriber implements EventSubscriberInterface {
       return FALSE;
     }
     $data = $billing_profile->get('data')->first()->getValue();
-    return isset($data['add_to_addressbook']) && $data['add_to_addressbook'] === TRUE;
+    return !empty($data['add_to_addressbook']);
   }
 
   /**
