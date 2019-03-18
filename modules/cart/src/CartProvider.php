@@ -210,11 +210,7 @@ class CartProvider implements CartProviderInterface {
 
     if ($account->isAuthenticated()) {
       $query = $this->orderStorage->getQuery()
-        ->condition('state', 'draft')
-        ->condition('cart', TRUE)
-        ->condition('uid', $account->id())
-        ->sort('order_id', 'DESC')
-        ->accessCheck(FALSE);
+        ->sort('order_id', 'DESC');
       $cart_ids = $query->execute();
     }
     else {

@@ -117,9 +117,10 @@ class CheckoutController implements ContainerInjectionInterface {
       $customer_check = $account->id() == $order->getCustomerId();
     }
     else {
-      $active_cart = $this->cartSession->hasCartId($order->id(), CartSession::ACTIVE);
-      $completed_cart = $this->cartSession->hasCartId($order->id(), CartSession::COMPLETED);
-      $customer_check = $active_cart || $completed_cart;
+      $order_storage = \Drupal::entityTypeManager()->getStorage('commerce_order');
+      $order_query = $order_storage->getQuery();
+      $orders_with_access = $order_query->execute();
+      $customer_check = in_array($order->id(), $orders_with_access);
     }
 
     $access = AccessResult::allowedIf($customer_check)

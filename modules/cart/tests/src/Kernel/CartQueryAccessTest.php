@@ -86,8 +86,9 @@ class CartQueryAccessTest extends CommerceKernelTestBase {
     $conditions = $this->handler->getConditions('view');
     $expected_conditions = [
       new Condition('order_id', [$cart->id()]),
+      new Condition('locked', FALSE),
     ];
-    $this->assertEquals(1, $conditions->count());
+    $this->assertEquals(2, $conditions->count());
     $this->assertEquals($expected_conditions, $conditions->getConditions());
     $this->assertEquals(['user.permissions'], $conditions->getCacheContexts());
     $this->assertFalse($conditions->isAlwaysFalse());
@@ -98,8 +99,9 @@ class CartQueryAccessTest extends CommerceKernelTestBase {
     $conditions = $this->handler->getConditions('view');
     $expected_conditions = [
       new Condition('order_id', [$another_cart->id(), $cart->id()]),
+      new Condition('locked', FALSE),
     ];
-    $this->assertEquals(1, $conditions->count());
+    $this->assertEquals(2, $conditions->count());
     $this->assertEquals($expected_conditions, $conditions->getConditions());
     $this->assertEquals(['user.permissions'], $conditions->getCacheContexts());
     $this->assertFalse($conditions->isAlwaysFalse());

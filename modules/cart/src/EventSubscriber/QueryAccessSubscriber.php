@@ -66,16 +66,23 @@ class QueryAccessSubscriber implements EventSubscriberInterface {
     $account = $event->getAccount();
     // Any user can view their own active carts, regardless of any permissions.
     // Anonymous users can also see their own completed carts.
-    $cart_ids = $this->cartProvider->getCartIds($account);
     if ($account->isAnonymous()) {
+      $cart_ids = $this->cartSession->getCartIds(CartSessionInterface::ACTIVE);
       $completed_cart_ids = $this->cartSession->getCartIds(CartSessionInterface::COMPLETED);
       $cart_ids = array_merge($cart_ids, $completed_cart_ids);
+      if (!empty($cart_ids)) {
+        $conditions->addCondition('order_id', $cart_ids);
+        $conditions->alwaysFalse(FALSE);
+      }
     }
-
-    if (!empty($cart_ids)) {
-      $conditions->addCondition('order_id', $cart_ids);
+    else {
+      $conditions->addCondition('uid', $account->id());
+      $conditions->addCondition('state', 'draft');
+      $conditions->addCondition('cart', TRUE);
       $conditions->alwaysFalse(FALSE);
     }
-  }
 
+    // Prevent loading locked orders.
+    $conditions->addCondition('locked', FALSE);
+  }
 }
