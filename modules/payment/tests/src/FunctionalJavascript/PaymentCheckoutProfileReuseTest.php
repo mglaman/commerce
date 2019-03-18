@@ -128,14 +128,6 @@ class PaymentCheckoutProfileReuseTest extends CommerceWebDriverTestBase {
     $this->drupalGet($this->product->toUrl());
     $this->submitForm([], 'Add to cart');
     $this->drupalGet(Url::fromRoute('commerce_checkout.form', ['commerce_order' => 1]));
-
-    // Verify billing_information is empty.
-    $this->assertSession()->fieldValueEquals('payment_information[add_payment_method][billing_information][address][0][address][given_name]', '');
-    $this->assertSession()->fieldValueEquals('payment_information[add_payment_method][billing_information][address][0][address][family_name]', '');
-    $this->assertSession()->fieldValueEquals('payment_information[add_payment_method][billing_information][address][0][address][address_line1]', '');
-    $this->assertSession()->fieldValueEquals('payment_information[add_payment_method][billing_information][address][0][address][postal_code]', '');
-    $this->assertSession()->fieldValueEquals('payment_information[add_payment_method][billing_information][address][0][address][locality]', '');
-    $this->assertSession()->fieldValueEquals('payment_information[add_payment_method][billing_information][address][0][address][administrative_area]', '');
     $this->submitForm([
       'payment_information[add_payment_method][payment_details][number]' => '4012888888881881',
       'payment_information[add_payment_method][payment_details][expiration][month]' => '02',
@@ -151,16 +143,15 @@ class PaymentCheckoutProfileReuseTest extends CommerceWebDriverTestBase {
     $this->submitForm([], 'Pay and complete purchase');
     $this->assertSession()->pageTextContains('Your order number is 1. You can view your order on your account page when logged in.');
 
-    // The user should not have any profiles in their addressbook.
-    $profiles = $profile_storage->loadMultipleByUser($this->account, 'customer', TRUE);
-    $this->assertCount(0, $profiles);
-
+    // The order's billing address should have no owner.
     $order = Order::load(1);
     /** @var \Drupal\profile\Entity\ProfileInterface $order_billing_profile */
     $order_billing_profile = $order->getBillingProfile();
-
-    // The order's billing address should have no owner.
     $this->assertEquals(0, $order_billing_profile->getOwnerId());
+
+    // The user should not have any profiles in their addressbook.
+    $profiles = $profile_storage->loadMultipleByUser($this->account, 'customer', TRUE);
+    $this->assertCount(0, $profiles);
   }
 
   /**
@@ -173,14 +164,6 @@ class PaymentCheckoutProfileReuseTest extends CommerceWebDriverTestBase {
     $this->drupalGet($this->product->toUrl());
     $this->submitForm([], 'Add to cart');
     $this->drupalGet(Url::fromRoute('commerce_checkout.form', ['commerce_order' => 1]));
-
-    // Verify billing_information is empty.
-    $this->assertSession()->fieldValueEquals('payment_information[add_payment_method][billing_information][address][0][address][given_name]', '');
-    $this->assertSession()->fieldValueEquals('payment_information[add_payment_method][billing_information][address][0][address][family_name]', '');
-    $this->assertSession()->fieldValueEquals('payment_information[add_payment_method][billing_information][address][0][address][address_line1]', '');
-    $this->assertSession()->fieldValueEquals('payment_information[add_payment_method][billing_information][address][0][address][postal_code]', '');
-    $this->assertSession()->fieldValueEquals('payment_information[add_payment_method][billing_information][address][0][address][locality]', '');
-    $this->assertSession()->fieldValueEquals('payment_information[add_payment_method][billing_information][address][0][address][administrative_area]', '');
     $this->submitForm([
       'payment_information[add_payment_method][payment_details][number]' => '4012888888881881',
       'payment_information[add_payment_method][payment_details][expiration][month]' => '02',
@@ -197,16 +180,19 @@ class PaymentCheckoutProfileReuseTest extends CommerceWebDriverTestBase {
     $this->submitForm([], 'Pay and complete purchase');
     $this->assertSession()->pageTextContains('Your order number is 1. You can view your order on your account page when logged in.');
 
-    // The user should not have any profiles in their addressbook.
+    // The order's billing address should have no owner.
+    $order = Order::load(1);
+    $order_billing_profile = $order->getBillingProfile();
+    $this->assertEquals(0, $order_billing_profile->getOwnerId());
+
+    // Verify the profile is now in the user's addressbook.
     $profiles = $profile_storage->loadMultipleByUser($this->account, 'customer', TRUE);
     $this->assertCount(1, $profiles);
-
-    $order = Order::load(1);
-    /** @var \Drupal\profile\Entity\ProfileInterface $order_billing_profile */
-    $order_billing_profile = $order->getBillingProfile();
-
-    // The order's billing address should have no owner.
-    $this->assertEquals(0, $order_billing_profile->getOwnerId());
+    $profile = reset($profiles);
+    /** @var \Drupal\address\Plugin\Field\FieldType\AddressItem $address */
+    $address = $profile->get('address')->first();
+    $this->assertEquals('Johnny', $address->getGivenName());
+    $this->assertEquals('Appleseed', $address->getFamilyName());
   }
 
   /**
@@ -222,13 +208,6 @@ class PaymentCheckoutProfileReuseTest extends CommerceWebDriverTestBase {
     $radio_button = $this->getSession()->getPage()->findField('Example');
     $radio_button->click();
     $this->waitForAjaxToFinish();
-    // Verify billing_information is empty.
-    $this->assertSession()->fieldValueEquals('payment_information[billing_information][address][0][address][given_name]', '');
-    $this->assertSession()->fieldValueEquals('payment_information[billing_information][address][0][address][family_name]', '');
-    $this->assertSession()->fieldValueEquals('payment_information[billing_information][address][0][address][address_line1]', '');
-    $this->assertSession()->fieldValueEquals('payment_information[billing_information][address][0][address][postal_code]', '');
-    $this->assertSession()->fieldValueEquals('payment_information[billing_information][address][0][address][locality]', '');
-    $this->assertSession()->fieldValueEquals('payment_information[billing_information][address][0][address][administrative_area]', '');
     $this->submitForm([
       'payment_information[billing_information][address][0][address][given_name]' => 'Johnny',
       'payment_information[billing_information][address][0][address][family_name]' => 'Appleseed',
@@ -240,16 +219,14 @@ class PaymentCheckoutProfileReuseTest extends CommerceWebDriverTestBase {
     $this->submitForm([], 'Pay and complete purchase');
     $this->assertSession()->pageTextContains('Your order number is 1. You can view your order on your account page when logged in.');
 
+    // The order's billing address should have no owner.
+    $order = Order::load(1);
+    $order_billing_profile = $order->getBillingProfile();
+    $this->assertEquals(0, $order_billing_profile->getOwnerId());
+
     // The user should not have any profiles in their addressbook.
     $profiles = $profile_storage->loadMultipleByUser($this->account, 'customer', TRUE);
     $this->assertCount(0, $profiles);
-
-    $order = Order::load(1);
-    /** @var \Drupal\profile\Entity\ProfileInterface $order_billing_profile */
-    $order_billing_profile = $order->getBillingProfile();
-
-    // The order's billing address should have no owner.
-    $this->assertEquals(0, $order_billing_profile->getOwnerId());
   }
 
   /**
@@ -265,13 +242,6 @@ class PaymentCheckoutProfileReuseTest extends CommerceWebDriverTestBase {
     $radio_button = $this->getSession()->getPage()->findField('Example');
     $radio_button->click();
     $this->waitForAjaxToFinish();
-    // Verify billing_information is empty.
-    $this->assertSession()->fieldValueEquals('payment_information[billing_information][address][0][address][given_name]', '');
-    $this->assertSession()->fieldValueEquals('payment_information[billing_information][address][0][address][family_name]', '');
-    $this->assertSession()->fieldValueEquals('payment_information[billing_information][address][0][address][address_line1]', '');
-    $this->assertSession()->fieldValueEquals('payment_information[billing_information][address][0][address][postal_code]', '');
-    $this->assertSession()->fieldValueEquals('payment_information[billing_information][address][0][address][locality]', '');
-    $this->assertSession()->fieldValueEquals('payment_information[billing_information][address][0][address][administrative_area]', '');
     $this->submitForm([
       'payment_information[billing_information][address][0][address][given_name]' => 'Johnny',
       'payment_information[billing_information][address][0][address][family_name]' => 'Appleseed',
@@ -284,16 +254,19 @@ class PaymentCheckoutProfileReuseTest extends CommerceWebDriverTestBase {
     $this->submitForm([], 'Pay and complete purchase');
     $this->assertSession()->pageTextContains('Your order number is 1. You can view your order on your account page when logged in.');
 
-    // The user should not have any profiles in their addressbook.
+    // The order's billing address should have no owner.
+    $order = Order::load(1);
+    $order_billing_profile = $order->getBillingProfile();
+    $this->assertEquals(0, $order_billing_profile->getOwnerId());
+
+    // Verify the profile is now in the user's addressbook.
     $profiles = $profile_storage->loadMultipleByUser($this->account, 'customer', TRUE);
     $this->assertCount(1, $profiles);
-
-    $order = Order::load(1);
-    /** @var \Drupal\profile\Entity\ProfileInterface $order_billing_profile */
-    $order_billing_profile = $order->getBillingProfile();
-
-    // The order's billing address should have no owner.
-    $this->assertEquals(0, $order_billing_profile->getOwnerId());
+    $profile = reset($profiles);
+    /** @var \Drupal\address\Plugin\Field\FieldType\AddressItem $address */
+    $address = $profile->get('address')->first();
+    $this->assertEquals('Johnny', $address->getGivenName());
+    $this->assertEquals('Appleseed', $address->getFamilyName());
   }
 
 }

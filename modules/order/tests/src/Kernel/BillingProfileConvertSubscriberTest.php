@@ -110,21 +110,20 @@ class BillingProfileConvertSubscriberTest extends CommerceKernelTestBase {
 
     // If we did not convert, there should only be the one profile created for
     // the order.
-    $base_profile_query = $this->profileStorage->getQuery()->accessCheck(FALSE);
     if ($convert === FALSE) {
-      $profile_ids = (clone $base_profile_query)->execute();
+      $profile_ids = $this->profileQuery()->execute();
       $this->assertCount(1, $profile_ids);
     }
     // If we did convert, but the user did not become authenticated, there
     // should not be a copied profile.
     elseif ($convert === TRUE && $authenticated === FALSE) {
-      $profile_ids = (clone $base_profile_query)->execute();
+      $profile_ids = $this->profileQuery()->execute();
       $this->assertCount(1, $profile_ids);
     }
     elseif ($convert === TRUE && $authenticated === TRUE) {
-      $profile_ids = (clone $base_profile_query)->execute();
+      $profile_ids = $this->profileQuery()->execute();
       $this->assertCount(2, $profile_ids);
-      $profile_ids = (clone $base_profile_query)->condition('uid', $user->id())->execute();
+      $profile_ids = $this->profileQuery()->condition('uid', $user->id())->execute();
       $this->assertCount(1, $profile_ids);
     }
 
@@ -135,15 +134,15 @@ class BillingProfileConvertSubscriberTest extends CommerceKernelTestBase {
       $order_assignment = $this->container->get('commerce_order.order_assignment');
       $order_assignment->assign($order, $new_user);
       if ($convert === TRUE) {
-        $profile_ids = (clone $base_profile_query)->execute();
+        $profile_ids = $this->profileQuery()->execute();
         $this->assertCount(2, $profile_ids);
-        $profile_ids = (clone $base_profile_query)->condition('uid', $user->id())->execute();
+        $profile_ids = $this->profileQuery()->condition('uid', $user->id())->execute();
         $this->assertCount(1, $profile_ids);
       }
       else {
-        $profile_ids = (clone $base_profile_query)->execute();
+        $profile_ids = $this->profileQuery()->execute();
         $this->assertCount(1, $profile_ids);
-        $profile_ids = (clone $base_profile_query)->condition('uid', $new_user->id())->execute();
+        $profile_ids = $this->profileQuery()->condition('uid', $new_user->id())->execute();
         $this->assertCount(0, $profile_ids);
       }
     }
@@ -158,6 +157,16 @@ class BillingProfileConvertSubscriberTest extends CommerceKernelTestBase {
     yield [TRUE, FALSE];
     // Logged in, convert.
     yield [TRUE, TRUE];
+  }
+
+  /**
+   * Returns a base Profile entity query without entity access.
+   *
+   * @return \Drupal\Core\Entity\Query\QueryInterface
+   *   The query.
+   */
+  protected function profileQuery() {
+    return $this->profileStorage->getQuery()->accessCheck(FALSE);
   }
 
 }
