@@ -48,7 +48,7 @@ class AddressesLocalAction extends DeriverBase implements ContainerDeriverInterf
     // Starting weight for ordering the local tasks.
     $weight = 0;
     $profile_type_storage = $this->entityTypeManager->getStorage('profile_type');
-    $profile_types = array_filter($profile_type_storage->loadMultiple(), function (ProfileTypeInterface $profile_type) {
+    $profile_types = array_filter($profile_type_storage->loadMultiple(), static function (ProfileTypeInterface $profile_type) {
       return $profile_type->getThirdPartySetting('commerce_order', 'commerce_profile_type', FALSE);
     });
     foreach ($profile_types as $profile_type_id => $profile_type) {

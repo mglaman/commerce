@@ -2,6 +2,7 @@
 
 namespace Drupal\Tests\commerce_order\Functional;
 
+use Drupal\profile\Entity\Profile;
 use Drupal\profile\Entity\ProfileType;
 use Drupal\Tests\commerce\Functional\CommerceBrowserTestBase;
 
@@ -115,6 +116,33 @@ class AddressesTest extends CommerceBrowserTestBase {
     $this->getSession()->getPage()->clickLink('Addresses');
     $this->assertSession()->linkExists('Add new Customer');
     $this->assertSession()->linkExists('Add new Shipping');
+  }
+
+  public function testAddressesAvailable() {
+    $customer = $this->createUser([
+      'create customer profile',
+      'update own customer profile',
+      'view own customer profile',
+    ]);
+    $customer_profile = Profile::create([
+      'type' => 'customer',
+      'uid' => $customer->id(),
+    ]);
+    $customer_profile->get('address')->setValue([
+      'country_code' => 'US',
+      'postal_code' => '53177',
+      'locality' => 'Milwaukee',
+      'address_line1' => 'Pabst Blue Ribbon Dr',
+      'administrative_area' => 'WI',
+      'given_name' => 'Frederick',
+      'family_name' => 'Pabst',
+    ]);
+    $customer_profile->save();
+    $this->drupalLogin($customer);
+    $this->drupalGet($customer->toUrl());
+
+    $this->getSession()->getPage()->clickLink('Addresses');
+    $this->assertSession()->pageTextContains($customer_profile->label());
   }
 
 }
