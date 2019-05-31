@@ -57,9 +57,17 @@ function commerce_order_theme($existing, $type, $theme, $path) {
  * Implements hook_local_tasks_alter().
  */
 function commerce_order_local_tasks_alter(&$definitions) {
-  $id = 'entity.profile.user_profile_form:profile.type.customer';
-  if (isset($definitions[$id])) {
-    $definitions[$id]['title'] = t('Address book');
+  // Remove local tasks for all profile types used by Commerce as we provide our
+  // own page for managing them.
+  $profile_type_storage = \Drupal::entityTypeManager()->getStorage('profile_type');
+  $profile_types = array_filter($profile_type_storage->loadMultiple(), function (ProfileTypeInterface $profile_type) {
+    return $profile_type->getThirdPartySetting('commerce_order', 'commerce_profile_type', FALSE);
+  });
+  foreach ($profile_types as $profile_type) {
+    $derivative_key = "entity.profile.user_profile_form:profile.type.{$profile_type->id()}";
+    if (isset($definitions[$derivative_key])) {
+      unset($definitions[$derivative_key]);
+    }
   }
 }
 

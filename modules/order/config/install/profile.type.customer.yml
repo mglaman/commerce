@@ -9,3 +9,6 @@ label: Customer
 registration: false
 multiple: true
 weight: 0
+third_party_settings:
+  commerce_order:
+    commerce_profile_type: true

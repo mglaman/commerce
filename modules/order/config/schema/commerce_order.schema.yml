@@ -117,3 +117,12 @@ field.widget.settings.commerce_unit_price:
     require_confirmation:
       type: boolean
       label: 'Require confirmation before overriding the unit price'
+
+# @todo: Feels like this should go into the root `commerce` module.
+profile.type.*.third_party.commerce_order:
+  type: mapping
+  label: 'Commerce order settings'
+  mapping:
+    commerce_profile_type:
+      type: boolean
+      label: 'Commerce profile type'
