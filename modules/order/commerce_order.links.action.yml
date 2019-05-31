@@ -15,3 +15,6 @@ entity.commerce_order_item_type.add_form:
   title: 'Add order item type'
   appears_on:
     - entity.commerce_order_item_type.collection
+
+commerce_order.addresses_actions:
+  deriver: Drupal\commerce_order\Plugin\Derivative\AddressesLocalAction

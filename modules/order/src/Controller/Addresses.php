@@ -5,8 +5,8 @@ namespace Drupal\commerce_order\Controller;
 use Drupal\Core\Access\AccessResult;
 use Drupal\Core\DependencyInjection\ContainerInjectionInterface;
 use Drupal\Core\Entity\EntityTypeManagerInterface;
+use Drupal\Core\Routing\RouteMatchInterface;
 use Drupal\Core\Session\AccountInterface;
-use Drupal\user\UserInterface;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 
 class Addresses implements ContainerInjectionInterface {
@@ -23,7 +23,8 @@ class Addresses implements ContainerInjectionInterface {
     );
   }
 
-  public function checkAccess(AccountInterface $account, UserInterface $user) {
+  public function checkAccess(RouteMatchInterface $route_match, AccountInterface $account) {
+    $user = $route_match->getParameter('user');
     if ($account->id() === $user->id()) {
       return AccessResult::allowed()->cachePerUser();
     }
@@ -42,7 +43,9 @@ class Addresses implements ContainerInjectionInterface {
     // @todo list each profile type.
     // @todo we need local actions for adding addresses.
     // @todo this needs a local task on user pages.
-    return [];
+    return [
+      '#plain_text' => 'Placeholder',
+    ];
   }
 
 }

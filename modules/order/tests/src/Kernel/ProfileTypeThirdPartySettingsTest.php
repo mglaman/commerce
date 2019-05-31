@@ -2,19 +2,16 @@
 
 namespace Drupal\Tests\commerce_order\Kernel;
 
-use Drupal\KernelTests\KernelTestBase;
+use Drupal\KernelTests\Core\Entity\EntityKernelTestBase;
 use Drupal\profile\Entity\ProfileType;
 
 /**
  * @group commerce
  * @group commerce_order
  */
-class ProfileTypeThirdPartySettingsTest extends KernelTestBase {
+class ProfileTypeThirdPartySettingsTest extends EntityKernelTestBase {
 
-  protected static $modules = [
-    'system',
-    'user',
-    'field',
+  public static $modules = [
     'options',
     'views',
     'address',
@@ -34,6 +31,7 @@ class ProfileTypeThirdPartySettingsTest extends KernelTestBase {
    */
   protected function setUp() {
     parent::setUp();
+    $this->installEntitySchema('user');
     $this->installEntitySchema('profile');
     $this->installEntitySchema('commerce_order');
     $this->installConfig(['commerce_order']);
@@ -81,6 +79,24 @@ class ProfileTypeThirdPartySettingsTest extends KernelTestBase {
 
     $local_tasks_manager->clearCachedDefinitions();
     $this->assertFalse($local_tasks_manager->hasDefinition(sprintf($derivative_key, $new_profile->id())));
+  }
+
+  public function testLocalActions() {
+    $local_actions_manager = $this->container->get('plugin.manager.menu.local_action');
+    $derivative_key = 'commerce_order.addresses.%s';
+
+    $customer_profile_type = ProfileType::load('customer');
+    $this->assertFalse($local_actions_manager->hasDefinition(sprintf($derivative_key, $customer_profile_type->id())));
+
+    $test_account = $this->createUser([], [
+      'create customer profile',
+      'update own customer profile',
+      'view own customer profile',
+    ]);
+    $this->container->get('current_user')->setAccount($test_account);
+    $actions = $local_actions_manager->getActionsForRoute('commerce_order.user_addresses');
+    $this->assertNotEmpty($actions);
+    $this->assertArrayHasKey('commerce_order.addresses_actions:customer', $actions);
   }
 
 }
