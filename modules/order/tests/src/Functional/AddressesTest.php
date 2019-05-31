@@ -91,6 +91,7 @@ class AddressesTest extends CommerceBrowserTestBase {
       'label' => 'Test',
     ]);
     $test_profile_type->save();
+    drupal_flush_all_caches();
 
     $customer = $this->createUser([
       'create customer profile',
@@ -103,12 +104,12 @@ class AddressesTest extends CommerceBrowserTestBase {
       'update own test profile',
       'view own test profile',
     ]);
+
     $this->drupalLogin($customer);
     $this->drupalGet($customer->toUrl());
 
     $this->drupalGet($customer->toUrl());
-    // @todo this should show.
-    // $this->assertSession()->linkExists('Test');
+    $this->assertSession()->linkExists('Test');
     $this->assertSession()->linkNotExists('Shipping');
 
     $this->getSession()->getPage()->clickLink('Addresses');
