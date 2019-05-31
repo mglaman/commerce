@@ -237,3 +237,15 @@ function commerce_order_post_update_9() {
     $role->save();
   }
 }
+
+/**
+ * Mark the customer profile type as a commerce profile type.
+ */
+function commerce_order_post_update_10() {
+  $customer = \Drupal\profile\Entity\ProfileType::load('customer');
+  if ($customer) {
+    $customer->set('label', 'Address');
+    $customer->setThirdPartySetting('commerce_order', 'commerce_profile_type', TRUE);
+    $customer->save();
+  }
+}

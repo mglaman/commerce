@@ -48,6 +48,7 @@ class AddressesLocalAction extends DeriverBase implements ContainerDeriverInterf
     // Starting weight for ordering the local tasks.
     $weight = 0;
     $profile_type_storage = $this->entityTypeManager->getStorage('profile_type');
+    /** @var \Drupal\profile\Entity\ProfileTypeInterface[] $profile_types */
     $profile_types = array_filter($profile_type_storage->loadMultiple(), static function (ProfileTypeInterface $profile_type) {
       return $profile_type->getThirdPartySetting('commerce_order', 'commerce_profile_type', FALSE);
     });
@@ -59,6 +60,9 @@ class AddressesLocalAction extends DeriverBase implements ContainerDeriverInterf
         'route_parameters' => [
           'profile_type' => $profile_type_id,
         ],
+        // @todo: test that this ensures new actions appear w/ a new profile type.
+        // @todo if they do, add to Profile which has problems like this for tasks.
+        'cache_tags' => $profile_type->getCacheTags(),
         'weight' => ++$weight,
       ] + $base_plugin_definition;
     }
