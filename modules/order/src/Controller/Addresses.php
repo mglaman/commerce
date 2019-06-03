@@ -47,9 +47,11 @@ class Addresses implements ContainerInjectionInterface {
     $cacheability = new CacheableMetadata();
     $build = [];
     $profile_type_storage = $this->entityTypeManager->getStorage('profile_type');
-    $profile_types = array_filter($profile_type_storage->loadMultiple(), static function (ProfileTypeInterface $profile_type) {
-      return $profile_type->getThirdPartySetting('commerce_order', 'commerce_profile_type', FALSE);
-    });
+    /** @var \Drupal\profile\Entity\ProfileTypeInterface[] $profile_types */
+    $profile_types = $profile_type_storage->loadByProperties([
+      'multiple' => TRUE,
+      'third_party_settings.commerce_order.commerce_profile_type' => TRUE,
+    ]);
     $wrapper_element_type = count($profile_types) > 1 ? 'details' : 'container';
     foreach ($profile_types as $profile_type_id => $profile_type) {
       $cacheability->addCacheableDependency($profile_type);

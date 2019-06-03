@@ -60,9 +60,11 @@ function commerce_order_local_tasks_alter(&$definitions) {
   // Remove local tasks for all profile types used by Commerce as we provide our
   // own page for managing them.
   $profile_type_storage = \Drupal::entityTypeManager()->getStorage('profile_type');
-  $profile_types = array_filter($profile_type_storage->loadMultiple(), function (ProfileTypeInterface $profile_type) {
-    return $profile_type->getThirdPartySetting('commerce_order', 'commerce_profile_type', FALSE);
-  });
+
+  $profile_types = $profile_type_storage->loadByProperties([
+    'multiple' => TRUE,
+    'third_party_settings.commerce_order.commerce_profile_type' => TRUE,
+  ]);
   foreach ($profile_types as $profile_type) {
     $derivative_key = "entity.profile.user_profile_form:profile.type.{$profile_type->id()}";
     if (isset($definitions[$derivative_key])) {
@@ -240,6 +242,7 @@ function commerce_order_entity_operation_alter(array &$operations, EntityInterfa
 function commerce_order_form_field_config_edit_form_alter(array &$form, FormStateInterface $form_state) {
   /** @var \Drupal\Core\Field\FieldConfigInterface $entity */
   $entity = $form_state->getFormObject()->getEntity();
+  // @todo check if the profile type is use by commerce
   if ($entity->id() == 'profile.customer.address') {
     $form['settings']['available_countries']['#access'] = FALSE;
   }

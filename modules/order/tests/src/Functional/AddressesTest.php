@@ -213,4 +213,44 @@ class AddressesTest extends CommerceBrowserTestBase {
     $this->assertSession()->pageTextContains($shipping_profile->label());
   }
 
+  public function testWithNonMultipleProfileType() {
+    $bundle_entity_duplicator = $this->container->get('entity.bundle_entity_duplicator');
+    $customer_profile_type = ProfileType::load('customer');
+    $bundle_entity_duplicator->duplicate($customer_profile_type, [
+      'id' => 'shipping',
+      'label' => 'Shipping',
+      'multiple' => FALSE,
+    ]);
+    $test_profile_type = ProfileType::create([
+      'id' => 'test',
+      'label' => 'Test',
+    ]);
+    $test_profile_type->save();
+    drupal_flush_all_caches();
+
+    $customer = $this->createUser([
+      'create customer profile',
+      'update own customer profile',
+      'view own customer profile',
+      'create shipping profile',
+      'update own shipping profile',
+      'view own shipping profile',
+      'create test profile',
+      'update own test profile',
+      'view own test profile',
+    ]);
+
+
+    $this->drupalLogin($customer);
+    $this->drupalGet($customer->toUrl());
+
+    $this->drupalGet($customer->toUrl());
+    $this->assertSession()->linkExists('Test');
+    $this->assertSession()->linkExists('Shipping');
+
+    $this->getSession()->getPage()->clickLink('Addresses');
+    $this->assertSession()->linkExists('Add new Address');
+    $this->assertSession()->linkNotExists('Add new Shipping');
+  }
+
 }

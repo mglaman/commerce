@@ -20,12 +20,10 @@ class AddressesLocalAction extends DeriverBase implements ContainerDeriverInterf
   /**
    * Constructs a new ProfileAddLocalTask.
    *
-   * @param string $base_plugin_definition
-   *   The base plugin definition.
    * @param \Drupal\Core\Entity\EntityTypeManagerInterface $entity_type_manager
    *   The entity type manager.
    */
-  public function __construct($base_plugin_definition, EntityTypeManagerInterface $entity_type_manager) {
+  public function __construct(EntityTypeManagerInterface $entity_type_manager) {
     $this->entityTypeManager = $entity_type_manager;
   }
 
@@ -34,7 +32,6 @@ class AddressesLocalAction extends DeriverBase implements ContainerDeriverInterf
    */
   public static function create(ContainerInterface $container, $base_plugin_definition) {
     return new static(
-      $base_plugin_definition,
       $container->get('entity_type.manager')
     );
   }
@@ -49,10 +46,10 @@ class AddressesLocalAction extends DeriverBase implements ContainerDeriverInterf
     $weight = 0;
     $profile_type_storage = $this->entityTypeManager->getStorage('profile_type');
     /** @var \Drupal\profile\Entity\ProfileTypeInterface[] $profile_types */
-    $profile_types = array_filter($profile_type_storage->loadMultiple(), static function (ProfileTypeInterface $profile_type) {
-      return $profile_type->getThirdPartySetting('commerce_order', 'commerce_profile_type', FALSE);
-    });
-    // @todo what about profile types which do not have multiple?
+    $profile_types = $profile_type_storage->loadByProperties([
+      'multiple' => TRUE,
+      'third_party_settings.commerce_order.commerce_profile_type' => TRUE,
+    ]);
     foreach ($profile_types as $profile_type_id => $profile_type) {
       $this->derivatives[$profile_type_id] = [
         'title' => "Add new {$profile_type->label()}",
@@ -61,8 +58,6 @@ class AddressesLocalAction extends DeriverBase implements ContainerDeriverInterf
         'route_parameters' => [
           'profile_type' => $profile_type_id,
         ],
-        // @todo: test that this ensures new actions appear w/ a new profile type.
-        // @todo if they do, add to Profile which has problems like this for tasks.
         'cache_tags' => $profile_type->getCacheTags(),
         'weight' => ++$weight,
       ] + $base_plugin_definition;
