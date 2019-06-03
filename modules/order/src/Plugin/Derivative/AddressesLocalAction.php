@@ -52,6 +52,7 @@ class AddressesLocalAction extends DeriverBase implements ContainerDeriverInterf
     $profile_types = array_filter($profile_type_storage->loadMultiple(), static function (ProfileTypeInterface $profile_type) {
       return $profile_type->getThirdPartySetting('commerce_order', 'commerce_profile_type', FALSE);
     });
+    // @todo what about profile types which do not have multiple?
     foreach ($profile_types as $profile_type_id => $profile_type) {
       $this->derivatives[$profile_type_id] = [
         'title' => "Add new {$profile_type->label()}",

@@ -50,13 +50,12 @@ class Addresses implements ContainerInjectionInterface {
     $profile_types = array_filter($profile_type_storage->loadMultiple(), static function (ProfileTypeInterface $profile_type) {
       return $profile_type->getThirdPartySetting('commerce_order', 'commerce_profile_type', FALSE);
     });
+    $wrapper_element_type = count($profile_types) > 1 ? 'details' : 'container';
     foreach ($profile_types as $profile_type_id => $profile_type) {
       $cacheability->addCacheableDependency($profile_type);
       // Render the active profiles.
-      // @todo test multiple profile types and that they appear.
-      // @todo decide to avoid using `details` if there is only one profile type.
       $build[$profile_type_id . '_profiles'] = [
-        '#type' => 'details',
+        '#type' => $wrapper_element_type,
         '#title' => $profile_type->label(),
         '#open' => TRUE,
         'list' => [
