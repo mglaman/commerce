@@ -78,6 +78,12 @@ class ProfileTypeThirdPartySettingsTest extends EntityKernelTestBase {
     $new_profile->save();
 
     $local_tasks_manager->clearCachedDefinitions();
+    $this->assertTrue($local_tasks_manager->hasDefinition(sprintf($derivative_key, $new_profile->id())));
+
+    $new_profile->setMultiple(TRUE);
+    $new_profile->save();
+
+    $local_tasks_manager->clearCachedDefinitions();
     $this->assertFalse($local_tasks_manager->hasDefinition(sprintf($derivative_key, $new_profile->id())));
   }
 

@@ -69,7 +69,7 @@ class Addresses implements ContainerInjectionInterface {
    * @param Drupal\user\UserInterface $user
    *   The user.
    */
-  public function list(UserInterface $user) {
+  public function listProfiles(UserInterface $user) {
     $cacheability = new CacheableMetadata();
     $build = [];
     $profile_type_storage = $this->entityTypeManager->getStorage('profile_type');
