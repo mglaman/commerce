@@ -49,6 +49,9 @@ class AddressesTest extends CommerceBrowserTestBase {
     ];
   }
 
+  /**
+   * Tests the local task overrides.
+   */
   public function testAddressesLocalTask() {
     $customer = $this->createUser();
     $this->drupalLogin($customer);
@@ -63,6 +66,9 @@ class AddressesTest extends CommerceBrowserTestBase {
     $this->assertSession()->pageTextContains($customer->getDisplayName());
   }
 
+  /**
+   * Tests the generated actions.
+   */
   public function testAddressesActions() {
     $customer = $this->createUser([
       'create customer profile',
@@ -80,6 +86,9 @@ class AddressesTest extends CommerceBrowserTestBase {
     $this->assertSession()->buttonExists('Save and make default');
   }
 
+  /**
+   * Tests additional profile types.
+   */
   public function testAddressesActionsAdditionalTypes() {
     $bundle_entity_duplicator = $this->container->get('entity.bundle_entity_duplicator');
     $customer_profile_type = ProfileType::load('customer');
@@ -106,7 +115,6 @@ class AddressesTest extends CommerceBrowserTestBase {
       'view own test profile',
     ]);
 
-
     $this->drupalLogin($customer);
     $this->drupalGet($customer->toUrl());
 
@@ -119,6 +127,9 @@ class AddressesTest extends CommerceBrowserTestBase {
     $this->assertSession()->linkExists('Add new Shipping');
   }
 
+  /**
+   * Tests profiles are available on the addresses page.
+   */
   public function testAddressesAvailable() {
     $customer = $this->createUser([
       'create customer profile',
@@ -147,6 +158,9 @@ class AddressesTest extends CommerceBrowserTestBase {
     $this->assertSession()->pageTextContains($customer_profile->label());
   }
 
+  /**
+   * Test display of multiple profiles with different types.
+   */
   public function testAddressesDisplayMultipleTypes() {
     $bundle_entity_duplicator = $this->container->get('entity.bundle_entity_duplicator');
     $customer_profile_type = ProfileType::load('customer');
@@ -202,7 +216,6 @@ class AddressesTest extends CommerceBrowserTestBase {
     ]);
     $shipping_profile->save();
 
-
     $this->drupalLogin($customer);
     $this->drupalGet($customer->toUrl());
 
@@ -213,6 +226,9 @@ class AddressesTest extends CommerceBrowserTestBase {
     $this->assertSession()->pageTextContains($shipping_profile->label());
   }
 
+  /**
+   * Test with a non-multiple profile type.
+   */
   public function testWithNonMultipleProfileType() {
     $bundle_entity_duplicator = $this->container->get('entity.bundle_entity_duplicator');
     $customer_profile_type = ProfileType::load('customer');
@@ -239,7 +255,6 @@ class AddressesTest extends CommerceBrowserTestBase {
       'update own test profile',
       'view own test profile',
     ]);
-
 
     $this->drupalLogin($customer);
     $this->drupalGet($customer->toUrl());

@@ -5,7 +5,6 @@ namespace Drupal\commerce_order\Plugin\Derivative;
 use Drupal\Component\Plugin\Derivative\DeriverBase;
 use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\Core\Plugin\Discovery\ContainerDeriverInterface;
-use Drupal\profile\Entity\ProfileTypeInterface;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 
 class AddressesLocalAction extends DeriverBase implements ContainerDeriverInterface {

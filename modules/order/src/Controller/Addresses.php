@@ -8,25 +8,45 @@ use Drupal\Core\DependencyInjection\ContainerInjectionInterface;
 use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\Core\Routing\RouteMatchInterface;
 use Drupal\Core\Session\AccountInterface;
-use Drupal\profile\Entity\ProfileTypeInterface;
 use Drupal\user\UserInterface;
 use Symfony\Component\DependencyInjection\ContainerInterface;
-use Drupal\views\Element\View;
 
 class Addresses implements ContainerInjectionInterface {
 
+  /**
+   * The entity type manager.
+   *
+   * @var Drupal\Core\Entity\EntityTypeManagerInterface
+   */
   protected $entityTypeManager;
 
+  /**
+   * Constructs a new Addresses object.
+   *
+   * @param Drupal\Core\Entity\EntityTypeManagerInterface $entity_type_manager
+   *   The entity type manager.
+   */
   public function __construct(EntityTypeManagerInterface $entity_type_manager) {
     $this->entityTypeManager = $entity_type_manager;
   }
 
+  /**
+   * {@inheritdoc}
+   */
   public static function create(ContainerInterface $container) {
     return new static(
       $container->get('entity_type.manager')
     );
   }
 
+  /**
+   * Checks access to the addresses.
+   *
+   * @param Drupal\Core\Routing\RouteMatchInterface $route_match
+   *   The route match.
+   * @param Drupal\Core\Session\AccountInterface $account
+   *   The account.
+   */
   public function checkAccess(RouteMatchInterface $route_match, AccountInterface $account) {
     $user = $route_match->getParameter('user');
     if ($account->id() === $user->id()) {
@@ -43,7 +63,13 @@ class Addresses implements ContainerInjectionInterface {
     return AccessResult::forbidden()->cachePerUser();
   }
 
-  public function addressBook(UserInterface $user) {
+  /**
+   * Renders the addressbook.
+   *
+   * @param Drupal\user\UserInterface $user
+   *   The user.
+   */
+  public function list(UserInterface $user) {
     $cacheability = new CacheableMetadata();
     $build = [];
     $profile_type_storage = $this->entityTypeManager->getStorage('profile_type');

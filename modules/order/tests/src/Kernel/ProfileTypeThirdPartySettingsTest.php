@@ -81,6 +81,9 @@ class ProfileTypeThirdPartySettingsTest extends EntityKernelTestBase {
     $this->assertFalse($local_tasks_manager->hasDefinition(sprintf($derivative_key, $new_profile->id())));
   }
 
+  /**
+   * Tests the generated local actions.
+   */
   public function testLocalActions() {
     $local_actions_manager = $this->container->get('plugin.manager.menu.local_action');
     $derivative_key = 'commerce_order.addresses.%s';
