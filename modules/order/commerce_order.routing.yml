@@ -59,3 +59,31 @@ commerce_order.user_addresses:
   requirements:
     _user_is_logged_in: 'TRUE'
     _custom_access: '\Drupal\commerce_order\Controller\Addresses::checkAccess'
+
+commerce_order.user_addresses.add_page:
+  path: '/user/{user}/addresses/add'
+  defaults:
+    _controller: '\Drupal\commerce_order\Controller\Addresses::addProfile'
+    _title: 'Add address'
+  options:
+    parameters:
+      user:
+        type: 'entity:user'
+  requirements:
+    _user_is_logged_in: 'TRUE'
+    _custom_access: '\Drupal\commerce_order\Controller\Addresses::checkAccess'
+commerce_order.user_addresses.add_form:
+  path: '/user/{user}/addresses/add/{profile_type}'
+  defaults:
+    _entity_form: 'profile.add'
+    entity_type_id: 'profile'
+    bundle_parameter: 'profile_type'
+  options:
+    parameters:
+      user:
+        type: 'entity:user'
+      profile_type:
+        type: 'entity:profile_type'
+  requirements:
+    _user_is_logged_in: 'TRUE'
+    _custom_access: '\Drupal\commerce_order\Controller\Addresses::checkAccess'

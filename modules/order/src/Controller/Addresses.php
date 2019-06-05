@@ -6,10 +6,13 @@ use Drupal\Core\Access\AccessResult;
 use Drupal\Core\Cache\CacheableMetadata;
 use Drupal\Core\DependencyInjection\ContainerInjectionInterface;
 use Drupal\Core\Entity\EntityTypeManagerInterface;
+use Drupal\Core\Link;
 use Drupal\Core\Routing\RouteMatchInterface;
 use Drupal\Core\Session\AccountInterface;
+use Drupal\Core\Url;
 use Drupal\user\UserInterface;
 use Symfony\Component\DependencyInjection\ContainerInterface;
+use Symfony\Component\HttpFoundation\RedirectResponse;
 
 class Addresses implements ContainerInjectionInterface {
 
@@ -42,10 +45,13 @@ class Addresses implements ContainerInjectionInterface {
   /**
    * Checks access to the addresses.
    *
-   * @param Drupal\Core\Routing\RouteMatchInterface $route_match
+   * @param \Drupal\Core\Routing\RouteMatchInterface $route_match
    *   The route match.
-   * @param Drupal\Core\Session\AccountInterface $account
+   * @param \Drupal\Core\Session\AccountInterface $account
    *   The account.
+   *
+   * @return \Drupal\Core\Access\AccessResult
+   *   The access result.
    */
   public function checkAccess(RouteMatchInterface $route_match, AccountInterface $account) {
     $user = $route_match->getParameter('user');
@@ -64,10 +70,62 @@ class Addresses implements ContainerInjectionInterface {
   }
 
   /**
+   * @see \Drupal\Core\Entity\Controller\EntityController::addPage
+   *
+   */
+  public function addProfile(UserInterface $user) {
+    $profile_type_definition = $this->entityTypeManager->getDefinition('profile_type');
+    $profile_type_storage = $this->entityTypeManager->getStorage('profile_type');
+    /** @var \Drupal\profile\Entity\ProfileTypeInterface[] $profile_types */
+    $profile_types = $profile_type_storage->loadByProperties([
+      'multiple' => TRUE,
+      'third_party_settings.commerce_order.commerce_profile_type' => TRUE,
+    ]);
+
+    if (count($profile_types) === 1) {
+      $bundle_names = array_keys($profile_types);
+      $bundle_name = reset($bundle_names);
+      $url = Url::fromRoute(
+        'commerce_order.user_addresses.add_form',
+        [
+          'user' => $user->id(),
+          'profile_type' => $bundle_name,
+        ],
+        ['absolute' => TRUE]);
+      return new RedirectResponse($url->toString());
+    }
+
+    $build = [
+      '#theme' => 'entity_add_list',
+      '#bundles' => [],
+    ];
+    $build['#cache']['tags'] = $profile_type_definition->getListCacheTags();
+    foreach ($profile_types as $profile_type_id => $profile_type) {
+      $build['#bundles'][$profile_type_id] = [
+        'label' => $profile_type->label(),
+        'description' => '',
+        'add_link' => Link::createFromRoute(
+          $profile_type->label(),
+          'commerce_order.user_addresses.add_form',
+          [
+            'user' => $user->id(),
+            'profile_type' => $profile_type_id,
+          ]
+        ),
+      ];
+    }
+
+    return $build;
+  }
+
+  /**
    * Renders the addressbook.
    *
-   * @param Drupal\user\UserInterface $user
+   * @param \Drupal\user\UserInterface $user
    *   The user.
+   *
+   * @return array
+   *   The response.
    */
   public function listProfiles(UserInterface $user) {
     $cacheability = new CacheableMetadata();

@@ -87,25 +87,4 @@ class ProfileTypeThirdPartySettingsTest extends EntityKernelTestBase {
     $this->assertFalse($local_tasks_manager->hasDefinition(sprintf($derivative_key, $new_profile->id())));
   }
 
-  /**
-   * Tests the generated local actions.
-   */
-  public function testLocalActions() {
-    $local_actions_manager = $this->container->get('plugin.manager.menu.local_action');
-    $derivative_key = 'commerce_order.addresses.%s';
-
-    $customer_profile_type = ProfileType::load('customer');
-    $this->assertFalse($local_actions_manager->hasDefinition(sprintf($derivative_key, $customer_profile_type->id())));
-
-    $test_account = $this->createUser([], [
-      'create customer profile',
-      'update own customer profile',
-      'view own customer profile',
-    ]);
-    $this->container->get('current_user')->setAccount($test_account);
-    $actions = $local_actions_manager->getActionsForRoute('commerce_order.user_addresses');
-    $this->assertNotEmpty($actions);
-    $this->assertArrayHasKey('commerce_order.addresses_actions:customer', $actions);
-  }
-
 }

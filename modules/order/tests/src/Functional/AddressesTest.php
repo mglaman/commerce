@@ -79,9 +79,9 @@ class AddressesTest extends CommerceBrowserTestBase {
     $this->drupalGet($customer->toUrl());
 
     $this->getSession()->getPage()->clickLink('Addresses');
-    $this->assertSession()->linkExists('Add new Address');
-    $this->getSession()->getPage()->clickLink('Add new Address');
-    $this->assertSession()->pageTextContains('Create Address');
+    $this->assertSession()->linkExists('Add address');
+    $this->getSession()->getPage()->clickLink('Add address');
+//    $this->assertSession()->pageTextContains('Create Address');
     $this->assertSession()->buttonExists('Save');
     $this->assertSession()->buttonExists('Save and make default');
   }
@@ -123,8 +123,12 @@ class AddressesTest extends CommerceBrowserTestBase {
     $this->assertSession()->linkNotExists('Shipping');
 
     $this->getSession()->getPage()->clickLink('Addresses');
-    $this->assertSession()->linkExists('Add new Address');
-    $this->assertSession()->linkExists('Add new Shipping');
+    $this->assertSession()->linkExists('Add address');
+    $this->getSession()->getPage()->clickLink('Add address');
+
+    $this->assertSession()->linkExists('Customer');
+    $this->assertSession()->linkExists('Shipping');
+    $this->assertSession()->linkNotExists('Test');
   }
 
   /**
@@ -264,8 +268,10 @@ class AddressesTest extends CommerceBrowserTestBase {
     $this->assertSession()->linkExists('Shipping');
 
     $this->getSession()->getPage()->clickLink('Addresses');
-    $this->assertSession()->linkExists('Add new Address');
-    $this->assertSession()->linkNotExists('Add new Shipping');
+    $this->assertSession()->linkExists('Add address');
+    $this->getSession()->getPage()->clickLink('Add address');
+
+    $this->assertSession()->pageTextContains('Create Address');
   }
 
 }
