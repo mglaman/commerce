@@ -81,7 +81,7 @@ class AddressesTest extends CommerceBrowserTestBase {
     $this->getSession()->getPage()->clickLink('Addresses');
     $this->assertSession()->linkExists('Add address');
     $this->getSession()->getPage()->clickLink('Add address');
-//    $this->assertSession()->pageTextContains('Create Address');
+
     $this->assertSession()->buttonExists('Save');
     $this->assertSession()->buttonExists('Save and make default');
   }
@@ -224,7 +224,7 @@ class AddressesTest extends CommerceBrowserTestBase {
     $this->drupalGet($customer->toUrl());
 
     $this->getSession()->getPage()->clickLink('Addresses');
-    $this->assertSession()->elementTextContains('xpath', '//details[1]', 'Address');
+    $this->assertSession()->elementTextContains('xpath', '//details[1]', 'Customer');
     $this->assertSession()->pageTextContains($customer_profile->label());
     $this->assertSession()->elementTextContains('xpath', '//details[2]', 'Shipping');
     $this->assertSession()->pageTextContains($shipping_profile->label());
@@ -271,7 +271,8 @@ class AddressesTest extends CommerceBrowserTestBase {
     $this->assertSession()->linkExists('Add address');
     $this->getSession()->getPage()->clickLink('Add address');
 
-    $this->assertSession()->pageTextContains('Create Address');
+    $this->assertSession()->buttonExists('Save');
+    $this->assertSession()->buttonExists('Save and make default');
   }
 
 }
