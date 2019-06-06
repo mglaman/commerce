@@ -222,4 +222,30 @@ class AddressBookTest extends CommerceKernelTestBase {
     $this->assertEquals($new_default_profile->id(), $this->orderProfile->getData('address_book_profile_id'));
   }
 
+  /**
+   * Test getting available address book profile types.
+   *
+   * @covers ::getProfileTypes
+   */
+  public function testGetProfileTypes() {
+    $profile_types = $this->addressBook->getProfileTypes();
+    $this->assertCount(1, $profile_types);
+
+    $bundle_entity_duplicator = $this->container->get('entity.bundle_entity_duplicator');
+    $customer_profile_type = ProfileType::load('customer');
+    $bundle_entity_duplicator->duplicate($customer_profile_type, [
+      'id' => 'shipping',
+      'label' => 'Shipping',
+    ]);
+    $test_profile_type = ProfileType::create([
+      'id' => 'test',
+      'label' => 'Test',
+    ]);
+    $test_profile_type->save();
+
+    $profile_types = $this->addressBook->getProfileTypes();
+    $this->assertCount(2, $profile_types);
+    $this->assertArrayNotHasKey('test', $profile_types);
+  }
+
 }

@@ -99,4 +99,12 @@ interface AddressBookInterface {
    */
   public function copy(ProfileInterface $profile, UserInterface $customer);
 
+  /**
+   * Get the address book profile types.
+   *
+   * @return \Drupal\profile\Entity\ProfileTypeInterface[]
+   *   The profile types.
+   */
+  public function getProfileTypes();
+
 }

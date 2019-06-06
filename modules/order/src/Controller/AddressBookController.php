@@ -2,6 +2,7 @@
 
 namespace Drupal\commerce_order\Controller;
 
+use Drupal\commerce_order\AddressBookInterface;
 use Drupal\Core\Access\AccessResult;
 use Drupal\Core\Cache\CacheableMetadata;
 use Drupal\Core\DependencyInjection\ContainerInjectionInterface;
@@ -14,23 +15,31 @@ use Drupal\user\UserInterface;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 
-class Addresses implements ContainerInjectionInterface {
+class AddressBookController implements ContainerInjectionInterface {
 
   /**
    * The entity type manager.
    *
-   * @var Drupal\Core\Entity\EntityTypeManagerInterface
+   * @var \Drupal\Core\Entity\EntityTypeManagerInterface
    */
   protected $entityTypeManager;
 
   /**
+   * The address book service.
+   *
+   * @var \Drupal\commerce_order\AddressBookInterface
+   */
+  protected $addressBook;
+
+  /**
    * Constructs a new Addresses object.
    *
-   * @param Drupal\Core\Entity\EntityTypeManagerInterface $entity_type_manager
+   * @param \Drupal\Core\Entity\EntityTypeManagerInterface $entity_type_manager
    *   The entity type manager.
    */
-  public function __construct(EntityTypeManagerInterface $entity_type_manager) {
+  public function __construct(EntityTypeManagerInterface $entity_type_manager, AddressBookInterface $address_book) {
     $this->entityTypeManager = $entity_type_manager;
+    $this->addressBook = $address_book;
   }
 
   /**
@@ -38,7 +47,8 @@ class Addresses implements ContainerInjectionInterface {
    */
   public static function create(ContainerInterface $container) {
     return new static(
-      $container->get('entity_type.manager')
+      $container->get('entity_type.manager'),
+      $container->get('commerce_order.address_book')
     );
   }
 
@@ -70,23 +80,24 @@ class Addresses implements ContainerInjectionInterface {
   }
 
   /**
-   * @see \Drupal\Core\Entity\Controller\EntityController::addPage
+   * Add profile page.
    *
+   * @param \Drupal\user\UserInterface $user
+   *   The user.
+   *
+   * @return array|\Symfony\Component\HttpFoundation\RedirectResponse
+   *   The render array, or redirect response.
+   *
+   * @see \Drupal\Core\Entity\Controller\EntityController::addPage
    */
   public function addProfile(UserInterface $user) {
-    $profile_type_definition = $this->entityTypeManager->getDefinition('profile_type');
-    $profile_type_storage = $this->entityTypeManager->getStorage('profile_type');
     /** @var \Drupal\profile\Entity\ProfileTypeInterface[] $profile_types */
-    $profile_types = $profile_type_storage->loadByProperties([
-      'multiple' => TRUE,
-      'third_party_settings.commerce_order.commerce_profile_type' => TRUE,
-    ]);
-
+    $profile_types = $this->addressBook->getProfileTypes();
     if (count($profile_types) === 1) {
       $bundle_names = array_keys($profile_types);
       $bundle_name = reset($bundle_names);
       $url = Url::fromRoute(
-        'commerce_order.user_addresses.add_form',
+        'commerce_order.user_addressbook.add_form',
         [
           'user' => $user->id(),
           'profile_type' => $bundle_name,
@@ -99,6 +110,7 @@ class Addresses implements ContainerInjectionInterface {
       '#theme' => 'entity_add_list',
       '#bundles' => [],
     ];
+    $profile_type_definition = $this->entityTypeManager->getDefinition('profile_type');
     $build['#cache']['tags'] = $profile_type_definition->getListCacheTags();
     foreach ($profile_types as $profile_type_id => $profile_type) {
       $build['#bundles'][$profile_type_id] = [
@@ -106,7 +118,7 @@ class Addresses implements ContainerInjectionInterface {
         'description' => '',
         'add_link' => Link::createFromRoute(
           $profile_type->label(),
-          'commerce_order.user_addresses.add_form',
+          'commerce_order.user_addressbook.add_form',
           [
             'user' => $user->id(),
             'profile_type' => $profile_type_id,
@@ -119,7 +131,7 @@ class Addresses implements ContainerInjectionInterface {
   }
 
   /**
-   * Renders the addressbook.
+   * Renders the addresses for the user.
    *
    * @param \Drupal\user\UserInterface $user
    *   The user.
@@ -130,12 +142,7 @@ class Addresses implements ContainerInjectionInterface {
   public function listProfiles(UserInterface $user) {
     $cacheability = new CacheableMetadata();
     $build = [];
-    $profile_type_storage = $this->entityTypeManager->getStorage('profile_type');
-    /** @var \Drupal\profile\Entity\ProfileTypeInterface[] $profile_types */
-    $profile_types = $profile_type_storage->loadByProperties([
-      'multiple' => TRUE,
-      'third_party_settings.commerce_order.commerce_profile_type' => TRUE,
-    ]);
+    $profile_types = $this->addressBook->getProfileTypes();
     $wrapper_element_type = count($profile_types) > 1 ? 'details' : 'container';
     foreach ($profile_types as $profile_type_id => $profile_type) {
       $cacheability->addCacheableDependency($profile_type);
