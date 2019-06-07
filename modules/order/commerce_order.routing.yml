@@ -75,7 +75,7 @@ commerce_order.user_addressbook.add_page:
 commerce_order.user_addressbook.add_form:
   path: '/user/{user}/addresses/add/{profile_type}'
   defaults:
-    _entity_form: 'profile.add'
+    _entity_form: 'profile.addressbook'
     entity_type_id: 'profile'
     bundle_parameter: 'profile_type'
   options:

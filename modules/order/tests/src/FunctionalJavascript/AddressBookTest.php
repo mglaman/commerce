@@ -33,11 +33,13 @@ class AddressBookTest extends OrderWebDriverTestBase {
       'address[0][address][locality]' => 'Milwaukee',
       'address[0][address][administrative_area]' => 'WI',
     ], 'Save and make default');
-    // @todo should this say "Address %s has been created"?
-    $this->assertSession()->pageTextContains('Pabst Blue Ribbon Dr has been created.');
-    // @todo override the redirect of the form to go to address book.
+    $this->assertSession()->pageTextContains('Address Pabst Blue Ribbon Dr has been created.');
     $url = Url::fromRoute('commerce_order.user_addressbook', ['user' => $customer->id()]);
     $this->assertSession()->addressEquals($url);
+    $this->assertSession()->pageTextContains('Frederick Pabst');
+    $this->assertSession()->pageTextContains('Pabst Blue Ribbon Dr');
+    $this->assertSession()->pageTextContains('Milwaukee, WI 53177');
+    $this->assertSession()->pageTextContains('United States');
   }
 
 }

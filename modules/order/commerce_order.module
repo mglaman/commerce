@@ -242,3 +242,10 @@ function commerce_order_form_field_config_edit_form_alter(array &$form, FormStat
     $form['settings']['available_countries']['#access'] = FALSE;
   }
 }
+
+/**
+ * Implements hook_entity_type_build().
+ */
+function commerce_order_entity_type_build(array &$entity_types) {
+  $entity_types['profile']->setFormClass('addressbook', 'Drupal\commerce_order\Form\ProfileAddressBookForm');
+}
