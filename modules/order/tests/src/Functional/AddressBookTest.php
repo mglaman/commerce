@@ -53,7 +53,11 @@ class AddressBookTest extends CommerceBrowserTestBase {
    * Tests the local task overrides.
    */
   public function testAddressesLocalTask() {
-    $customer = $this->createUser();
+    $customer = $this->createUser([
+      'create customer profile',
+      'update own customer profile',
+      'view own customer profile',
+    ]);
     $this->drupalLogin($customer);
     $this->drupalGet($customer->toUrl());
 
