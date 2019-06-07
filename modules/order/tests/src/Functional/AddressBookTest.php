@@ -10,7 +10,7 @@ use Drupal\Tests\commerce\Functional\CommerceBrowserTestBase;
  * @group commerce
  * @group commerce_order
  */
-class AddressesTest extends CommerceBrowserTestBase {
+class AddressBookTest extends CommerceBrowserTestBase {
 
   /**
    * Modules to enable.
