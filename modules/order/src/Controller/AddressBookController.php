@@ -11,6 +11,7 @@ use Drupal\Core\Link;
 use Drupal\Core\Routing\RouteMatchInterface;
 use Drupal\Core\Session\AccountInterface;
 use Drupal\Core\Url;
+use Drupal\profile\Entity\ProfileTypeInterface;
 use Drupal\user\UserInterface;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use Symfony\Component\HttpFoundation\RedirectResponse;
@@ -64,19 +65,40 @@ class AddressBookController implements ContainerInjectionInterface {
    *   The access result.
    */
   public function checkAccess(RouteMatchInterface $route_match, AccountInterface $account) {
-    $user = $route_match->getParameter('user');
-    if ($account->id() === $user->id()) {
-      return AccessResult::allowed()->cachePerUser();
-    }
     $definition = $this->entityTypeManager->getDefinition('profile');
     if ($account->hasPermission($definition->getAdminPermission())) {
       return AccessResult::allowed()->cachePerUser();
     }
-    // @todo figure out permissions. Do we want more granular for each type?
-    // decorate the route with all profile types which are used by commerce
-    // and check their specific permissions.
-    // @see \Drupal\profile\Access\ProfileAccessCheck.
-    return AccessResult::forbidden()->cachePerUser();
+    $user = $route_match->getParameter('user');
+    if ($account->id() !== $user->id()) {
+      return AccessResult::forbidden()->cachePerUser();
+    }
+    /** @var \Drupal\profile\Entity\ProfileTypeInterface[] $profile_types */
+    $profile_types = $this->addressBook->getProfileTypes();
+    $profile_types = array_filter($profile_types, function (ProfileTypeInterface $profile_type) use ($user) {
+      // Create a stub profile to pass to entity access.
+      $profile_storage = $this->entityTypeManager->getStorage('profile');
+      // Create a stubbed Profile entity for access checks.
+      $profile_stub = $profile_storage->create([
+        'type' => $profile_type->id(),
+        'uid' => $user->id(),
+      ]);
+      $access_handler = $this->entityTypeManager->getAccessControlHandler('profile');
+      return $access_handler->access($profile_stub, 'view');
+    });
+
+    return AccessResult::allowedIf(!empty($profile_types))->cachePerUser();
+  }
+
+  public function checkCreateAccess(RouteMatchInterface $route_match, AccountInterface $account) {
+    $definition = $this->entityTypeManager->getDefinition('profile');
+    if ($account->hasPermission($definition->getAdminPermission())) {
+      return AccessResult::allowed()->cachePerUser();
+    }
+    /** @var \Drupal\profile\Entity\ProfileTypeInterface $profile_type */
+    $profile_type = $route_match->getParameter('profile_type');
+    $access_handler = $this->entityTypeManager->getAccessControlHandler('profile');
+    return $access_handler->createAccess($profile_type->id(), $account, [], TRUE);
   }
 
   /**
@@ -93,6 +115,10 @@ class AddressBookController implements ContainerInjectionInterface {
   public function addProfile(UserInterface $user) {
     /** @var \Drupal\profile\Entity\ProfileTypeInterface[] $profile_types */
     $profile_types = $this->addressBook->getProfileTypes();
+    $profile_types = array_filter($profile_types, function (ProfileTypeInterface $profile_type) {
+      $access_handler = $this->entityTypeManager->getAccessControlHandler('profile');
+      return $access_handler->createAccess($profile_type->id());
+    });
     if (count($profile_types) === 1) {
       $bundle_names = array_keys($profile_types);
       $bundle_name = reset($bundle_names);
@@ -143,6 +169,17 @@ class AddressBookController implements ContainerInjectionInterface {
     $cacheability = new CacheableMetadata();
     $build = [];
     $profile_types = $this->addressBook->getProfileTypes();
+    $profile_types = array_filter($profile_types, function (ProfileTypeInterface $profile_type) use ($user) {
+      // Create a stub profile to pass to entity access.
+      $profile_storage = $this->entityTypeManager->getStorage('profile');
+      // Create a stubbed Profile entity for access checks.
+      $profile_stub = $profile_storage->create([
+        'type' => $profile_type->id(),
+        'uid' => $user->id(),
+      ]);
+      $access_handler = $this->entityTypeManager->getAccessControlHandler('profile');
+      return $access_handler->access($profile_stub, 'view');
+    });
     $wrapper_element_type = count($profile_types) > 1 ? 'details' : 'container';
     foreach ($profile_types as $profile_type_id => $profile_type) {
       $cacheability->addCacheableDependency($profile_type);

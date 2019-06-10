@@ -86,4 +86,4 @@ commerce_order.user_addressbook.add_form:
         type: 'entity:profile_type'
   requirements:
     _user_is_logged_in: 'TRUE'
-    _custom_access: '\Drupal\commerce_order\Controller\AddressBookController::checkAccess'
+    _custom_access: '\Drupal\commerce_order\Controller\AddressBookController::checkCreateAccess'

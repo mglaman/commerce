@@ -279,4 +279,76 @@ class AddressBookTest extends CommerceBrowserTestBase {
     $this->assertSession()->buttonExists('Save and make default');
   }
 
+  /**
+   * @group testing
+   */
+  public function testMultipleWithAccessControl() {
+    $bundle_entity_duplicator = $this->container->get('entity.bundle_entity_duplicator');
+    $customer_profile_type = ProfileType::load('customer');
+    $bundle_entity_duplicator->duplicate($customer_profile_type, [
+      'id' => 'shipping',
+      'label' => 'Shipping',
+    ]);
+    drupal_flush_all_caches();
+
+    $customer = $this->createUser([
+      'create customer profile',
+      'update own customer profile',
+      'view own customer profile',
+    ]);
+    $this->drupalLogin($customer);
+    $this->drupalGet($customer->toUrl());
+
+    $this->getSession()->getPage()->clickLink('Addresses');
+    $this->assertSession()->elementNotExists('xpath', '//details[1]');
+    $this->assertSession()->elementNotExists('xpath', '//details[2]');
+    $this->getSession()->getPage()->clickLink('Add address');
+    $this->assertSession()->buttonExists('Save and make default');
+
+    $this->drupalLogout();
+    $customer = $this->createUser([
+      'create customer profile',
+      'update own customer profile',
+      'view own customer profile',
+      'view own shipping profile',
+    ]);
+    $this->drupalLogin($customer);
+    $this->drupalGet($customer->toUrl());
+
+    $this->getSession()->getPage()->clickLink('Addresses');
+    $this->assertSession()->elementTextContains('xpath', '//details[1]', 'Customer');
+    $this->assertSession()->elementTextContains('xpath', '//details[2]', 'Shipping');
+    $this->getSession()->getPage()->clickLink('Add address');
+    $this->assertSession()->buttonExists('Save and make default');
+
+    $this->drupalLogout();
+    $customer = $this->createUser([
+      'create customer profile',
+      'update own customer profile',
+      'view own customer profile',
+      'create shipping profile',
+      'view own shipping profile',
+    ]);
+    $this->drupalLogin($customer);
+    $this->drupalGet($customer->toUrl());
+
+    $this->getSession()->getPage()->clickLink('Addresses');
+    $this->assertSession()->elementTextContains('xpath', '//details[1]', 'Customer');
+    $this->assertSession()->elementTextContains('xpath', '//details[2]', 'Shipping');
+
+    $this->getSession()->getPage()->clickLink('Add address');
+    $this->assertSession()->linkExists('Customer');
+    $this->assertSession()->linkExists('Shipping');
+    $this->getSession()->getPage()->clickLink('Shipping');
+    $this->assertSession()->buttonExists('Save and make default');
+
+    $this->drupalLogout();
+    $customer = $this->createUser([]);
+    $this->drupalLogin($customer);
+    $this->drupalGet($customer->toUrl());
+    $this->assertSession()->linkExists('View');
+    $this->assertSession()->linkExists('Edit');
+    $this->assertSession()->linkNotExists('Addresses');
+  }
+
 }
