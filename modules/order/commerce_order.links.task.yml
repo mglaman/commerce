@@ -3,7 +3,7 @@ entity.commerce_order.collection:
   base_route: entity.commerce_order.collection
   title: 'Orders'
 
-commerce_order.user_addressbook:
-  route_name: commerce_order.user_addressbook
+commerce_order.user_address_book:
+  route_name: commerce_order.user_address_book
   base_route: entity.user.canonical
   title: 'Addresses'

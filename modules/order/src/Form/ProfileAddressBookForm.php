@@ -21,7 +21,7 @@ class ProfileAddressBookForm extends ProfileForm {
         break;
     }
 
-    $form_state->setRedirect('commerce_order.user_addressbook', [
+    $form_state->setRedirect('commerce_order.user_address_book', [
       'user' => $this->entity->getOwnerId(),
     ]);
   }

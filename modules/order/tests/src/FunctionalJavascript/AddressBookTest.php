@@ -38,7 +38,7 @@ class AddressBookTest extends OrderWebDriverTestBase {
       'address[0][address][administrative_area]' => 'WI',
     ], 'Save and make default');
     $this->assertSession()->pageTextContains('Address Pabst Blue Ribbon Dr has been created.');
-    $url = Url::fromRoute('commerce_order.user_addressbook', ['user' => $customer->id()]);
+    $url = Url::fromRoute('commerce_order.user_address_book', ['user' => $customer->id()]);
     $this->assertSession()->addressEquals($url);
     $this->assertSession()->pageTextContains('Frederick Pabst');
     $this->assertSession()->pageTextContains('Pabst Blue Ribbon Dr');
@@ -52,7 +52,7 @@ class AddressBookTest extends OrderWebDriverTestBase {
     $this->saveHtmlOutput();
 //    $this->assertSession()->pageTextContains('Address Pabst Blue Ribbon Dr has been updated. ');
     $this->assertSession()->pageTextContains('Pabst Blue Ribbon Dr has been updated. ');
-    $url = Url::fromRoute('commerce_order.user_addressbook', ['user' => $customer->id()]);
+    $url = Url::fromRoute('commerce_order.user_address_book', ['user' => $customer->id()]);
     $this->assertSession()->addressEquals($url);
   }
 
@@ -89,7 +89,7 @@ class AddressBookTest extends OrderWebDriverTestBase {
       'address[0][address][administrative_area]' => 'WI',
     ], 'Save and make default');
     $this->assertSession()->pageTextContains('Address Pabst Blue Ribbon Dr has been created.');
-    $url = Url::fromRoute('commerce_order.user_addressbook', ['user' => $customer->id()]);
+    $url = Url::fromRoute('commerce_order.user_address_book', ['user' => $customer->id()]);
     $this->assertSession()->addressEquals($url);
 
     $this->assertSession()->elementTextContains('xpath', '//details[1]', 'Customer');

@@ -247,5 +247,27 @@ function commerce_order_form_field_config_edit_form_alter(array &$form, FormStat
  * Implements hook_entity_type_build().
  */
 function commerce_order_entity_type_build(array &$entity_types) {
-  $entity_types['profile']->setFormClass('addressbook', 'Drupal\commerce_order\Form\ProfileAddressBookForm');
+  $entity_types['profile']->setFormClass('address_book', 'Drupal\commerce_order\Form\ProfileAddressBookForm');
+}
+
+
+function commerce_order_form_profile_type_edit_form_alter(array &$form, FormStateInterface $form_state) {
+  /** @var \Drupal\profile\Entity\ProfileTypeInterface $profile_type */
+  $profile_type = $form_state->getFormObject()->getEntity();
+  $form['commerce_order']['commerce_profile_type'] = [
+    '#type' => 'checkbox',
+    '#title' => t('This profile type is used for Drupal Commerce'),
+    '#default_value' => $profile_type->getThirdPartySetting('commerce_order', 'commerce_profile_type', FALSE),
+  ];
+  $form['actions']['submit']['#submit'][] = 'commerce_order_profile_type_edit_form_submit';
+}
+
+/**
+ * Form submission handler for 'profile_type_edit_form'.
+ */
+function commerce_order_profile_type_edit_form_submit($form, FormStateInterface $form_state) {
+  /** @var \Drupal\profile\Entity\ProfileTypeInterface $profile_type */
+  $profile_type = $form_state->getFormObject()->getEntity();
+  $profile_type->setThirdPartySetting('commerce_order', 'commerce_profile_type', $form_state->getValue('commerce_profile_type'));
+  $profile_type->save();
 }

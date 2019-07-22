@@ -47,7 +47,7 @@ entity.commerce_order.user_view:
         commerce_order: 'entity:order'
 
 
-commerce_order.user_addressbook:
+commerce_order.user_address_book:
   path: '/user/{user}/addresses'
   defaults:
     _controller: '\Drupal\commerce_order\Controller\AddressBookController::listProfiles'
@@ -60,7 +60,7 @@ commerce_order.user_addressbook:
     _user_is_logged_in: 'TRUE'
     _custom_access: '\Drupal\commerce_order\Controller\AddressBookController::checkAccess'
 
-commerce_order.user_addressbook.add_page:
+commerce_order.user_address_book.add_page:
   path: '/user/{user}/addresses/add'
   defaults:
     _controller: '\Drupal\commerce_order\Controller\AddressBookController::addProfile'
@@ -72,10 +72,10 @@ commerce_order.user_addressbook.add_page:
   requirements:
     _user_is_logged_in: 'TRUE'
     _custom_access: '\Drupal\commerce_order\Controller\AddressBookController::checkAccess'
-commerce_order.user_addressbook.add_form:
+commerce_order.user_address_book.add_form:
   path: '/user/{user}/addresses/add/{profile_type}'
   defaults:
-    _entity_form: 'profile.addressbook'
+    _entity_form: 'profile.address_book'
     entity_type_id: 'profile'
     bundle_parameter: 'profile_type'
   options:
