@@ -7,6 +7,7 @@
 
 use Drupal\Core\Field\BaseFieldDefinition;
 use Drupal\Core\Session\AccountInterface;
+use Drupal\commerce_order\Entity\Order;
 
 /**
  * Implements hook_install().
@@ -96,4 +97,85 @@ function commerce_order_update_8206() {
   $database = \Drupal::database();
   $database->query("UPDATE {profile} SET uid = 0 WHERE type = 'customer'");
   $database->query("UPDATE {profile_revision} SET uid = 0 WHERE profile_id IN (SELECT profile_id FROM {profile} WHERE type = 'customer')");
+}
+
+/**
+ * Convert the 'order_items' configurable field into a base field.
+ */
+function commerce_order_update_8207() {
+  $bundle_info = \Drupal::service('entity_type.bundle.info')->getBundleInfo('commerce_order');
+  $order_types = array_keys($bundle_info);
+  $config_factory = \Drupal::configFactory();
+  $config_manager = \Drupal::service('config.manager');
+  $entity_type_manager = \Drupal::entityTypeManager();
+  $entity_field_manager = \Drupal::service('entity_field.manager');
+
+  $entity_type_manager->clearCachedDefinitions();
+  $entity_field_manager->clearCachedFieldDefinitions();
+
+  $entity_definitions_installed = \Drupal::keyValue('entity.definitions.installed');
+  $key = 'commerce_order.field_storage_definitions';
+  $definitions = $entity_definitions_installed->get($key);
+
+  /** @var \Drupal\Core\Field\FieldDefinitionInterface[] $base_field_definitions */
+  $base_field_definitions = $entity_field_manager->getBaseFieldDefinitions('commerce_order');
+  $definitions['order_items'] = $base_field_definitions['order_items']->getFieldStorageDefinition();
+  $entity_definitions_installed->set($key, $definitions);
+
+  $configurations_to_delete = [];
+  foreach ($order_types as $bundle) {
+    $configurations_to_delete[] = 'field.field.commerce_order.' . $bundle . '.order_items';
+  }
+  $configurations_to_delete[] = 'field.storage.commerce_order.order_items';
+
+  $dependents = $config_manager->findConfigEntityDependents('config', $configurations_to_delete);
+
+  /** @var \Drupal\Core\Config\Entity\ConfigEntityInterface $config_entity */
+  foreach ($dependents as $config_name => $config_entity) {
+    $config_entity = $config_factory->getEditable($config_name);
+    $dependencies = $config_entity->get('dependencies.config');
+    $dependencies = array_diff($dependencies, $configurations_to_delete);
+    $config_entity->set('dependencies.config', $dependencies);
+    $config_entity->save();
+  }
+
+  foreach ($configurations_to_delete as $config) {
+    $config_factory->getEditable($config)->delete();
+  }
+}
+
+/**
+ * Update all existing views using a reference to commerce_order_items.
+ */
+function commerce_order_update_8208() {
+  $config_factory = \Drupal::configFactory();
+
+  foreach ($config_factory->listAll('views.view.') as $view_config_name) {
+    $view = $config_factory->getEditable($view_config_name);
+    $displays = $view->get('display');
+    foreach ($displays as $display_name => $display) {
+      if (!empty($display['display_options']['relationships'])) {
+        foreach ($display['display_options']['relationships'] as $relationship_name => $relationship) {
+          if ($relationship_name == 'order_items') {
+            // Update the relation field and add entity information.
+            $base = "display.$display_name.display_options.relationships.$relationship_name";
+            $view->set($base . '.field', $relationship_name . '_target_id');
+            $view->set($base . '.entity_type', 'commerce_order');
+            $view->set($base . '.entity_field', $relationship_name);
+          }
+        }
+      }
+
+      if (!empty($display['display_options']['fields'])) {
+        foreach ($display['display_options']['fields'] as $field_name => $field) {
+          if ($field_name == 'order_items') {
+            // Update the relation field and add entity information.
+            $base = "display.$display_name.display_options.fields.$field_name";
+            $view->set($base . '.field', $field_name . '_target_id');
+          }
+        }
+      }
+    }
+    $view->save(TRUE);
+  }
 }
