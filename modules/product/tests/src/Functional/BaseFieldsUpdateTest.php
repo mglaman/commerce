@@ -4,14 +4,19 @@ namespace Drupal\Tests\commerce_product\Functional;
 
 use Drupal\commerce_product\Entity\Product;
 use Drupal\commerce_store\StoreCreationTrait;
+use Drupal\Core\Field\BaseFieldDefinition;
+use Drupal\field\FieldStorageConfigInterface;
 use Drupal\FunctionalTests\Update\UpdatePathTestBase;
 
+/**
+ * Tests the upgrade path from field config to base fields.
+ */
 class BaseFieldsUpdateTest extends UpdatePathTestBase {
 
   use StoreCreationTrait;
 
   /**
-   * @inheritDoc
+   * {@inheritdoc}
    */
   protected function setDatabaseDumpFiles() {
     $this->databaseDumpFiles = [
@@ -19,6 +24,9 @@ class BaseFieldsUpdateTest extends UpdatePathTestBase {
     ];
   }
 
+  /**
+   * Tests the existing product is accessible after the upgrades.
+   */
   public function testProductBaseFieldsUpdate() {
     $this->runUpdates();
 
@@ -29,6 +37,12 @@ class BaseFieldsUpdateTest extends UpdatePathTestBase {
     assert($product instanceof Product);
     $this->assertEquals([1], $product->getVariationIds());
     $this->assertEquals([1, 2], $product->getStoreIds());
+
+    $field_storage_definitions = \Drupal::service('entity_field.manager')->getFieldStorageDefinitions('commerce_product');
+    $this->assertNotInstanceOf(FieldStorageConfigInterface::class, $field_storage_definitions['variations']);
+    $this->assertNotInstanceOf(FieldStorageConfigInterface::class, $field_storage_definitions['stores']);
+    $this->assertInstanceOf(BaseFieldDefinition::class, $field_storage_definitions['variations']);
+    $this->assertInstanceOf(BaseFieldDefinition::class, $field_storage_definitions['stores']);
   }
 
 }
