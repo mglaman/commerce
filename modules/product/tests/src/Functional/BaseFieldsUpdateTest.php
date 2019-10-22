@@ -3,7 +3,6 @@
 namespace Drupal\Tests\commerce_product\Functional;
 
 use Drupal\commerce_product\Entity\Product;
-use Drupal\commerce_store\StoreCreationTrait;
 use Drupal\Core\Field\BaseFieldDefinition;
 use Drupal\field\FieldStorageConfigInterface;
 use Drupal\FunctionalTests\Update\UpdatePathTestBase;
@@ -12,8 +11,6 @@ use Drupal\FunctionalTests\Update\UpdatePathTestBase;
  * Tests the upgrade path from field config to base fields.
  */
 class BaseFieldsUpdateTest extends UpdatePathTestBase {
-
-  use StoreCreationTrait;
 
   /**
    * {@inheritdoc}
