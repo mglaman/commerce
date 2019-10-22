@@ -5,6 +5,7 @@
  * Defines the Order entity and associated features.
  */
 
+use Drupal\commerce_order\Entity\OrderTypeInterface;
 use Drupal\commerce_order\Plugin\Field\FieldFormatter\PriceCalculatedFormatter;
 use Drupal\Core\Access\AccessResult;
 use Drupal\Core\Entity\EntityInterface;
@@ -130,6 +131,18 @@ function commerce_order_theme_suggestions_commerce_order_receipt(array $variable
     $suggestions[] = $variables['theme_hook_original'] . '__' . $order->bundle();
   }
   return $suggestions;
+}
+
+/**
+ * Adds the default order_items field to an order type.
+ *
+ * @param \Drupal\commerce_order\Entity\OrderTypeInterface $order_type
+ *   The order type.
+ *
+ * @deprecated in Commerce 2.15 and currently performs no operations.
+ */
+function commerce_order_add_order_items_field(OrderTypeInterface $order_type) {
+  trigger_error('commerce_order_add_order_items_field() no longer performs any operations, the "order_items" field is now a base field on the Order entity type.');
 }
 
 /**

@@ -180,6 +180,18 @@ function template_preprocess_commerce_product_attribute_value(array &$variables)
 }
 
 /**
+ * Adds the default stores field to a product.
+ *
+ * @param \Drupal\commerce_product\Entity\ProductTypeInterface $product_type
+ *   The product type.
+ *
+ * @deprecated in Commerce 2.15 and currently performs no operations.
+ */
+function commerce_product_add_stores_field(ProductTypeInterface $product_type) {
+  trigger_error('commerce_product_add_stores_field() no longer performs any operations, the "stores" field is now a base field on the Product entity type.');
+}
+
+/**
  * Adds the default body field to a product type.
  *
  * @param \Drupal\commerce_product\Entity\ProductTypeInterface $product_type
@@ -206,6 +218,18 @@ function commerce_product_add_body_field(ProductTypeInterface $product_type, $la
 
   $configurable_field_manager = \Drupal::service('commerce.configurable_field_manager');
   $configurable_field_manager->createField($field_definition, FALSE);
+}
+
+/**
+ * Adds the default variations field to a product type.
+ *
+ * @param \Drupal\commerce_product\Entity\ProductTypeInterface $product_type
+ *   The product type.
+ *
+ * @deprecated in Commerce 2.15 and currently performs no operations.
+ */
+function commerce_product_add_variations_field(ProductTypeInterface $product_type) {
+  trigger_error('commerce_product_add_variations_field() no longer performs any operations, the "variations" field is now a base field on the Product entity type.');
 }
 
 /**
