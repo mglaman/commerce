@@ -204,11 +204,11 @@ class CouponRedemption extends InlineFormBase {
       }
     }
     if (!$coupon->available($order)) {
-      $form_state->setErrorByName($coupon_code_path, t('The provided coupon code is invalid.'));
+      $form_state->setErrorByName($coupon_code_path, t('The provided coupon code is not available. It may have expired or already been used.'));
       return;
     }
     if (!$coupon->getPromotion()->applies($order)) {
-      $form_state->setErrorByName($coupon_code_path, t('The provided coupon code is invalid.'));
+      $form_state->setErrorByName($coupon_code_path, t('The provided coupon code cannot be applied to your order.'));
       return;
     }
 
