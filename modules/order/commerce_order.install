@@ -5,6 +5,7 @@
  * Install, update and uninstall functions for the Order module.
  */
 
+use Drupal\commerce\CommerceContentEntityStorageSchema;
 use Drupal\Core\Field\BaseFieldDefinition;
 use Drupal\Core\Session\AccountInterface;
 
@@ -206,4 +207,20 @@ function commerce_order_update_8209() {
     }
     $view->save(TRUE);
   }
+}
+
+/**
+ * Ensure new field indexes on the order entity.
+ */
+function commerce_order_update_8210() {
+  $entity_type_manager = \Drupal::entityTypeManager();
+  $definition_update_manager = \Drupal::entityDefinitionUpdateManager();
+
+  // Get the current order entity type definition, ensure the storage schema
+  // class is set.
+  $entity_type = $entity_type_manager->getDefinition('commerce_order')
+    ->setHandlerClass('storage_schema', CommerceContentEntityStorageSchema::class);
+
+  // Regenerate entity type indexes.
+  $definition_update_manager->updateEntityType($entity_type);
 }

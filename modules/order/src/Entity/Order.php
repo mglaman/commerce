@@ -35,6 +35,7 @@ use Drupal\profile\Entity\ProfileInterface;
  *   handlers = {
  *     "event" = "Drupal\commerce_order\Event\OrderEvent",
  *     "storage" = "Drupal\commerce_order\OrderStorage",
+ *     "storage_schema" = "Drupal\commerce\CommerceContentEntityStorageSchema",
  *     "access" = "Drupal\commerce_order\OrderAccessControlHandler",
  *     "query_access" = "Drupal\commerce_order\OrderQueryAccessHandler",
  *     "permission_provider" = "Drupal\commerce_order\OrderPermissionProvider",
@@ -60,6 +61,9 @@ use Drupal\profile\Entity\ProfileInterface;
  *   base_table = "commerce_order",
  *   admin_permission = "administer commerce_order",
  *   permission_granularity = "bundle",
+ *   field_indexes = {
+ *     "order_number"
+ *   },
  *   entity_keys = {
  *     "id" = "order_id",
  *     "label" = "order_number",
