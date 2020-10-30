@@ -3,6 +3,7 @@
 namespace Drupal\commerce_payment;
 
 use CommerceGuys\Intl\Formatter\CurrencyFormatterInterface;
+use Drupal\Core\Datetime\DateFormatterInterface;
 use Drupal\Core\Entity\EntityInterface;
 use Drupal\Core\Entity\EntityListBuilder;
 use Drupal\Core\Entity\EntityStorageInterface;
@@ -31,6 +32,13 @@ class PaymentListBuilder extends EntityListBuilder {
   protected $routeMatch;
 
   /**
+   * The date formatter.
+   *
+   * @var \Drupal\Core\Datetime\DateFormatterInterface
+   */
+  protected $dateFormatter;
+
+  /**
    * {@inheritdoc}
    */
   protected $entitiesKey = 'payments';
@@ -46,12 +54,15 @@ class PaymentListBuilder extends EntityListBuilder {
    *   The currency formatter.
    * @param \Drupal\Core\Routing\RouteMatchInterface $route_match
    *   The current route match.
+   * @param \Drupal\Core\Datetime\DateFormatterInterface $date_formatter
+   *   The date formatter.
    */
-  public function __construct(EntityTypeInterface $entity_type, EntityStorageInterface $storage, CurrencyFormatterInterface $currency_formatter, RouteMatchInterface $route_match) {
+  public function __construct(EntityTypeInterface $entity_type, EntityStorageInterface $storage, CurrencyFormatterInterface $currency_formatter, RouteMatchInterface $route_match, DateFormatterInterface $date_formatter) {
     parent::__construct($entity_type, $storage);
 
     $this->currencyFormatter = $currency_formatter;
     $this->routeMatch = $route_match;
+    $this->dateFormatter = $date_formatter;
   }
 
   /**
@@ -62,7 +73,8 @@ class PaymentListBuilder extends EntityListBuilder {
       $entity_type,
       $container->get('entity_type.manager')->getStorage($entity_type->id()),
       $container->get('commerce_price.currency_formatter'),
-      $container->get('current_route_match')
+      $container->get('current_route_match'),
+      $container->get('date.formatter')
     );
   }
 
@@ -125,6 +137,8 @@ class PaymentListBuilder extends EntityListBuilder {
     $header['label'] = $this->t('Payment');
     $header['state'] = $this->t('State');
     $header['payment_gateway'] = $this->t('Payment gateway');
+    $header['authorized'] = $this->t('Authorized');
+    $header['completed'] = $this->t('Completed');
     $header['avs_response'] = '';
     $header['remote_id'] = $this->t('Remote ID');
     return $header + parent::buildHeader();
@@ -147,6 +161,14 @@ class PaymentListBuilder extends EntityListBuilder {
     $row['label'] = $formatted_amount;
     $row['state'] = $entity->getState()->getLabel();
     $row['payment_gateway'] = $payment_gateway ? $payment_gateway->label() : $this->t('N/A');
+
+    foreach (['authorized', 'completed'] as $field) {
+      if ($entity->get($field)->isEmpty()) {
+        $row[$field] = '';
+        continue;
+      }
+      $row[$field] = $this->dateFormatter->format($entity->get($field)->value, 'short');
+    }
 
     // Add the AVS response code label beneath the gateway name if it exists.
     if ($avs_response_code = $entity->getAvsResponseCode()) {
