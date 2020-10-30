@@ -17,7 +17,7 @@ use Drupal\user\UserInterface;
 class OrderCustomerTest extends UnitTestCase {
 
   /**
-   * ::covers evaluate
+   * ::covers evaluate.
    */
   public function testEvaluate() {
     $entity_type_manager = $this->prophesize(EntityTypeManagerInterface::class);

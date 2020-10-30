@@ -4,8 +4,6 @@ namespace Drupal\Tests\commerce_cart\Kernel;
 
 use Drupal\commerce_cart\Exception\DuplicateCartException;
 use Drupal\commerce_order\Entity\OrderInterface;
-use Drupal\commerce_store\Entity\Store;
-use Drupal\commerce_store\Entity\StoreType;
 
 /**
  * Tests the cart provider.
