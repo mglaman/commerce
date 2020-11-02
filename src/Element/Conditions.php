@@ -169,19 +169,21 @@ class Conditions extends FormElement {
           ],
         ];
         if ($enabled) {
-          $element[$category_id][$plugin_id]['configuration'] = [
-            '#type' => 'commerce_plugin_configuration',
-            '#plugin_type' => 'commerce_condition',
-            '#plugin_id' => $plugin_id,
-            '#default_value' => isset($default_value[$plugin_id]) ? $default_value[$plugin_id] : [],
-            '#states' => [
-              'visible' => [
-                ':input[name="' . $checkbox_name . '"]' => ['checked' => TRUE],
-              ],
+          $inline_form_manager = \Drupal::service('plugin.manager.commerce_inline_form');
+          $inline_form = $inline_form_manager->createInstance('plugin_configuration', [
+            'plugin_type' => 'commerce_condition',
+            'plugin_id' => $plugin_id,
+            'plugin_configuration' => isset($default_value[$plugin_id]) ? $default_value[$plugin_id] : [],
+          ]);
+          $element[$category_id][$plugin_id]['configuration']['#inline_form'] = $inline_form;
+          $element[$category_id][$plugin_id]['configuration'] = $inline_form->buildInlineForm($element[$category_id][$plugin_id]['configuration'], $form_state);
+          $element[$category_id][$plugin_id]['configuration']['#states'] = [
+            'visible' => [
+              ':input[name="' . $checkbox_name . '"]' => ['checked' => TRUE],
             ],
-            // The element is already keyed by $plugin_id, no need to do it twice.
-            '#enforce_unique_parents' => FALSE,
           ];
+          // The element is already keyed by $plugin_id, no need to do it twice.
+          $element[$category_id][$plugin_id]['configuration']['#enforce_unique_parents'] = FALSE;
         }
       }
     }
