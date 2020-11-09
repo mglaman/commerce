@@ -112,6 +112,7 @@ class BuyXGetY extends OrderPromotionOfferBase {
       '#type' => 'commerce_number',
       '#title' => $this->t('Quantity'),
       '#default_value' => $this->configuration['buy_quantity'],
+      '#min' => 1,
     ];
     $form['buy']['conditions'] = [
       '#type' => 'commerce_conditions',
@@ -130,6 +131,7 @@ class BuyXGetY extends OrderPromotionOfferBase {
       '#type' => 'commerce_number',
       '#title' => $this->t('Quantity'),
       '#default_value' => $this->configuration['get_quantity'],
+      '#min' => 1,
     ];
     $form['get']['conditions'] = [
       '#type' => 'commerce_conditions',
