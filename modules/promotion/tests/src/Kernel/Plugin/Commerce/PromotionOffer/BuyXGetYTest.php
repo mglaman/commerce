@@ -414,6 +414,72 @@ class BuyXGetYTest extends OrderKernelTestBase {
   }
 
   /**
+   * Tests order item sorting when a 'get_condition' product has a higher value.
+   *
+   * @covers ::apply
+   */
+  public function testOrderItemSortingWithHigherValueGetCondition() {
+    $offer = $this->promotion->getOffer();
+    $offer_configuration = $offer->getConfiguration();
+    // The customer purchases 2 quantities of any product.
+    $offer_configuration['buy_quantity'] = '2';
+    $offer_configuration['buy_conditions'] = [];
+    // The customer receives 1 specific product for free.
+    $offer_configuration['get_quantity'] = '1';
+    $offer_configuration['get_conditions'] = [
+      [
+        'plugin' => 'order_item_purchased_entity:commerce_product_variation',
+        'configuration' => [
+          'entities' => [
+            $this->variations[2]->uuid(),
+          ],
+        ],
+      ],
+    ];
+    $offer_configuration['offer_type'] = 'percentage';
+    $offer_configuration['offer_percentage'] = '1';
+    $offer_configuration['offer_amount'] = NULL;
+    $offer->setConfiguration($offer_configuration);
+    $this->promotion->setOffer($offer);
+
+    /** @var \Drupal\commerce_order\OrderItemStorageInterface $order_item_storage */
+    $order_item_storage = \Drupal::entityTypeManager()->getStorage('commerce_order_item');
+    // Price of first order item: 10. Matches the first required quantity of the
+    // buy condition.
+    $first_order_item = $order_item_storage->createFromPurchasableEntity($this->variations[0], [
+      'quantity' => '1',
+    ]);
+    $first_order_item->save();
+    // Price of second order item: 20. Matches the second required quantity of
+    // the buy condition.
+    $second_order_item = $order_item_storage->createFromPurchasableEntity($this->variations[1], [
+      'quantity' => '1',
+    ]);
+    $second_order_item->save();
+    // Price of third order item: 30. Matches the get_conditions, which means
+    // that this order item will be discounted 100%. The purpose of this test
+    // is to check the case when the get_conditions product has an equal or
+    // higher value than the order items that match the buy_conditions.
+    $third_order_item = $order_item_storage->createFromPurchasableEntity($this->variations[2], [
+      'quantity' => '1',
+    ]);
+    $third_order_item->save();
+    $this->order->setItems([$first_order_item, $second_order_item, $third_order_item]);
+    $this->order->save();
+    $this->promotion->apply($this->order);
+    list($first_order_item, $second_order_item, $third_order_item) = $this->order->getItems();
+
+    $this->assertCount(0, $first_order_item->getAdjustments());
+    $this->assertCount(0, $second_order_item->getAdjustments());
+    $this->assertCount(1, $third_order_item->getAdjustments());
+    $adjustments = $third_order_item->getAdjustments();
+    $adjustment = reset($adjustments);
+    $this->assertEquals('promotion', $adjustment->getType());
+    $this->assertEquals(new Price('-30', 'USD'), $adjustment->getAmount());
+    $this->assertEquals($this->promotion->id(), $adjustment->getSourceId());
+  }
+
+  /**
    * Tests working with decimal quantities.
    *
    * @covers ::apply

@@ -269,6 +269,17 @@ class BuyXGetY extends OrderPromotionOfferBase {
     // discounted products, in this order: 3, 1, 3, 1. To ensure the specified
     // results, $buy_quantities must be processed group by group, with any
     // overlaps immediately removed from the $get_quantities (and vice-versa).
+    // Additionally, ensure that any items from $buy_quantities that overlap
+    // with $get_quantities are processed last, in order to accommodate the case
+    // when $buy_conditions (or the lack thereof) are satisfied by the other
+    // (non-overlapping) $buy_quantity items.
+    foreach ($buy_quantities as $id => $quantity) {
+      if (isset($get_quantities[$id])) {
+        unset($buy_quantities[$id]);
+        $buy_quantities[$id] = $quantity;
+      }
+    }
+
     $final_quantities = [];
     while (!empty($buy_quantities)) {
       $selected_buy_quantities = $this->sliceQuantities($buy_quantities, $this->configuration['buy_quantity']);
