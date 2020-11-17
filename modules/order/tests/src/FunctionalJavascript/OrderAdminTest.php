@@ -152,7 +152,6 @@ class OrderAdminTest extends OrderWebDriverTestBase {
     $order = Order::load(1);
     $this->assertNull($order->getBillingProfile());;
 
-
     // Use an adjustment that is not locked by default.
     $this->drupalGet($order->toUrl('edit-form'));
     $this->getSession()->getPage()->pressButton('add_billing_information');
