@@ -174,8 +174,10 @@ class Conditions extends FormElement {
             'plugin_type' => 'commerce_condition',
             'plugin_id' => $plugin_id,
             'plugin_configuration' => isset($default_value[$plugin_id]) ? $default_value[$plugin_id] : [],
+            'enforce_unique_parents' => FALSE,
           ]);
           $element[$category_id][$plugin_id]['configuration']['#inline_form'] = $inline_form;
+          $element[$category_id][$plugin_id]['configuration']['#parents'] = array_merge($element['#parents'], [$category_id, $plugin_id, 'configuration']);
           $element[$category_id][$plugin_id]['configuration'] = $inline_form->buildInlineForm($element[$category_id][$plugin_id]['configuration'], $form_state);
           $element[$category_id][$plugin_id]['configuration']['#states'] = [
             'visible' => [
