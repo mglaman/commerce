@@ -44,6 +44,10 @@
             </div>
           {% endif %}
         {% endfor %}
+      {# If the order has possible transitions, render the field for transition buttons. #}
+      {% if order_entity.getState.getTransitions is not empty %}
+        {{ order.state }}
+      {% endif %}
       </div>
       <details open class="seven-details">
         <summary role="button" class="seven-details__summary">
@@ -78,12 +82,6 @@
             {{ order.shipping_information }}
           </div>
         </details>
-      {% endif %}
-      {# If the order has possible transitions, render the field for transition buttons. #}
-      {% if order_entity.getState.getTransitions is not empty %}
-        <div class="entity-meta__header">
-          {{ order.state }}
-        </div>
       {% endif %}
     </div>
   </div>
