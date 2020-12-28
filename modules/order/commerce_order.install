@@ -224,3 +224,20 @@ function commerce_order_update_8210() {
   // Regenerate entity type indexes.
   $definition_update_manager->updateEntityType($entity_type);
 }
+
+/**
+ * Add the 'locked' field to 'commerce_order_item' entities.
+ */
+function commerce_order_update_8211() {
+  $storage_definition = BaseFieldDefinition::create('boolean')
+    ->setLabel(t('Locked'))
+    ->setSettings([
+      'on_label' => t('Yes'),
+      'off_label' => t('No'),
+    ])
+    ->setDefaultValue(FALSE)
+    ->setInitialValue(FALSE);
+
+  $update_manager = \Drupal::entityDefinitionUpdateManager();
+  $update_manager->installFieldStorageDefinition('locked', 'commerce_order_item', 'commerce_order_item', $storage_definition);
+}
