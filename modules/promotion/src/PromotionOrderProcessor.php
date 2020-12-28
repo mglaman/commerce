@@ -5,6 +5,8 @@ namespace Drupal\commerce_promotion;
 use Drupal\commerce_order\Entity\OrderInterface;
 use Drupal\commerce_order\OrderProcessorInterface;
 use Drupal\Core\Entity\EntityTypeManagerInterface;
+use Drupal\Core\Language\LanguageInterface;
+use Drupal\Core\Language\LanguageManagerInterface;
 
 /**
  * Applies promotions to orders during the order refresh process.
@@ -19,13 +21,23 @@ class PromotionOrderProcessor implements OrderProcessorInterface {
   protected $promotionStorage;
 
   /**
+   * The language manager.
+   *
+   * @var \Drupal\Core\Language\LanguageManagerInterface
+   */
+  protected $languageManager;
+
+  /**
    * Constructs a new PromotionOrderProcessor object.
    *
    * @param \Drupal\Core\Entity\EntityTypeManagerInterface $entity_type_manager
    *   The entity type manager.
+   * @param \Drupal\Core\Language\LanguageManagerInterface $language_manager
+   *   The language manager.
    */
-  public function __construct(EntityTypeManagerInterface $entity_type_manager) {
+  public function __construct(EntityTypeManagerInterface $entity_type_manager, LanguageManagerInterface $language_manager) {
     $this->promotionStorage = $entity_type_manager->getStorage('commerce_promotion');
+    $this->languageManager = $language_manager;
   }
 
   /**
@@ -41,6 +53,7 @@ class PromotionOrderProcessor implements OrderProcessorInterface {
       $coupons_field_list->removeItem($delta);
     }
 
+    $content_langcode = $this->languageManager->getCurrentLanguage(LanguageInterface::TYPE_CONTENT)->getId();
     /** @var \Drupal\commerce_promotion\Entity\CouponInterface[] $coupons */
     $coupons = $order->get('coupons')->referencedEntities();
     foreach ($coupons as $index => $coupon) {
@@ -52,6 +65,11 @@ class PromotionOrderProcessor implements OrderProcessorInterface {
     $promotions = $this->promotionStorage->loadAvailable($order);
     foreach ($promotions as $promotion) {
       if ($promotion->applies($order)) {
+        // Ensure the promotion is in the right language, to ensure promotions
+        // adjustments labels are correctly translated.
+        if ($promotion->hasTranslation($content_langcode)) {
+          $promotion = $promotion->getTranslation($content_langcode);
+        }
         $promotion->apply($order);
       }
     }

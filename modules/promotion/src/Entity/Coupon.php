@@ -2,10 +2,10 @@
 
 namespace Drupal\commerce_promotion\Entity;
 
+use Drupal\commerce\Entity\CommerceContentEntityBase;
 use Drupal\commerce_order\Entity\OrderInterface;
 use Drupal\Core\Entity\EntityStorageInterface;
 use Drupal\Core\Field\BaseFieldDefinition;
-use Drupal\Core\Entity\ContentEntityBase;
 use Drupal\Core\Entity\EntityTypeInterface;
 
 /**
@@ -58,7 +58,7 @@ use Drupal\Core\Entity\EntityTypeInterface;
  *   },
  * )
  */
-class Coupon extends ContentEntityBase implements CouponInterface {
+class Coupon extends CommerceContentEntityBase implements CouponInterface {
 
   /**
    * {@inheritdoc}
@@ -73,7 +73,7 @@ class Coupon extends ContentEntityBase implements CouponInterface {
    * {@inheritdoc}
    */
   public function getPromotion() {
-    return $this->get('promotion_id')->entity;
+    return $this->getTranslatedReferencedEntity('promotion_id');
   }
 
   /**
