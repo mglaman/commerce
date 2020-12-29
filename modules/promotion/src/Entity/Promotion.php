@@ -580,6 +580,21 @@ class Promotion extends CommerceContentEntityBase implements PromotionInterface 
   /**
    * {@inheritdoc}
    */
+  public function clear(OrderInterface $order) {
+    $offer = $this->getOffer();
+    if ($offer instanceof OrderItemPromotionOfferInterface) {
+      foreach ($order->getItems() as $order_item) {
+        $offer->clear($order_item, $this);
+      }
+    }
+    else {
+      $offer->clear($order, $this);
+    }
+  }
+
+  /**
+   * {@inheritdoc}
+   */
   public function postSave(EntityStorageInterface $storage, $update = TRUE) {
     parent::postSave($storage, $update);
 
