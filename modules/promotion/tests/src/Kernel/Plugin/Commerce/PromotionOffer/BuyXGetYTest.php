@@ -580,6 +580,7 @@ class BuyXGetYTest extends OrderKernelTestBase {
 
     $this->assertCount(0, $first_order_item->getAdjustments());
     $this->assertCount(1, $second_order_item->getAdjustments());
+    $this->assertTrue($second_order_item->isUnitPriceOverridden());
     $this->assertEquals(1, $second_order_item->getQuantity());
     $this->assertEquals($this->variations[2]->id(), $second_order_item->getPurchasedEntityId());
     $this->assertAdjustmentPrice($second_order_item->getAdjustments()[0], '-30');

@@ -375,11 +375,18 @@ class BuyXGetY extends OrderPromotionOfferBase {
         // conditions are no longer satisfied on the next order refresh.
         $order_item->setData("promotion:{$promotion->id()}:auto_add_quantity", $expected_get_quantity);
 
+        $time = $order->getCalculationDate()->format('U');
+        $context = new Context($order->getCustomer(), $order->getStore(), $time);
+        $unit_price = $this->chainPriceResolver->resolve($get_purchasable_entity, $order_item->getQuantity(), $context);
+        $order_item->setUnitPrice($unit_price);
+
         if ($order_item->isNew()) {
-          $time = $order->getCalculationDate()->format('U');
-          $context = new Context($order->getCustomer(), $order->getStore(), $time);
-          $unit_price = $this->chainPriceResolver->resolve($get_purchasable_entity, $order_item->getQuantity(), $context);
-          $order_item->setUnitPrice($unit_price);
+          // Because we've automatically added this order item, mark the unit
+          // price as overridden so OrderRefresh::refresh() doesn't try to
+          // resolve the unit price for a quantity = 0 (See the clear() method)
+          // which deducts the auto added get quantity very early in the refresh
+          // process.
+          $order_item->set('overridden_unit_price', TRUE);
           $order_item->set('order_id', $order->id());
           $order_item->save();
           $order->addItem($order_item);
