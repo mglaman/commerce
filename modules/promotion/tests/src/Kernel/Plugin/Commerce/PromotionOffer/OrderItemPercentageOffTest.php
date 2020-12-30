@@ -302,6 +302,7 @@ class OrderItemPercentageOffTest extends OrderKernelTestBase {
     // Ensures the unit price is not reduced by second inclusive promotion.
     $this->assertEquals(new Price('9.99', 'USD'), $order_item->getUnitPrice());
     $this->assertEquals('100% off', $adjustments[0]->getLabel());
+    $this->order->recalculateTotalPrice();
     $this->assertEquals(new Price('0', 'USD'), $this->order->getTotalPrice());
   }
 

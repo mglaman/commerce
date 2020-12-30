@@ -340,6 +340,8 @@ class OrderItemFixedAmountOffTest extends OrderKernelTestBase {
     // Ensures the unit price is not reduced by second inclusive promotion.
     $this->assertEquals(new Price('10', 'USD'), $order_item->getUnitPrice());
     $this->assertEquals(new Price('0', 'USD'), $this->order->getTotalPrice());
+    $this->order->recalculateTotalPrice();
+    $this->assertEquals(new Price('0', 'USD'), $this->order->getTotalPrice());
   }
 
 }
