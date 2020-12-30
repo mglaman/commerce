@@ -7,6 +7,7 @@ use Drupal\commerce\Entity\CommerceContentEntityBase;
 use Drupal\commerce\Plugin\Commerce\Condition\ConditionInterface;
 use Drupal\commerce\Plugin\Commerce\Condition\ParentEntityAwareInterface;
 use Drupal\commerce_order\Entity\OrderInterface;
+use Drupal\commerce_price\Calculator;
 use Drupal\commerce_promotion\Plugin\Commerce\PromotionOffer\OrderItemPromotionOfferInterface;
 use Drupal\commerce_promotion\Plugin\Commerce\PromotionOffer\PromotionOfferInterface;
 use Drupal\Core\Datetime\DrupalDateTime;
@@ -567,6 +568,10 @@ class Promotion extends CommerceContentEntityBase implements PromotionInterface 
       $offer_conditions = new ConditionGroup($offer->getConditions(), $offer->getConditionOperator());
       // Apply the offer to order items that pass the conditions.
       foreach ($order->getItems() as $order_item) {
+        // Skip order items with a null unit price or with a quantity = 0.
+        if (!$order_item->getUnitPrice() || Calculator::compare($order_item->getQuantity(), '0') === 0) {
+          continue;
+        }
         if ($offer_conditions->evaluate($order_item)) {
           $offer->apply($order_item, $this);
         }
