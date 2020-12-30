@@ -111,6 +111,7 @@ class Conditions extends FormElement {
     $tab_group = implode('][', array_merge($element['#parents'], ['conditions']));
 
     $element['#attached']['library'][] = 'commerce/conditions';
+    $element['#after_build'] = [[get_called_class(), 'clearValues']];
     $element['#categories'] = [];
 
     // Render vertical tabs only if there is more than a single category.
@@ -240,6 +241,31 @@ class Conditions extends FormElement {
       }
     }
     $form_state->setValueForElement($element, $value);
+  }
+
+  /**
+   * Clears plugin configuration when a condition plugin gets disabled.
+   *
+   * Implemented as an #after_build callback because #after_build runs before
+   * validation, allowing the values to be cleared early enough to prevent the
+   * "Illegal choice" error.
+   */
+  public static function clearValues(array $element, FormStateInterface $form_state) {
+    $triggering_element = $form_state->getTriggeringElement();
+    if (!$triggering_element) {
+      return $element;
+    }
+    $triggering_element_name = end($triggering_element['#parents']);
+    if ($triggering_element_name === 'enable' && !$triggering_element['#value']) {
+      $user_input = &$form_state->getUserInput();
+      array_pop($triggering_element['#parents']);
+      $values = NestedArray::getValue($user_input, $triggering_element['#parents']);
+      // Clear the configuration when the "enable" checkbox is unchecked.
+      unset($values['configuration']);
+      NestedArray::setValue($user_input, $triggering_element['#parents'], $values);
+    }
+
+    return $element;
   }
 
 }
