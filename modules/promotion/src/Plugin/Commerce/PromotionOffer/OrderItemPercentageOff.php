@@ -29,7 +29,11 @@ class OrderItemPercentageOff extends OrderItemPromotionOfferBase {
     $percentage = $this->getPercentage();
     if ($this->configuration['display_inclusive']) {
       // Display-inclusive promotions must first be applied to the unit price.
-      $unit_price = $order_item->getUnitPrice();
+      $unit_price = $order_item->getAdjustedUnitPrice(['promotion']);
+      // If the order item unit price is already reduced to 0, stop here.
+      if ($unit_price->isZero()) {
+        return;
+      }
       $amount = $unit_price->multiply($percentage);
       $amount = $this->rounder->round($amount);
       $new_unit_price = $unit_price->subtract($amount);

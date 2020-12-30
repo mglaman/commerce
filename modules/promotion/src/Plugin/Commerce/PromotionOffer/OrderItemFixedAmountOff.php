@@ -34,6 +34,12 @@ class OrderItemFixedAmountOff extends OrderItemPromotionOfferBase {
     if ($this->configuration['display_inclusive']) {
       // Display-inclusive promotions must first be applied to the unit price.
       $unit_price = $order_item->getAdjustedUnitPrice(['promotion']);
+
+      // The unit price is already reduced to 0, no need to continue further.
+      if ($unit_price->isZero()) {
+        return;
+      }
+
       if ($amount->greaterThan($unit_price)) {
         // Don't reduce the unit price past zero.
         $amount = $unit_price;
