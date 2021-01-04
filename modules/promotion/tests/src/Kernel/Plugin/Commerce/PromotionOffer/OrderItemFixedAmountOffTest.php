@@ -292,7 +292,7 @@ class OrderItemFixedAmountOffTest extends OrderKernelTestBase {
     /** @var \Drupal\commerce_promotion\Entity\PromotionInterface $promotion */
     $promotion = Promotion::create([
       'name' => 'Promotion test',
-      'display_name' => '$20 off',
+      'display_name' => '$5 off',
       'order_types' => [$this->order->bundle()],
       'stores' => [$this->store->id()],
       'status' => TRUE,
@@ -301,21 +301,23 @@ class OrderItemFixedAmountOffTest extends OrderKernelTestBase {
         'target_plugin_configuration' => [
           'display_inclusive' => FALSE,
           'amount' => [
-            'number' => '20.00',
+            'number' => '5.00',
             'currency_code' => 'USD',
           ],
         ],
       ],
+      'weight' => -1,
     ]);
     $promotion->save();
 
     $inclusive_promotion = $promotion->createDuplicate();
-    $inclusive_promotion->setDisplayName('Inclusive $20 off');
+    $inclusive_promotion->setWeight(0);
+    $inclusive_promotion->setDisplayName('Inclusive $2 off');
     $offer = $inclusive_promotion->getOffer();
     $offer->setConfiguration([
       'display_inclusive' => TRUE,
       'amount' => [
-        'number' => '20.00',
+        'number' => '2.00',
         'currency_code' => 'USD',
       ],
     ]);
@@ -333,13 +335,37 @@ class OrderItemFixedAmountOffTest extends OrderKernelTestBase {
     $this->container->get('commerce_order.order_refresh')->refresh($this->order);
     $order_item = $this->reloadEntity($order_item);
     $adjustments = $order_item->getAdjustments();
-    $this->assertEquals(1, count($adjustments));
-    $this->assertEquals('$20 off', $adjustments[0]->getLabel());
-    $this->assertEquals(new Price('20', 'USD'), $order_item->getTotalPrice());
+    $this->assertEquals(2, count($adjustments));
+    $this->assertEquals('$5 off', $adjustments[0]->getLabel());
+    $this->assertEquals(new Price('16', 'USD'), $order_item->getTotalPrice());
+    $this->assertEquals(new Price('3', 'USD'), $order_item->getAdjustedUnitPrice());
+    $this->assertEquals(new Price('6', 'USD'), $order_item->getAdjustedTotalPrice());
+    $this->assertEquals(new Price('8', 'USD'), $order_item->getUnitPrice());
+    $this->order->recalculateTotalPrice();
+    $this->assertEquals(new Price('6', 'USD'), $this->order->getTotalPrice());
+
+    $another_inclusive_promotion = $inclusive_promotion->createDuplicate();
+    $another_inclusive_promotion->setWeight(2);
+    $another_inclusive_promotion->setDisplayName('Inclusive $10 off');
+    $offer = $another_inclusive_promotion->getOffer();
+    $offer->setConfiguration([
+      'display_inclusive' => TRUE,
+      'amount' => [
+        'number' => '10.00',
+        'currency_code' => 'USD',
+      ],
+    ]);
+    $another_inclusive_promotion->setOffer($offer);
+    $another_inclusive_promotion->save();
+    $this->container->get('commerce_order.order_refresh')->refresh($this->order);
+    $order_item = $this->reloadEntity($order_item);
+    $adjustments = $order_item->getAdjustments();
+    $this->assertEquals(3, count($adjustments));
+    $this->assertEquals('$5 off', $adjustments[0]->getLabel());
+    $this->assertFalse($adjustments[0]->isIncluded());
+    $this->assertEquals(new Price('10', 'USD'), $order_item->getTotalPrice());
     $this->assertEquals(new Price('0', 'USD'), $order_item->getAdjustedTotalPrice());
-    // Ensures the unit price is not reduced by second inclusive promotion.
-    $this->assertEquals(new Price('10', 'USD'), $order_item->getUnitPrice());
-    $this->assertEquals(new Price('0', 'USD'), $this->order->getTotalPrice());
+    $this->assertEquals(new Price('5', 'USD'), $order_item->getUnitPrice());
     $this->order->recalculateTotalPrice();
     $this->assertEquals(new Price('0', 'USD'), $this->order->getTotalPrice());
   }
