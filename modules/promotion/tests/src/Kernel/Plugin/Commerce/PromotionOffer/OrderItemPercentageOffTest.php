@@ -306,15 +306,18 @@ class OrderItemPercentageOffTest extends OrderKernelTestBase {
           'percentage' => '1',
         ],
       ],
+      'weight' => 0,
     ]);
     $promotion->save();
 
     $inclusive_promotion = $promotion->createDuplicate();
+    $inclusive_promotion->setDisplayName('Inclusive 100% off');
     $offer = $inclusive_promotion->getOffer();
     $offer->setConfiguration([
       'display_inclusive' => TRUE,
       'percentage' => '1',
     ]);
+    $inclusive_promotion->setWeight(1);
     $inclusive_promotion->setOffer($offer);
     $inclusive_promotion->save();
     $order_item = OrderItem::create([
@@ -329,10 +332,11 @@ class OrderItemPercentageOffTest extends OrderKernelTestBase {
     $this->container->get('commerce_order.order_refresh')->refresh($this->order);
     $order_item = $this->reloadEntity($order_item);
     $adjustments = $order_item->getAdjustments();
+    // The adjusted total is already reduced to 0, the inclusive promotion
+    // shouldn't add an adjustment.
     $this->assertEquals(1, count($adjustments));
     $this->assertEquals(new Price('19.98', 'USD'), $order_item->getTotalPrice());
     $this->assertEquals(new Price('0', 'USD'), $order_item->getAdjustedTotalPrice());
-    // Ensures the unit price is not reduced by second inclusive promotion.
     $this->assertEquals(new Price('9.99', 'USD'), $order_item->getUnitPrice());
     $this->assertEquals('100% off', $adjustments[0]->getLabel());
     $this->order->recalculateTotalPrice();
