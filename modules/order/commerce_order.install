@@ -241,3 +241,11 @@ function commerce_order_update_8211() {
   $update_manager = \Drupal::entityDefinitionUpdateManager();
   $update_manager->installFieldStorageDefinition('locked', 'commerce_order_item', 'commerce_order_item', $storage_definition);
 }
+
+/**
+ * Update the order_number field definition.
+ */
+function commerce_order_update_8212() {
+  $definition_update_manager = \Drupal::service('entity.definition_update_manager');
+  $definition_update_manager->updateFieldStorageDefinition($definition_update_manager->getFieldStorageDefinition('order_number', 'commerce_order'));
+}

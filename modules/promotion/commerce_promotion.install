@@ -177,3 +177,11 @@ function commerce_promotion_update_8206() {
   // Regenerate entity type indexes.
   $definition_update_manager->updateEntityType($entity_type);
 }
+
+/**
+ * Update the code field definition.
+ */
+function commerce_promotion_update_8207() {
+  $definition_update_manager = \Drupal::service('entity.definition_update_manager');
+  $definition_update_manager->updateFieldStorageDefinition($definition_update_manager->getFieldStorageDefinition('code', 'commerce_promotion_coupon'));
+}

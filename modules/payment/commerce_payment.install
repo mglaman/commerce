@@ -166,3 +166,12 @@ function commerce_payment_update_8207() {
     ->setHandlerClass('storage_schema', CommerceContentEntityStorageSchema::class);
   $definition_update_manager->updateEntityType($entity_type);
 }
+
+/**
+ * Update the remote_id field definition.
+ */
+function commerce_payment_update_8208() {
+  $definition_update_manager = \Drupal::service('entity.definition_update_manager');
+  $definition_update_manager->updateFieldStorageDefinition($definition_update_manager->getFieldStorageDefinition('remote_id', 'commerce_payment'));
+  $definition_update_manager->updateFieldStorageDefinition($definition_update_manager->getFieldStorageDefinition('remote_id', 'commerce_payment_method'));
+}

@@ -284,3 +284,11 @@ function commerce_product_update_8211() {
   // Regenerate entity type indexes.
   $definition_update_manager->updateEntityType($entity_type);
 }
+
+/**
+ * Update the sku field definition.
+ */
+function commerce_product_update_8212() {
+  $definition_update_manager = \Drupal::service('entity.definition_update_manager');
+  $definition_update_manager->updateFieldStorageDefinition($definition_update_manager->getFieldStorageDefinition('sku', 'commerce_product_variation'));
+}
