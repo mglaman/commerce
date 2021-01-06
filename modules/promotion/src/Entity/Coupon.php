@@ -163,6 +163,11 @@ class Coupon extends CommerceContentEntityBase implements CouponInterface {
     /** @var \Drupal\commerce_promotion\PromotionUsageInterface $usage */
     $usage = \Drupal::service('commerce_promotion.usage');
 
+    // Check the global usage limit fist.
+    if ($usage_limit && $usage_limit <= $usage->loadByCoupon($this)) {
+      return FALSE;
+    }
+
     // Only check customer usage when email address is known.
     if ($usage_limit_customer) {
       $email = $order->getEmail();
