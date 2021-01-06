@@ -167,9 +167,9 @@ class ProductVariationFieldRendererTest extends CommerceKernelTestBase {
     $this->assertArrayHasKey('sku', $rendered_fields);
     $this->assertArrayHasKey('attribute_color', $rendered_fields);
     $this->assertNotEmpty($rendered_fields['sku']);
-    $this->assertNotEmpty($rendered_fields['sku'][0]);
+    $this->assertNotEmpty($rendered_fields['sku']['rendered_field'][0]);
     $this->assertNotEmpty($rendered_fields['attribute_color']);
-    $this->assertNotEmpty($rendered_fields['attribute_color'][0]);
+    $this->assertNotEmpty($rendered_fields['attribute_color']['rendered_field'][0]);
     $this->assertEquals('product--variation-field--variation_sku__' . $variation->getProductId(), $rendered_fields['sku']['#ajax_replace_class']);
     $this->assertEquals('product--variation-field--variation_attribute_color__' . $variation->getProductId(), $rendered_fields['attribute_color']['#ajax_replace_class']);
     // Confirm that an empty field gets a rendered wrapper.
@@ -316,7 +316,7 @@ class ProductVariationFieldRendererTest extends CommerceKernelTestBase {
 
     $rendered_field = $this->variationFieldRenderer->renderField('sku', $variation, 'default');
     $this->assertNotEmpty($rendered_field);
-    $this->assertNotEmpty($rendered_field[0]);
+    $this->assertNotEmpty($rendered_field['rendered_field'][0]);
     $this->assertEquals('product--variation-field--variation_sku__' . $variation->getProductId(), $rendered_field['#ajax_replace_class']);
 
     // Confirm that an empty field gets a rendered wrapper.
@@ -334,7 +334,7 @@ class ProductVariationFieldRendererTest extends CommerceKernelTestBase {
       'type' => 'commerce_price_default',
     ]);
     $this->assertNotEmpty($rendered_field);
-    $this->assertNotEmpty($rendered_field[0]);
+    $this->assertNotEmpty($rendered_field['rendered_field'][0]);
     $this->assertEquals('product--variation-field--variation_price__' . $variation->getProductId(), $rendered_field['#ajax_replace_class']);
   }
 

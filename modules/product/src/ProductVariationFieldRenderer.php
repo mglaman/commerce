@@ -91,15 +91,16 @@ class ProductVariationFieldRenderer implements ProductVariationFieldRendererInte
    */
   protected function prepareForAjax(array $rendered_field, $field_name, ProductVariationInterface $variation) {
     $ajax_class = $this->buildAjaxReplacementClass($field_name, $variation);
-    $rendered_field['#attributes']['class'][] = $ajax_class;
-    $rendered_field['#ajax_replace_class'] = $ajax_class;
-    // Ensure that a <div> is rendered even if the field is empty, to allow
-    // field replacement to work when the variation changes.
-    if (!Element::children($rendered_field)) {
-      $rendered_field['#type'] = 'container';
-    }
 
-    return $rendered_field;
+    // Add a wrapper for the AJAX replacement. Do not tamper with the original
+    // render array because fields with a #lazy_builder property cannot have an
+    // #attributes property as well.
+    return [
+      '#type' => 'container',
+      '#attributes' => ['class' => [$ajax_class]],
+      '#ajax_replace_class' => $ajax_class,
+      'rendered_field' => $rendered_field,
+    ];
   }
 
   /**
