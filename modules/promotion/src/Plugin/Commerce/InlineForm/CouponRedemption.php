@@ -110,7 +110,7 @@ class CouponRedemption extends InlineFormBase {
     ];
     $inline_form['apply'] = [
       '#type' => 'submit',
-      '#value' => t('Apply coupon'),
+      '#value' => $this->t('Apply coupon'),
       '#name' => 'apply_coupon',
       '#limit_validation_errors' => [
         $inline_form['#parents'],
@@ -140,7 +140,7 @@ class CouponRedemption extends InlineFormBase {
       ];
       $inline_form['coupons'][$index]['remove_button'] = [
         '#type' => 'submit',
-        '#value' => t('Remove coupon'),
+        '#value' => $this->t('Remove coupon'),
         '#name' => 'remove_coupon_' . $index,
         '#ajax' => [
           'callback' => [get_called_class(), 'ajaxRefreshForm'],

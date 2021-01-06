@@ -209,7 +209,7 @@ class PromotionListBuilder extends EntityListBuilder implements FormInterface {
       $form['actions']['#type'] = 'actions';
       $form['actions']['submit'] = [
         '#type' => 'submit',
-        '#value' => t('Save'),
+        '#value' => $this->t('Save'),
         '#button_type' => 'primary',
       ];
     }

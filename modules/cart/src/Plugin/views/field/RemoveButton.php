@@ -95,7 +95,7 @@ class RemoveButton extends FieldPluginBase {
 
       $form[$this->options['id']][$row_index] = [
         '#type' => 'submit',
-        '#value' => t('Remove'),
+        '#value' => $this->t('Remove'),
         '#name' => 'delete-order-item-' . $row_index,
         '#remove_order_item' => TRUE,
         '#row_index' => $row_index,
