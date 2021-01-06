@@ -134,7 +134,7 @@ class Price extends FormElement {
       $last_visible_element = 'currency_code';
       $element['currency_code'] = [
         '#type' => 'select',
-        '#title' => $this->t('Currency'),
+        '#title' => t('Currency'),
         '#default_value' => $default_value ? $default_value['currency_code'] : NULL,
         '#options' => array_combine($currency_codes, $currency_codes),
         '#title_display' => 'invisible',
