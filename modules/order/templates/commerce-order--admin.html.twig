@@ -83,6 +83,17 @@
           </div>
         </details>
       {% endif %}
+      {% if additional_order_fields %}
+        <details open class="seven-details">
+          <summary role="button" class="seven-details__summary">
+            {{ 'Other'|t }}
+          </summary>
+          {# Show fields that are not shown elsewhere. #}
+          <div class="details-wrapper seven-details__wrapper">
+            {{ additional_order_fields }}
+          </div>
+        </details>
+      {% endif %}
     </div>
   </div>
 </div>
