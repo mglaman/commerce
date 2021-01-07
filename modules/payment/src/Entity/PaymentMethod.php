@@ -276,7 +276,7 @@ class PaymentMethod extends ContentEntityBase implements PaymentMethodInterface 
       ])
       ->setDisplayOptions('view', [
         'label' => 'hidden',
-        'type' => 'entity_reference_entity_view',
+        'type' => 'commerce_payment_method_profile',
         'weight' => 2,
       ])
       ->setDisplayConfigurable('view', TRUE);
