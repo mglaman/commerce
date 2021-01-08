@@ -53,6 +53,7 @@ class TaxTypeListBuilder extends ConfigEntityListBuilder {
    */
   public function buildHeader() {
     $header['label'] = $this->t('Tax type');
+    $header['id'] = $this->t('ID');
     $header['status'] = $this->t('Status');
     return $header + parent::buildHeader();
   }
@@ -63,6 +64,7 @@ class TaxTypeListBuilder extends ConfigEntityListBuilder {
   public function buildRow(EntityInterface $entity) {
     /** @var \Drupal\commerce_tax\Entity\TaxTypeInterface $entity */
     $row['label'] = $entity->label();
+    $row['id'] = $entity->id();
     $row['status'] = $entity->status() ? $this->t('Enabled') : $this->t('Disabled');
     return $row + parent::buildRow($entity);
   }
