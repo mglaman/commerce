@@ -44,6 +44,18 @@ class PaymentListBuilder extends EntityListBuilder {
   protected $entitiesKey = 'payments';
 
   /**
+   * {@inheritdoc}
+   *
+   * Set limit to false so the list is not paginated.
+   */
+  protected $limit = FALSE;
+
+  /**
+   * The order.
+   */
+  protected $order;
+
+  /**
    * Constructs a new PaymentListBuilder object.
    *
    * @param \Drupal\Core\Entity\EntityTypeInterface $entity_type
@@ -89,8 +101,8 @@ class PaymentListBuilder extends EntityListBuilder {
    * {@inheritdoc}
    */
   public function load() {
-    $order = $this->routeMatch->getParameter('commerce_order');
-    return $this->storage->loadMultipleByOrder($order);
+    $this->order = $this->routeMatch->getParameter('commerce_order');
+    return $this->storage->loadMultipleByOrder($this->order);
   }
 
   /**
@@ -181,6 +193,21 @@ class PaymentListBuilder extends EntityListBuilder {
     $row['remote_id'] = $entity->getRemoteId() ?: $this->t('N/A');
 
     return $row + parent::buildRow($entity);
+  }
+
+  /**
+   * {@inheritdoc}
+   *
+   * Make the payment list page themeable. Add total_paid and order_balance
+   * elements.
+   */
+  public function render() {
+    $build = parent::render();
+    $build['payment_total_summary'] = [
+      '#theme' => 'commerce_payment_total_summary',
+      '#order_entity' => $this->order,
+    ];
+    return $build;
   }
 
 }
