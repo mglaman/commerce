@@ -41,6 +41,8 @@ use Drupal\datetime\Plugin\Field\FieldType\DateTimeItemInterface;
  *     "form" = {
  *       "default" = "Drupal\commerce_promotion\Form\PromotionForm",
  *       "add" = "Drupal\commerce_promotion\Form\PromotionForm",
+ *       "enable" = "Drupal\commerce_promotion\Form\PromotionEnableForm",
+ *       "disable" = "Drupal\commerce_promotion\Form\PromotionDisableForm",
  *       "edit" = "Drupal\commerce_promotion\Form\PromotionForm",
  *       "duplicate" = "Drupal\commerce_promotion\Form\PromotionForm",
  *       "delete" = "Drupal\Core\Entity\ContentEntityDeleteForm"
@@ -49,7 +51,7 @@ use Drupal\datetime\Plugin\Field\FieldType\DateTimeItemInterface;
  *       "default" = "Drupal\entity\Menu\DefaultEntityLocalTaskProvider",
  *     },
  *     "route_provider" = {
- *       "default" = "Drupal\entity\Routing\AdminHtmlRouteProvider",
+ *       "default" = "Drupal\commerce_promotion\PromotionRouteProvider",
  *       "delete-multiple" = "Drupal\entity\Routing\DeleteMultipleRouteProvider",
  *     },
  *     "translation" = "Drupal\commerce_promotion\PromotionTranslationHandler",
@@ -73,6 +75,8 @@ use Drupal\datetime\Plugin\Field\FieldType\DateTimeItemInterface;
  *   links = {
  *     "add-form" = "/promotion/add",
  *     "edit-form" = "/promotion/{commerce_promotion}/edit",
+ *     "enable-form" = "/promotion/{commerce_promotion}/enable",
+ *     "disable-form" = "/promotion/{commerce_promotion}/disable",
  *     "duplicate-form" = "/promotion/{commerce_promotion}/duplicate",
  *     "delete-form" = "/promotion/{commerce_promotion}/delete",
  *     "delete-multiple-form" = "/admin/commerce/promotions/delete",
