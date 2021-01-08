@@ -249,3 +249,23 @@ function commerce_order_update_8212() {
   $definition_update_manager = \Drupal::service('entity.definition_update_manager');
   $definition_update_manager->updateFieldStorageDefinition($definition_update_manager->getFieldStorageDefinition('order_number', 'commerce_order'));
 }
+
+/**
+ * Add the 'balance' field to the 'default' view mode for all order bundles.
+ */
+function commerce_order_update_8213() {
+  $bundles = array_keys(\Drupal::service('entity_type.bundle.info')->getBundleInfo('commerce_order'));
+  $storage = \Drupal::entityTypeManager()->getStorage('entity_view_display');
+  foreach ($bundles as $bundle) {
+    /** @var \Drupal\Core\Entity\Display\EntityViewDisplayInterface $default_display */
+    $default_display = $storage->load('commerce_order.' . $bundle . '.default');
+    if (!$default_display) {
+      continue;
+    }
+    $default_display->setComponent('balance', [
+      'type' => 'commerce_price_default',
+      'label' => 'inline',
+    ]);
+    $default_display->save();
+  }
+}
