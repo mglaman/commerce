@@ -6,6 +6,7 @@ use Drupal\commerce\Entity\CommerceContentEntityBase;
 use Drupal\commerce_order\Adjustment;
 use Drupal\commerce_order\Event\OrderEvents;
 use Drupal\commerce_order\Event\OrderProfilesEvent;
+use Drupal\commerce_order\OrderBalanceFieldItemList;
 use Drupal\commerce_price\Price;
 use Drupal\commerce_store\Entity\StoreInterface;
 use Drupal\Core\Datetime\DrupalDateTime;
@@ -832,6 +833,15 @@ class Order extends CommerceContentEntityBase implements OrderInterface {
     $fields['total_paid'] = BaseFieldDefinition::create('commerce_price')
       ->setLabel(t('Total paid'))
       ->setDescription(t('The total paid price of the order.'))
+      ->setDisplayConfigurable('form', FALSE)
+      ->setDisplayConfigurable('view', TRUE);
+
+    $fields['balance'] = BaseFieldDefinition::create('commerce_price')
+      ->setLabel(t('Order balance'))
+      ->setDescription(t('The order balance.'))
+      ->setReadOnly(TRUE)
+      ->setComputed(TRUE)
+      ->setClass(OrderBalanceFieldItemList::class)
       ->setDisplayConfigurable('form', FALSE)
       ->setDisplayConfigurable('view', TRUE);
 
