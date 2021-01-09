@@ -197,8 +197,14 @@ class CartProvider implements CartProviderInterface {
    *   The cart data.
    */
   protected function loadCartData(AccountInterface $account = NULL, StoreInterface $store = NULL) {
-    $account = $account ?: $this->currentUser;
     $store = $store ?: $this->currentStore->getStore();
+
+    // No store was passed or resolved, stop here.
+    if (!$store) {
+      return [];
+    }
+
+    $account = $account ?: $this->currentUser;
     $uid = $account->id();
     $store_id = $store->id();
 
