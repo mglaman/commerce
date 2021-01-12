@@ -381,12 +381,6 @@ class BuyXGetY extends OrderPromotionOfferBase {
         $order_item->setUnitPrice($unit_price);
 
         if ($order_item->isNew()) {
-          // Because we've automatically added this order item, mark the unit
-          // price as overridden so OrderRefresh::refresh() doesn't try to
-          // resolve the unit price for a quantity = 0 (See the clear() method)
-          // which deducts the auto added get quantity very early in the refresh
-          // process.
-          $order_item->set('overridden_unit_price', TRUE);
           $order_item->set('order_id', $order->id());
           $order_item->save();
           $order->addItem($order_item);
@@ -449,7 +443,6 @@ class BuyXGetY extends OrderPromotionOfferBase {
         'label' => $promotion->getDisplayName() ?: $this->t('Discount'),
         'amount' => $adjustment_amount->multiply('-1'),
         'source_id' => $promotion->id(),
-        'locked' => TRUE,
       ]));
     }
   }
@@ -463,13 +456,6 @@ class BuyXGetY extends OrderPromotionOfferBase {
     $this->assertEntity($entity);
     /** @var \Drupal\commerce_order\Entity\OrderInterface $order */
     $order = $entity;
-
-    // Clear out any locked promotion adjustment added by this offer plugin.
-    foreach ($order->getItems() as $order_item) {
-      $order_item->setAdjustments(array_filter($order_item->getAdjustments(), function (Adjustment $adjustment) use ($promotion) {
-        return $adjustment->getSourceId() !== $promotion->id();
-      }));
-    }
 
     // Check if we have any order item whose quantity has been changed by this
     // promotion, and subtract that amount. If the promotion still applies, the

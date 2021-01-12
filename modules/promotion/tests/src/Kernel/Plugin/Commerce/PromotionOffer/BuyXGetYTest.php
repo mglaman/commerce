@@ -230,7 +230,6 @@ class BuyXGetYTest extends OrderKernelTestBase {
     $this->assertEquals('Discount', $adjustment->getLabel());
     $this->assertEquals(new Price('-3', 'USD'), $adjustment->getAmount());
     $this->assertEquals($this->promotion->id(), $adjustment->getSourceId());
-    $this->assertTrue($adjustment->isLocked());
 
     // Test having two offer order items, one ($third_order_item) reduced
     // completely, the other ($fourth_order_item) reduced partially.
@@ -253,7 +252,6 @@ class BuyXGetYTest extends OrderKernelTestBase {
     $this->assertEquals('Discount', $adjustment->getLabel());
     $this->assertEquals(new Price('-3', 'USD'), $adjustment->getAmount());
     $this->assertEquals($this->promotion->id(), $adjustment->getSourceId());
-    $this->assertTrue($adjustment->isLocked());
 
     $adjustments = $fourth_order_item->getAdjustments();
     $adjustment = reset($adjustments);
@@ -261,7 +259,6 @@ class BuyXGetYTest extends OrderKernelTestBase {
     $this->assertEquals('Discount', $adjustment->getLabel());
     $this->assertEquals(new Price('-1', 'USD'), $adjustment->getAmount());
     $this->assertEquals($this->promotion->id(), $adjustment->getSourceId());
-    $this->assertTrue($adjustment->isLocked());
   }
 
   /**
@@ -309,7 +306,6 @@ class BuyXGetYTest extends OrderKernelTestBase {
     $this->assertEquals('Buy X Get Y!', $adjustment->getLabel());
     $this->assertEquals(new Price('-18', 'USD'), $adjustment->getAmount());
     $this->assertEquals($this->promotion->id(), $adjustment->getSourceId());
-    $this->assertTrue($adjustment->isLocked());
 
     // Test having two offer order items, one ($third_order_item) reduced
     // completely, the other ($fourth_order_item) reduced partially.
@@ -332,7 +328,6 @@ class BuyXGetYTest extends OrderKernelTestBase {
     $this->assertEquals('Buy X Get Y!', $adjustment->getLabel());
     $this->assertEquals(new Price('-18', 'USD'), $adjustment->getAmount());
     $this->assertEquals($this->promotion->id(), $adjustment->getSourceId());
-    $this->assertTrue($adjustment->isLocked());
 
     $adjustments = $fourth_order_item->getAdjustments();
     $adjustment = reset($adjustments);
@@ -340,7 +335,6 @@ class BuyXGetYTest extends OrderKernelTestBase {
     $this->assertEquals('Buy X Get Y!', $adjustment->getLabel());
     $this->assertEquals(new Price('-6', 'USD'), $adjustment->getAmount());
     $this->assertEquals($this->promotion->id(), $adjustment->getSourceId());
-    $this->assertTrue($adjustment->isLocked());
   }
 
   /**
@@ -580,7 +574,6 @@ class BuyXGetYTest extends OrderKernelTestBase {
 
     $this->assertCount(0, $first_order_item->getAdjustments());
     $this->assertCount(1, $second_order_item->getAdjustments());
-    $this->assertTrue($second_order_item->isUnitPriceOverridden());
     $this->assertEquals(1, $second_order_item->getQuantity());
     $this->assertEquals($this->variations[2]->id(), $second_order_item->getPurchasedEntityId());
     $this->assertAdjustmentPrice($second_order_item->getAdjustments()[0], '-30');
