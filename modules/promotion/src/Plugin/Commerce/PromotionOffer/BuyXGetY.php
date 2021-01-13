@@ -463,12 +463,14 @@ class BuyXGetY extends OrderPromotionOfferBase {
     // end up with a quantity of 0 will be removed from the order by
     // \Drupal\commerce_order\OrderRefresh::refresh().
     if ($this->configuration['get_auto_add']) {
-      $auto_add_order_items = array_filter($order->getItems(), function (OrderItemInterface $order_item) use ($promotion) {
-        return $order_item->getData("promotion:{$promotion->id()}:auto_add_quantity");
+      $promotion_data_key = "promotion:{$promotion->id()}:auto_add_quantity";
+      $auto_add_order_items = array_filter($order->getItems(), function (OrderItemInterface $order_item) use ($promotion_data_key) {
+        return $order_item->getData($promotion_data_key);
       });
       foreach ($auto_add_order_items as $order_item) {
-        $new_quantity = Calculator::subtract($order_item->getQuantity(), $order_item->getData("promotion:{$promotion->id()}:auto_add_quantity"));
+        $new_quantity = Calculator::subtract($order_item->getQuantity(), $order_item->getData($promotion_data_key));
         $order_item->setQuantity($new_quantity);
+        $order_item->unsetData($promotion_data_key);
       }
     }
   }

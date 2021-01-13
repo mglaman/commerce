@@ -55,10 +55,34 @@ class PromotionOrderProcessor implements OrderPreprocessorInterface, OrderProces
       $promotion_ids[] = $adjustment->getSourceId();
     }
 
+    // Additionally, promotions may have altered the order without actually
+    // adding promotion adjustments to the order, in this case, we need to
+    // inspect the order item data to see if arbitrary data was stored by
+    // promotion offers.
+    // This will eventually need to be replaced by a proper solution at some
+    // point once we have a more reliable way to figure out what the applied
+    // promotions are.
+    foreach ($order->getItems() as $order_item) {
+      if ($order_item->get('data')->isEmpty()) {
+        continue;
+      }
+      $data = $order_item->get('data')->first()->getValue();
+      foreach ($data as $key => $value) {
+        $key_parts = explode(':', $key);
+        // Skip order item data keys that are not starting by
+        // "promotion:<promotion_id>".
+        if (count($key_parts) === 1 || $key_parts[0] !== 'promotion' || !is_numeric($key_parts[1])) {
+          continue;
+        }
+        $promotion_ids[] = $key_parts[1];
+      }
+    }
+
     // No promotions were found, stop here.
     if (!$promotion_ids) {
       return;
     }
+    $promotion_ids = array_unique($promotion_ids);
 
     /** @var \Drupal\commerce_promotion\PromotionStorageInterface $promotion_storage */
     $promotion_storage = $this->entityTypeManager->getStorage('commerce_promotion');

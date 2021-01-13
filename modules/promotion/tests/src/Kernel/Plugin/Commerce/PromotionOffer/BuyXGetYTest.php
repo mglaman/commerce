@@ -634,6 +634,17 @@ class BuyXGetYTest extends OrderKernelTestBase {
     $this->assertEquals(1, $second_order_item->getQuantity());
     $this->assertCount(1, $second_order_item->getAdjustments());
     $this->assertAdjustmentPrice($second_order_item->getAdjustments()[0], '-30');
+
+    // Test that the order item data key holding the auto-added quantity is
+    // cleared when the get order item is no longer eligible for the offer, but
+    // extra quantity was added by the customer.
+    $this->assertNotNull($second_order_item->getData('promotion:1:auto_add_quantity'));
+    $second_order_item->setQuantity('2');
+    $first_order_item->setQuantity('1');
+    $this->container->get('commerce_order.order_refresh')->refresh($this->order);
+    list(, $second_order_item) = $this->order->getItems();
+    $this->assertNull($second_order_item->getData('promotion:1:auto_add_quantity'));
+    $this->assertEquals(1, $second_order_item->getQuantity());
   }
 
   /**
@@ -645,7 +656,6 @@ class BuyXGetYTest extends OrderKernelTestBase {
   public function testAutoRemoveOrderItem() {
     $offer = $this->promotion->getOffer();
     $offer_configuration = $offer->getConfiguration();
-    // The customer purchases 3 quantities of any product.
     $offer_configuration['buy_quantity'] = '1';
     $offer_configuration['buy_conditions'] = [
       [
@@ -719,6 +729,26 @@ class BuyXGetYTest extends OrderKernelTestBase {
     $this->promotion->save();
     $this->container->get('commerce_order.order_refresh')->refresh($this->order);
     $this->assertCount(1, $this->order->getItems());
+
+    // Test that a free auto-added order item is automatically cleared out when
+    // the promotion offer no longer applies.
+    $this->promotion->setEnabled(TRUE);
+    $this->promotion->save();
+
+    $this->variations[1]->setPrice(new Price('0', 'USD'));
+    $this->variations[1]->save();
+    $this->container->get('commerce_order.order_refresh')->refresh($this->order);
+    $order_items = $this->order->getItems();
+    $this->assertCount(2, $order_items);
+    $this->assertEquals(new Price('0', 'USD'), $order_items[1]->getUnitPrice());
+    // Disable the promotion, since it no longer applies, the auto-added "get"
+    // order item should be removed.
+    $this->promotion->setEnabled(FALSE);
+    $this->promotion->save();
+    $this->container->get('commerce_order.order_refresh')->refresh($this->order);
+    $order_items = $this->order->getItems();
+    $this->assertCount(1, $order_items);
+    $this->assertEquals(new Price('20', 'USD'), $order_items[0]->getTotalPrice());
   }
 
   /**
