@@ -40,6 +40,10 @@ order_mail_failure:
   category: commerce_order
   label: 'Order email'
   template: '<p>Failed to send "{{ id }}" to {{ to_email }}.</p>'
+order_state_updated:
+  category: commerce_order
+  label: 'Order state updated'
+  template: '<p>Order moved from <em>{{ from_state }}</em> to <em>{{ to_state }}</em> by the <em>{{ transition_label }}</em> transition.</p>'
 mail_order_receipt:
   category: commerce_order
   label: 'Order receipt email'
