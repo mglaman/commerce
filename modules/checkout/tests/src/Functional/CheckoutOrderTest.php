@@ -190,6 +190,8 @@ class CheckoutOrderTest extends CommerceBrowserTestBase {
     $this->assertSession()->pageTextContains('0 items');
 
     $order = Order::load(1);
+    // Confirm that the checkout completion event was fired.
+    $this->assertTrue(TRUE, $order->getData('checkout_completed'));
     // Confirm that the profile hasn't been copied to the address book yet.
     $billing_profile = $order->getBillingProfile();
     $this->assertTrue($billing_profile->getData('copy_to_address_book'));
@@ -253,6 +255,8 @@ class CheckoutOrderTest extends CommerceBrowserTestBase {
     $this->assertSession()->pageTextContains('0 items');
 
     $order = Order::load(2);
+    // Confirm that the checkout completion event was fired.
+    $this->assertTrue(TRUE, $order->getData('checkout_completed'));
     // Confirm that the billing profile has the expected address.
     $expected_address += ['country_code' => 'US'];
     $billing_profile = $order->getBillingProfile();

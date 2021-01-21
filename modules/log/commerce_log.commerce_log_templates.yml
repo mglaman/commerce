@@ -7,6 +7,11 @@ cart_item_removed:
   label: 'Removed from cart'
   template: '<p><em>{{ purchased_entity_label }}</em> removed from the cart.</p>'
 
+checkout_complete:
+  category: commerce_checkout
+  label: 'Checkout complete'
+  template: '<p>Customer completed checkout for this order.</p>'
+
 order_placed:
   category: commerce_order
   label: 'Order placed'
