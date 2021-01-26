@@ -12,6 +12,10 @@ checkout_complete:
   label: 'Checkout complete'
   template: '<p>Customer completed checkout for this order.</p>'
 
+order_created_admin:
+  category: commerce_order
+  label: 'Order created'
+  template: '<p>Order created through the order add form.</p>'
 order_placed:
   category: commerce_order
   label: 'Order placed'
