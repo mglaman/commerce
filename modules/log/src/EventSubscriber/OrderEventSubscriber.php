@@ -57,10 +57,6 @@ class OrderEventSubscriber implements EventSubscriberInterface {
    */
   public function onOrderPostTransition(WorkflowTransitionEvent $event) {
     $transition = $event->getTransition();
-    // Skip logging the "cancel" transition as it is handled separately.
-    if ($transition->getId() === 'cancel') {
-      return;
-    }
     /** @var \Drupal\commerce_order\Entity\OrderInterface $order */
     $order = $event->getEntity();
     $original_state_id = $order->getState()->getOriginalId();
