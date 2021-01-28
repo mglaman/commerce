@@ -353,7 +353,7 @@ class PaymentInformation extends CheckoutPaneBase {
    * {@inheritdoc}
    */
   public function submitPaneForm(array &$pane_form, FormStateInterface $form_state, array &$complete_form) {
-    if (isset($pane_form['billing_information'])) {
+    if (isset($pane_form['billing_information']['#inline_form'])) {
       /** @var \Drupal\commerce\Plugin\Commerce\InlineForm\EntityInlineFormInterface $inline_form */
       $inline_form = $pane_form['billing_information']['#inline_form'];
       /** @var \Drupal\profile\Entity\ProfileInterface $billing_profile */
