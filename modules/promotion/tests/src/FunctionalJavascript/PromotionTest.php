@@ -164,7 +164,7 @@ class PromotionTest extends CommerceWebDriverTestBase {
       'name[0][value]' => $name,
       'offer[0][target_plugin_configuration][order_percentage_off][percentage]' => '10.0',
     ];
-    $this->drupalPostForm(NULL, $edit, t('Save'));
+    $this->submitForm($edit, t('Save'));
     $this->assertSession()->pageTextContains("Saved the $name promotion.");
 
     $rows = $this->getSession()->getPage()->findAll('xpath', '//table/tbody/tr/td[text()="' . $name . '"]');
