@@ -25,7 +25,7 @@ class CartEntityAccessTest extends CartBrowserTestBase {
   /**
    * {@inheritdoc}
    */
-  protected function setUp() {
+  protected function setUp(): void {
     parent::setUp();
     user_role_grant_permissions(RoleInterface::ANONYMOUS_ID, ['access checkout']);
   }

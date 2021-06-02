@@ -5,7 +5,7 @@
     "homepage": "http://drupal.org/project/commerce",
     "license": "GPL-2.0+",
     "require": {
-        "php": ">=7.0.8",
+        "php": ">=7.1",
         "ext-bcmath": "*",
         "drupal/core": "^8.9 || ^9",
         "drupal/address": "^1.7",

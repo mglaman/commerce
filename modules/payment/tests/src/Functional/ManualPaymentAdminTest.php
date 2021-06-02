@@ -59,7 +59,7 @@ class ManualPaymentAdminTest extends CommerceBrowserTestBase {
   /**
    * {@inheritdoc}
    */
-  protected function setUp() {
+  protected function setUp(): void {
     parent::setUp();
 
     $this->paymentGateway = $this->createEntity('commerce_payment_gateway', [

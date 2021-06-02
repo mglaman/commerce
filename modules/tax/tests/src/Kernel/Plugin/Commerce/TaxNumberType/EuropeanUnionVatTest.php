@@ -31,7 +31,7 @@ class EuropeanUnionVatTest extends OrderKernelTestBase {
   /**
    * {@inheritdoc}
    */
-  protected function setUp() {
+  protected function setUp(): void {
     parent::setUp();
 
     $plugin_manager = $this->container->get('plugin.manager.commerce_tax_number_type');

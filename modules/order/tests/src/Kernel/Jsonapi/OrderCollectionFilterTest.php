@@ -62,7 +62,7 @@ class OrderCollectionFilterTest extends OrderKernelTestBase {
   /**
    * {@inheritdoc}
    */
-  protected function setUp() {
+  protected function setUp(): void {
     parent::setUp();
     $this->installConfig('user');
     $this->grantPermissions(Role::load(Role::AUTHENTICATED_ID), ['view own commerce_order']);

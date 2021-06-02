@@ -41,7 +41,7 @@ class MultipleCartFormsTest extends CartWebDriverTestBase {
   /**
    * {@inheritdoc}
    */
-  protected function setUp() {
+  protected function setUp(): void {
     parent::setUp();
     $this->maximumMetaRefreshCount = 0;
 

@@ -67,7 +67,7 @@ class DefaultPaymentAdminTest extends CommerceBrowserTestBase {
   /**
    * {@inheritdoc}
    */
-  protected function setUp() {
+  protected function setUp(): void {
     parent::setUp();
 
     $profile = $this->createEntity('profile', [

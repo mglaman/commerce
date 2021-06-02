@@ -24,7 +24,7 @@ class CurrencyRepositoryTest extends CommerceKernelTestBase {
   /**
    * {@inheritdoc}
    */
-  protected function setUp() {
+  protected function setUp(): void {
     parent::setUp();
 
     // The parent has already imported USD.
