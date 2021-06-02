@@ -2,7 +2,6 @@
 
 namespace Drupal\commerce\Plugin\views\filter;
 
-use Drupal\commerce\EntityManagerBridgeTrait;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\views\Plugin\views\filter\Bundle;
 use Drupal\Core\Session\AccountInterface;

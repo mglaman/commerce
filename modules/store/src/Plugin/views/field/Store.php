@@ -2,7 +2,6 @@
 
 namespace Drupal\commerce_store\Plugin\views\field;
 
-use Drupal\commerce\EntityManagerBridgeTrait;
 use Drupal\views\Plugin\views\field\EntityField;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Session\AccountInterface;
