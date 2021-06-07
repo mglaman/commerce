@@ -89,4 +89,35 @@ class CurrencyRepositoryTest extends CommerceKernelTestBase {
     $this->assertEquals($expected_list, $this->currencyRepository->getList());
   }
 
+  /**
+   * Tests getting the currency default fraction digits.
+   *
+   * @param string $currency_code
+   *   The currency code.
+   * @param int $expected_fraction_digits
+   *   The expected fraction digits.
+   *
+   * @covers ::getDefaultFractionDigits
+   * @dataProvider fractionDigitsData
+   */
+  public function testGetDefaultFractionDigits(string $currency_code, int $expected_fraction_digits) {
+    $this->assertEquals($this->currencyRepository->getDefaultFractionDigits($currency_code), $expected_fraction_digits);
+  }
+
+  /**
+   * Data provider for ::testGetDefaultFractionDigits.
+   *
+   * @return array
+   *   The test data.
+   */
+  public function fractionDigitsData() {
+    return [
+      ['BHD', 3],
+      ['UGX', 0],
+      ['USD', 2],
+      ['UYU', 2],
+      ['UYW', 4],
+    ];
+  }
+
 }
