@@ -105,9 +105,9 @@ class StoreTest extends CommerceKernelTestBase {
     // Ensure that we don't store a broken reference to the store owner.
     $store->setOwnerId(900);
     $this->assertTrue($store->getOwner()->isAnonymous());
-    $this->assertEqual($store->getOwnerId(), 900);
+    $this->assertEquals(900, $store->getOwnerId());
     $store->save();
-    $this->assertEqual($store->getOwnerId(), 0);
+    $this->assertEquals(0, $store->getOwnerId());
   }
 
   /**
