@@ -17,7 +17,7 @@ use Drupal\layout_builder\DefaultsSectionStorageInterface;
 use Drupal\layout_builder\OverridesSectionStorageInterface;
 
 /**
- * @todo
+ * Provides a product variation context.
  */
 class ProductVariationContext implements ContextProviderInterface {
 
@@ -31,14 +31,14 @@ class ProductVariationContext implements ContextProviderInterface {
   protected $routeMatch;
 
   /**
-   * The product variation storage.
+   * The entity type manager.
    *
-   * @var \Drupal\commerce_product\ProductVariationStorageInterface
+   * @var \Drupal\Core\Entity\EntityTypeManagerInterface
    */
-  protected $productVariationStorage;
+  protected $entityTypeManager;
 
   /**
-   * Constructs a new ProductRouteContext object.
+   * Constructs a new ProductVariationContext object.
    *
    * @param \Drupal\Core\Routing\RouteMatchInterface $route_match
    *   The route match.
@@ -47,7 +47,7 @@ class ProductVariationContext implements ContextProviderInterface {
    */
   public function __construct(RouteMatchInterface $route_match, EntityTypeManagerInterface $entity_type_manager) {
     $this->routeMatch = $route_match;
-    $this->productVariationStorage = $entity_type_manager->getStorage('commerce_product_variation');
+    $this->entityTypeManager = $entity_type_manager;
   }
 
   /**
@@ -56,15 +56,30 @@ class ProductVariationContext implements ContextProviderInterface {
   public function getRuntimeContexts(array $unqualified_context_ids) {
     $context_definition = new EntityContextDefinition('entity:commerce_product_variation', new TranslatableMarkup('Product variation'));
     $value = $this->routeMatch->getParameter('commerce_product_variation');
+    /** @var \Drupal\commerce_product\ProductVariationStorageInterface $product_variation_storage */
+    $product_variation_storage = $this->entityTypeManager->getStorage('commerce_product_variation');
     if ($value === NULL) {
       $product = $this->routeMatch->getParameter('commerce_product');
-      if ($product instanceof ProductInterface) {
-        $value = $this->productVariationStorage->loadFromContext($product);
-        if ($value === NULL) {
-          $product_type = ProductType::load($product->bundle());
-          $value = $this->productVariationStorage->create([
-            'type' => $product_type->getVariationTypeId(),
-          ]);
+      if ($product) {
+        // If commerce_product has an entity reference to a custom translatable
+        // entity that has its translations overview available under
+        // product/{commerce_product}/custom_entity/{custom_entity}/translations
+        // $product passed by the breadcrumb builder when testing route
+        // candidates is just the product ID as string not the loaded entity.
+        // @see PathBasedBreadcrumbBuilder::getRequestForPath().
+        if (is_scalar($product)) {
+          $product_storage = $this->entityTypeManager->getStorage('commerce_product');
+          $product = $product_storage->load($product);
+        }
+
+        if ($product instanceof ProductInterface) {
+          $value = $product_variation_storage->loadFromContext($product);
+          if ($value === NULL) {
+            $product_type = ProductType::load($product->bundle());
+            $value = $product_variation_storage->create([
+              'type' => $product_type->getVariationTypeId(),
+            ]);
+          }
         }
       }
       /** @var \Drupal\commerce_product\Entity\ProductTypeInterface $product_type */
@@ -72,7 +87,7 @@ class ProductVariationContext implements ContextProviderInterface {
         if (is_string($product_type)) {
           $product_type = ProductType::load($product_type);
         }
-        $value = $this->productVariationStorage->createWithSampleValues($product_type->getVariationTypeId());
+        $value = $product_variation_storage->createWithSampleValues($product_type->getVariationTypeId());
       }
       // @todo Simplify this logic once EntityTargetInterface is available
       // @see https://www.drupal.org/project/drupal/issues/3054490
@@ -84,7 +99,7 @@ class ProductVariationContext implements ContextProviderInterface {
           assert($context instanceof EntityDisplayInterface);
           if ($context->getTargetEntityTypeId() === 'commerce_product') {
             $product_type = ProductType::load($context->getTargetBundle());
-            $value = $this->productVariationStorage->createWithSampleValues($product_type->getVariationTypeId());
+            $value = $product_variation_storage->createWithSampleValues($product_type->getVariationTypeId());
           }
         }
         elseif ($section_storage instanceof OverridesSectionStorageInterface) {
@@ -93,7 +108,7 @@ class ProductVariationContext implements ContextProviderInterface {
             $value = $context->getDefaultVariation();
             if ($value === NULL) {
               $product_type = ProductType::load($context->bundle());
-              $value = $this->productVariationStorage->createWithSampleValues($product_type->getVariationTypeId());
+              $value = $product_variation_storage->createWithSampleValues($product_type->getVariationTypeId());
             }
           }
         }
