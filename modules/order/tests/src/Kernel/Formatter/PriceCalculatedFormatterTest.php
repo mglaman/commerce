@@ -54,6 +54,7 @@ class PriceCalculatedFormatterTest extends OrderKernelTestBase {
     parent::setUp();
 
     $this->installEntitySchema('commerce_promotion');
+    $this->installSchema('commerce_promotion', ['commerce_promotion_usage']);
 
     $promotion = Promotion::create([
       'name' => 'Promotion 1',

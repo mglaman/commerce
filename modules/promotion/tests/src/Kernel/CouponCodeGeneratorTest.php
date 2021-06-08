@@ -47,8 +47,8 @@ class CouponCodeGeneratorTest extends OrderKernelTestBase {
 
     $this->installEntitySchema('commerce_promotion');
     $this->installEntitySchema('commerce_promotion_coupon');
+    $this->installSchema('commerce_promotion', ['commerce_promotion_usage']);
     $this->installConfig(['commerce_order']);
-
     $promotion = Promotion::create([
       'name' => 'Promotion 1',
       'order_types' => ['default'],

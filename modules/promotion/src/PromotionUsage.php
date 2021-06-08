@@ -18,6 +18,20 @@ class PromotionUsage implements PromotionUsageInterface {
   protected $connection;
 
   /**
+   * Static cache of usage for promotions.
+   *
+   * @var array
+   */
+  protected $promotionUsage = [];
+
+  /**
+   * Static cache of usage for coupons.
+   *
+   * @var array
+   */
+  protected $couponUsage = [];
+
+  /**
    * Constructs a PromotionUsage object.
    *
    * @param \Drupal\Core\Database\Connection $connection
@@ -39,6 +53,12 @@ class PromotionUsage implements PromotionUsageInterface {
         'mail' => $order->getEmail(),
       ])
       ->execute();
+
+    // Clear static cache for usage count of promotion/coupon.
+    unset($this->promotionUsage[$promotion->id()]);
+    if ($coupon) {
+      unset($this->couponUsage[$coupon->id()]);
+    }
   }
 
   /**
@@ -55,8 +75,11 @@ class PromotionUsage implements PromotionUsageInterface {
    * {@inheritdoc}
    */
   public function delete(array $promotions) {
+    $promotion_ids = $this->extractIds($promotions);
+    // Invalidate the promotion usage static cache for the passed promotions.
+    $this->clearCachedUsage($promotion_ids);
     $this->connection->delete('commerce_promotion_usage')
-      ->condition('promotion_id', EntityHelper::extractIds($promotions), 'IN')
+      ->condition('promotion_id', $promotion_ids, 'IN')
       ->execute();
   }
 
@@ -64,8 +87,11 @@ class PromotionUsage implements PromotionUsageInterface {
    * {@inheritdoc}
    */
   public function deleteByCoupon(array $coupons) {
+    $coupon_ids = $this->extractIds($coupons);
+    // Invalidate the coupon usage static cache for the passed coupons.
+    $this->clearCachedCouponUsage($coupon_ids);
     $this->connection->delete('commerce_promotion_usage')
-      ->condition('coupon_id', EntityHelper::extractIds($coupons), 'IN')
+      ->condition('coupon_id', $coupon_ids, 'IN')
       ->execute();
   }
 
@@ -92,27 +118,37 @@ class PromotionUsage implements PromotionUsageInterface {
     if (empty($promotions)) {
       return [];
     }
-    $promotion_ids = EntityHelper::extractIds($promotions);
-    $query = $this->connection->select('commerce_promotion_usage', 'cpu');
-    $query->addField('cpu', 'promotion_id');
-    $query->addExpression('COUNT(promotion_id)', 'count');
-    $query->condition('promotion_id', $promotion_ids, 'IN');
-    if (!empty($mail)) {
-      $query->condition('mail', $mail);
+
+    $promotion_ids = $this->extractIds($promotions);
+    // Always fetch the usage afresh when specifying the email.
+    $usage_to_load = $mail ? $promotion_ids : array_diff_key($promotion_ids, $this->promotionUsage);
+
+    if ($usage_to_load) {
+      // Removes the cached usage for the promotion usage we're about to fetch.
+      $this->clearCachedUsage($usage_to_load);
+      $query = $this->connection->select('commerce_promotion_usage', 'cpu');
+      $query->addField('cpu', 'promotion_id');
+      $query->addExpression('COUNT(promotion_id)', 'count');
+      $query->condition('promotion_id', $usage_to_load, 'IN');
+      if (!empty($mail)) {
+        $query->condition('mail', $mail);
+      }
+      $query->groupBy('promotion_id');
+      $this->promotionUsage += $query->execute()->fetchAllAssoc('promotion_id', \PDO::FETCH_ASSOC);
     }
-    $query->groupBy('promotion_id');
-    $result = $query->execute()->fetchAllAssoc('promotion_id', \PDO::FETCH_ASSOC);
+
     // Ensure that each promotion ID gets a count, even if it's not present
     // in the query due to non-existent usage.
     $counts = [];
     foreach ($promotion_ids as $promotion_id) {
       $counts[$promotion_id] = 0;
-      if (isset($result[$promotion_id])) {
-        $counts[$promotion_id] = $result[$promotion_id]['count'];
+      if (isset($this->promotionUsage[$promotion_id])) {
+        $counts[$promotion_id] = $this->promotionUsage[$promotion_id]['count'];
       }
     }
 
     return $counts;
+
   }
 
   /**
@@ -122,27 +158,72 @@ class PromotionUsage implements PromotionUsageInterface {
     if (empty($coupons)) {
       return [];
     }
-    $coupon_ids = EntityHelper::extractIds($coupons);
-    $query = $this->connection->select('commerce_promotion_usage', 'cpu');
-    $query->addField('cpu', 'coupon_id');
-    $query->addExpression('COUNT(coupon_id)', 'count');
-    $query->condition('coupon_id', $coupon_ids, 'IN');
-    if (!empty($mail)) {
-      $query->condition('mail', $mail);
+
+    $coupon_ids = $this->extractIds($coupons);
+    // Always fetch the usage afresh when specifying the email.
+    $usage_to_load = $mail ? $coupon_ids : array_diff_key($coupon_ids, $this->couponUsage);
+
+    if ($usage_to_load) {
+      // Removes the cached usage for the coupon usage we're about to fetch.
+      $this->clearCachedCouponUsage($coupon_ids);
+      $query = $this->connection->select('commerce_promotion_usage', 'cpu');
+      $query->addField('cpu', 'coupon_id');
+      $query->addExpression('COUNT(coupon_id)', 'count');
+      $query->condition('coupon_id', $usage_to_load, 'IN');
+      if (!empty($mail)) {
+        $query->condition('mail', $mail);
+      }
+      $query->groupBy('coupon_id');
+      $this->couponUsage += $query->execute()->fetchAllAssoc('coupon_id', \PDO::FETCH_ASSOC);
     }
-    $query->groupBy('coupon_id');
-    $result = $query->execute()->fetchAllAssoc('coupon_id', \PDO::FETCH_ASSOC);
+
     // Ensure that each coupon ID gets a count, even if it's not present
     // in the query due to non-existent usage.
     $counts = [];
     foreach ($coupon_ids as $coupon_id) {
       $counts[$coupon_id] = 0;
-      if (isset($result[$coupon_id])) {
-        $counts[$coupon_id] = $result[$coupon_id]['count'];
+      if (isset($this->couponUsage[$coupon_id])) {
+        $counts[$coupon_id] = $this->couponUsage[$coupon_id]['count'];
       }
     }
 
     return $counts;
+  }
+
+  /**
+   * Clears the statically cached usage the given promotion IDS.
+   *
+   * @param array $promotion_ids
+   *   An array of promotion IDS, keyed by promotion IDS.
+   */
+  protected function clearCachedUsage(array $promotion_ids) {
+    $this->promotionUsage = array_diff_key($this->promotionUsage, $promotion_ids);
+  }
+
+  /**
+   * Clears the statically cached usage the given coupon IDS.
+   *
+   * @param array $coupon_ids
+   *   An array of coupon IDS, keyed by coupon IDS.
+   */
+  protected function clearCachedCouponUsage(array $coupon_ids) {
+    $this->couponUsage = array_diff_key($this->couponUsage, $coupon_ids);
+  }
+
+  /**
+   * Wrapper around EntityHelper::extractIds().
+   *
+   * This wrapper returns an array keyed by entity IDS as well.
+   *
+   * @param array $entities
+   *   An array of promotions/coupons entities.
+   *
+   * @return array
+   *   The entity IDs, keyed by IDS.
+   */
+  protected function extractIds(array $entities) {
+    $ids = EntityHelper::extractIds($entities);
+    return array_combine($ids, $ids);
   }
 
 }

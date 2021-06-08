@@ -31,6 +31,7 @@ class CouponAccessTest extends OrderKernelTestBase {
 
     $this->installEntitySchema('commerce_promotion');
     $this->installEntitySchema('commerce_promotion_coupon');
+    $this->installSchema('commerce_promotion', ['commerce_promotion_usage']);
 
     // Create uid: 1 here so that it's skipped in test cases.
     $admin_user = $this->createUser();

@@ -155,3 +155,23 @@ function commerce_promotion_entity_base_field_info(EntityTypeInterface $entity_t
     return $fields;
   }
 }
+
+/**
+ * Implements hook_ENTITY_TYPE_load().
+ */
+function commerce_promotion_commerce_promotion_load(array $entities) {
+  // Preload the promotion usage so that the usage is fetched once for all
+  // promotions being loaded.
+  $usage_service = \Drupal::service('commerce_promotion.usage');
+  $usage_service->loadMultiple($entities);
+}
+
+/**
+ * Implements hook_ENTITY_TYPE_load().
+ */
+function commerce_promotion_commerce_promotion_coupon_load(array $entities) {
+  // Preload the coupon usage so that the usage is fetched once for all
+  // coupons being loaded.
+  $usage_service = \Drupal::service('commerce_promotion.usage');
+  $usage_service->loadMultipleByCoupon($entities);
+}
