@@ -141,10 +141,10 @@ class PromotionUsage implements PromotionUsageInterface {
     // in the query due to non-existent usage.
     $counts = [];
     foreach ($promotion_ids as $promotion_id) {
-      $counts[$promotion_id] = 0;
-      if (isset($this->promotionUsage[$promotion_id])) {
-        $counts[$promotion_id] = $this->promotionUsage[$promotion_id]['count'];
-      }
+      // Ensure we don't query for the usage the next time this is called by
+      // ensuring a count of 0 is stored if no usage was ever registered.
+      $this->promotionUsage += [$promotion_id => ['count' => 0]];
+      $counts[$promotion_id] = $this->promotionUsage[$promotion_id]['count'];
     }
 
     return $counts;
@@ -165,7 +165,7 @@ class PromotionUsage implements PromotionUsageInterface {
 
     if ($usage_to_load) {
       // Removes the cached usage for the coupon usage we're about to fetch.
-      $this->clearCachedCouponUsage($coupon_ids);
+      $this->clearCachedCouponUsage($usage_to_load);
       $query = $this->connection->select('commerce_promotion_usage', 'cpu');
       $query->addField('cpu', 'coupon_id');
       $query->addExpression('COUNT(coupon_id)', 'count');
@@ -181,10 +181,10 @@ class PromotionUsage implements PromotionUsageInterface {
     // in the query due to non-existent usage.
     $counts = [];
     foreach ($coupon_ids as $coupon_id) {
-      $counts[$coupon_id] = 0;
-      if (isset($this->couponUsage[$coupon_id])) {
-        $counts[$coupon_id] = $this->couponUsage[$coupon_id]['count'];
-      }
+      // Ensure we don't query for the usage the next time this is called by
+      // ensuring a count of 0 is stored if no usage was ever registered.
+      $this->couponUsage += [$coupon_id => ['count' => 0]];
+      $counts[$coupon_id] = $this->couponUsage[$coupon_id]['count'];
     }
 
     return $counts;
