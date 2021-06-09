@@ -41,23 +41,22 @@ class UsageLimitFormatter extends FormatterBase {
    */
   public function viewElements(FieldItemListInterface $items, $langcode) {
     $elements = [];
-    $field_name = $items->getName();
+    $field_name = $items->getFieldDefinition()->getName();
     $entity = $items->getEntity();
 
-    // Gets the promotion|coupon usage.
-    $current_usage = $entity->getEntityTypeId() == 'commerce_promotion' ?
-      $this->usage->load($entity) :
-      $this->usage->loadByCoupon($entity);
-
     // For the "usage_limit" output actual usage / limit.
-    if ($field_name == 'usage_limit') {
+    if ($field_name === 'usage_limit') {
+      // Gets the promotion|coupon usage.
+      $current_usage = $entity->getEntityTypeId() === 'commerce_promotion' ?
+        $this->usage->load($entity) :
+        $this->usage->loadByCoupon($entity);
       $usage_limit = $entity->getUsageLimit();
       $usage_limit = $usage_limit ?: $this->t('Unlimited');
       $usage = $current_usage . ' / ' . $usage_limit;
     }
     else {
-      // Output the actual limit (if not empty), otherwise output "Unlimited".
-      $usage = $current_usage ?: $this->t('Unlimited');
+      $customer_limit = $entity->getCustomerUsageLimit();
+      $usage = $customer_limit ?: $this->t('Unlimited');
     }
 
     $elements[0] = [
