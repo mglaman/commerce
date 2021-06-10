@@ -11,6 +11,7 @@ use Drupal\commerce_price\Calculator;
 use Drupal\commerce_promotion\Plugin\Commerce\PromotionOffer\OrderItemPromotionOfferInterface;
 use Drupal\commerce_promotion\Plugin\Commerce\PromotionOffer\PromotionOfferInterface;
 use Drupal\Core\Datetime\DrupalDateTime;
+use Drupal\Core\Entity\EntityChangedTrait;
 use Drupal\Core\Entity\EntityStorageInterface;
 use Drupal\Core\Entity\EntityTypeInterface;
 use Drupal\Core\Field\BaseFieldDefinition;
@@ -90,6 +91,8 @@ use Drupal\datetime\Plugin\Field\FieldType\DateTimeItemInterface;
  */
 class Promotion extends CommerceContentEntityBase implements PromotionInterface {
 
+  use EntityChangedTrait;
+
   /**
    * {@inheritdoc}
    */
@@ -153,6 +156,21 @@ class Promotion extends CommerceContentEntityBase implements PromotionInterface 
    */
   public function setDescription($description) {
     $this->set('description', $description);
+    return $this;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function getCreatedTime() {
+    return $this->get('created')->value;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function setCreatedTime($timestamp) {
+    $this->set('created', $timestamp);
     return $this;
   }
 
@@ -689,6 +707,17 @@ class Promotion extends CommerceContentEntityBase implements PromotionInterface 
       ])
       ->setDisplayConfigurable('view', TRUE)
       ->setDisplayConfigurable('form', TRUE);
+
+    $fields['created'] = BaseFieldDefinition::create('created')
+      ->setLabel(t('Created'))
+      ->setTranslatable(TRUE)
+      ->setDescription(t('The time when the promotion was created.'));
+
+    $fields['changed'] = BaseFieldDefinition::create('changed')
+      ->setLabel(t('Changed'))
+      ->setTranslatable(TRUE)
+      ->setDescription(t('The time when the promotion was last edited.'))
+      ->setDisplayConfigurable('view', TRUE);
 
     $fields['order_types'] = BaseFieldDefinition::create('entity_reference')
       ->setLabel(t('Order types'))

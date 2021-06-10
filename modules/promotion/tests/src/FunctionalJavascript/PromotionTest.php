@@ -99,6 +99,8 @@ class PromotionTest extends CommerceWebDriverTestBase {
 
     /** @var \Drupal\commerce_promotion\Entity\PromotionInterface $promotion */
     $promotion = Promotion::load(1);
+    $this->assertNotEmpty($promotion->getCreatedTime());
+    $this->assertNotEmpty($promotion->getChangedTime());
     $this->assertEquals($name, $promotion->getName());
     $this->assertEquals('Discount', $promotion->getDisplayName());
     $offer = $promotion->getOffer();

@@ -48,6 +48,8 @@ class PromotionTest extends OrderKernelTestBase {
    * @covers ::setDisplayName
    * @covers ::getDescription
    * @covers ::setDescription
+   * @covers ::getCreatedTime
+   * @covers ::setCreatedTime
    * @covers ::getOrderTypes
    * @covers ::setOrderTypes
    * @covers ::getOrderTypeIds
@@ -92,6 +94,9 @@ class PromotionTest extends OrderKernelTestBase {
 
     $promotion->setDescription('My Promotion Description');
     $this->assertEquals('My Promotion Description', $promotion->getDescription());
+
+    $promotion->setCreatedTime(635879700);
+    $this->assertEquals(635879700, $promotion->getCreatedTime());
 
     $promotion->setOrderTypes([$order_type]);
     $order_types = $promotion->getOrderTypes();

@@ -185,3 +185,34 @@ function commerce_promotion_update_8207() {
   $definition_update_manager = \Drupal::service('entity.definition_update_manager');
   $definition_update_manager->updateFieldStorageDefinition($definition_update_manager->getFieldStorageDefinition('code', 'commerce_promotion_coupon'));
 }
+
+/**
+ * Add created/changed timestamp fields to promotions & coupons.
+ */
+function commerce_promotion_update_8208() {
+  $definition_update_manager = \Drupal::entityDefinitionUpdateManager();
+
+  $created = BaseFieldDefinition::create('created')
+    ->setLabel(t('Created'))
+    ->setTranslatable(TRUE)
+    ->setDescription(t('The time when the promotion was created.'));
+  $definition_update_manager->installFieldStorageDefinition('created', 'commerce_promotion', 'commerce_promotion', $created);
+
+  $changed = BaseFieldDefinition::create('changed')
+    ->setLabel(t('Changed'))
+    ->setTranslatable(TRUE)
+    ->setDescription(t('The time when the promotion was last edited.'))
+    ->setDisplayConfigurable('view', TRUE);
+  $definition_update_manager->installFieldStorageDefinition('changed', 'commerce_promotion', 'commerce_promotion', $changed);
+
+  $created = BaseFieldDefinition::create('created')
+    ->setLabel(t('Created'))
+    ->setDescription(t('The time when the coupon was created.'));
+  $definition_update_manager->installFieldStorageDefinition('created', 'commerce_promotion_coupon', 'commerce_promotion', $created);
+
+  $changed = BaseFieldDefinition::create('changed')
+    ->setLabel(t('Changed'))
+    ->setDescription(t('The time when the coupon was last edited.'))
+    ->setDisplayConfigurable('view', TRUE);
+  $definition_update_manager->installFieldStorageDefinition('changed', 'commerce_promotion_coupon', 'commerce_promotion', $changed);
+}
