@@ -8,11 +8,12 @@ use Drupal\Core\Datetime\DrupalDateTime;
 use Drupal\Core\Entity\ContentEntityInterface;
 use Drupal\commerce_promotion\Plugin\Commerce\PromotionOffer\PromotionOfferInterface;
 use Drupal\Core\Entity\EntityChangedInterface;
+use Drupal\user\EntityOwnerInterface;
 
 /**
  * Defines the interface for promotions.
  */
-interface PromotionInterface extends ContentEntityInterface, EntityStoresInterface, EntityChangedInterface {
+interface PromotionInterface extends ContentEntityInterface, EntityStoresInterface, EntityChangedInterface, EntityOwnerInterface {
 
   const COMPATIBLE_ANY = 'any';
   const COMPATIBLE_NONE = 'none';

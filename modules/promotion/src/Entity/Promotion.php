@@ -3,6 +3,7 @@
 namespace Drupal\commerce_promotion\Entity;
 
 use Drupal\commerce\ConditionGroup;
+use Drupal\commerce\EntityOwnerTrait;
 use Drupal\commerce\Entity\CommerceContentEntityBase;
 use Drupal\commerce\Plugin\Commerce\Condition\ConditionInterface;
 use Drupal\commerce\Plugin\Commerce\Condition\ParentEntityAwareInterface;
@@ -71,6 +72,7 @@ use Drupal\datetime\Plugin\Field\FieldType\DateTimeItemInterface;
  *     "label" = "name",
  *     "langcode" = "langcode",
  *     "uuid" = "uuid",
+ *     "owner" = "uid",
  *     "status" = "status",
  *   },
  *   links = {
@@ -92,6 +94,7 @@ use Drupal\datetime\Plugin\Field\FieldType\DateTimeItemInterface;
 class Promotion extends CommerceContentEntityBase implements PromotionInterface {
 
   use EntityChangedTrait;
+  use EntityOwnerTrait;
 
   /**
    * {@inheritdoc}
@@ -622,6 +625,24 @@ class Promotion extends CommerceContentEntityBase implements PromotionInterface 
   /**
    * {@inheritdoc}
    */
+  public function preSave(EntityStorageInterface $storage) {
+    parent::preSave($storage);
+
+    foreach (array_keys($this->getTranslationLanguages()) as $langcode) {
+      $translation = $this->getTranslation($langcode);
+
+      // Explicitly set the owner ID to 0 if the translation owner is anonymous
+      // (This will ensure we don't store a broken reference in case the user
+      // no longer exists).
+      if ($translation->getOwner()->isAnonymous()) {
+        $translation->setOwnerId(0);
+      }
+    }
+  }
+
+  /**
+   * {@inheritdoc}
+   */
   public function postSave(EntityStorageInterface $storage, $update = TRUE) {
     parent::postSave($storage, $update);
 
@@ -658,6 +679,7 @@ class Promotion extends CommerceContentEntityBase implements PromotionInterface 
    */
   public static function baseFieldDefinitions(EntityTypeInterface $entity_type) {
     $fields = parent::baseFieldDefinitions($entity_type);
+    $fields += static::ownerBaseFieldDefinitions($entity_type);
 
     $fields['name'] = BaseFieldDefinition::create('string')
       ->setLabel(t('Name'))
@@ -672,6 +694,12 @@ class Promotion extends CommerceContentEntityBase implements PromotionInterface 
         'type' => 'string_textfield',
         'weight' => 0,
       ])
+      ->setDisplayConfigurable('view', TRUE)
+      ->setDisplayConfigurable('form', TRUE);
+
+    $fields['uid']
+      ->setLabel(t('Owner'))
+      ->setDescription(t('The promotion owner.'))
       ->setDisplayConfigurable('view', TRUE)
       ->setDisplayConfigurable('form', TRUE);
 
