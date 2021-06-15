@@ -3,7 +3,9 @@
 namespace Drupal\Tests\commerce_payment\Functional;
 
 use Drupal\commerce_payment\Entity\PaymentMethod;
+use Drupal\Core\Session\AccountInterface;
 use Drupal\Tests\commerce\Functional\CommerceBrowserTestBase;
+use Drupal\user\Entity\Role;
 
 /**
  * Tests the payment method UI.
@@ -67,13 +69,27 @@ class PaymentMethodTest extends CommerceBrowserTestBase {
   }
 
   /**
-   * Tests accessing another user's payment method pages.
+   * Tests accessing the payment method pages.
    */
-  public function testDifferentUserAccess() {
+  public function testUserAccess() {
     $this->drupalGet('user/' . $this->adminUser->id() . '/payment-methods');
     $this->assertSession()->statusCodeEquals(403);
 
     $this->drupalGet('user/' . $this->adminUser->id() . '/payment-methods/add');
+    $this->assertSession()->statusCodeEquals(403);
+
+    $this->drupalLogout();
+    // Ensure anonymous users don't have access to the manage payment methods
+    // page, even if either the "manage own payment methods" permission or
+    // the "administer commerce_payment_method" is granted.
+    $role = Role::load(AccountInterface::ANONYMOUS_ROLE);
+    $role->grantPermission('manage own commerce_payment_method');
+    $role->grantPermission('administer commerce_payment_method');
+    $role->trustData()->save();
+    $this->drupalGet('user/0/payment-methods');
+    $this->assertSession()->statusCodeEquals(403);
+
+    $this->drupalGet('user/0/payment-methods/add');
     $this->assertSession()->statusCodeEquals(403);
   }
 
