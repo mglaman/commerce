@@ -112,13 +112,12 @@ class PaymentMethodTest extends CommerceBrowserTestBase {
       'address' => $default_address,
     ]);
 
-    /** @var \Drupal\commerce_payment_example\Plugin\Commerce\PaymentGateway\OnsiteInterface $plugin */
     $this->drupalGet($this->collectionUrl);
     $this->getSession()->getPage()->clickLink('Add payment method');
     $this->assertSession()->addressEquals($this->collectionUrl . '/add');
     // Confirm that the default profile's address is rendered.
+    $prefix = 'payment_method[billing_information][address][0][address]';
     foreach ($default_address as $property => $value) {
-      $prefix = 'payment_method[billing_information][address][0][address]';
       $this->assertSession()->pageTextContains($value);
       $this->assertSession()->fieldNotExists($prefix . '[' . $property . ']');
     }
@@ -177,6 +176,58 @@ class PaymentMethodTest extends CommerceBrowserTestBase {
   }
 
   /**
+   * Tests the payment method add form in case of multiple gateways.
+   */
+  public function testPaymentMethodCreateWithMultipleGateways() {
+    $this->createEntity('commerce_payment_gateway', [
+      'id' => 'onsite_2',
+      'label' => 'Onsite Example 2',
+      'plugin' => 'example_onsite',
+    ]);
+
+    $this->createEntity('commerce_payment_gateway', [
+      'id' => 'offsite',
+      'label' => 'Offsite',
+      'plugin' => 'example_offsite_redirect',
+    ]);
+
+    $default_address = [
+      'country_code' => 'US',
+      'administrative_area' => 'SC',
+      'locality' => 'Greenville',
+      'postal_code' => '29616',
+      'address_line1' => '9 Drupal Ave',
+      'given_name' => 'Bryan',
+      'family_name' => 'Centarro',
+    ];
+    $this->createEntity('profile', [
+      'type' => 'customer',
+      'uid' => $this->user->id(),
+      'address' => $default_address,
+    ]);
+
+    $this->drupalGet($this->collectionUrl . '/add');
+    $this->assertSession()->elementExists('css', '[value="example"]');
+    $this->assertSession()->elementExists('css', '[value="onsite_2"]');
+    $this->assertSession()->elementNotExists('css', '[value="offsite"]');
+    $this->submitForm(['payment_gateway' => 'onsite_2'], 'Continue');
+
+    $form_values = [
+      'payment_method[payment_details][number]' => '4111111111111111',
+      'payment_method[payment_details][expiration][month]' => '01',
+      'payment_method[payment_details][expiration][year]' => date('Y') + 1,
+      'payment_method[payment_details][security_code]' => '111',
+    ];
+    $this->submitForm($form_values, 'Save');
+    $this->assertSession()->addressEquals($this->collectionUrl);
+    $this->assertSession()->pageTextContains('Visa ending in 1111 saved to your payment methods.');
+
+    $payment_method = PaymentMethod::load(1);
+    $this->assertEquals($payment_method->getPaymentGateway()->getPluginId(), 'example_onsite');
+    $this->assertEquals($payment_method->getPaymentGateway()->id(), 'onsite_2');
+  }
+
+  /**
    * Tests creating and updating a payment method without billing information.
    */
   public function testPaymentMethodCreationAndUpdateWithoutBilling() {
@@ -185,7 +236,6 @@ class PaymentMethodTest extends CommerceBrowserTestBase {
     ]);
     $this->paymentGateway->save();
 
-    /** @var \Drupal\commerce_payment_example\Plugin\Commerce\PaymentGateway\OnsiteInterface $plugin */
     $this->drupalGet($this->collectionUrl);
     $this->getSession()->getPage()->clickLink('Add payment method');
     $this->assertSession()->addressEquals($this->collectionUrl . '/add');
@@ -224,7 +274,6 @@ class PaymentMethodTest extends CommerceBrowserTestBase {
    * Tests creating a payment method declined by the remote API.
    */
   public function testPaymentMethodDecline() {
-    /** @var \Drupal\commerce_payment_example\Plugin\Commerce\PaymentGateway\OnsiteInterface $plugin */
     $this->drupalGet($this->collectionUrl);
     $this->getSession()->getPage()->clickLink('Add payment method');
     $this->assertSession()->addressEquals($this->collectionUrl . '/add');
