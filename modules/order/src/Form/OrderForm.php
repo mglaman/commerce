@@ -68,6 +68,11 @@ class OrderForm extends ContentEntityForm {
       '#type' => 'hidden',
       '#default_value' => $order->getChangedTime(),
     ];
+    // Version must be sent to the client, for later overwrite error checking.
+    $form['version'] = [
+      '#type' => 'hidden',
+      '#default_value' => $order->getVersion(),
+    ];
 
     $last_saved = $this->dateFormatter->format($order->getChangedTime(), 'short');
     $form['advanced'] = [

@@ -105,13 +105,13 @@ class OrderAdminTest extends OrderWebDriverTestBase {
     $page = $this->getSession()->getPage();
 
     // First item with overriding the price.
-    $page->checkField('Override the unit price');
+    $this->getSession()->getPage()->checkField('Override the unit price');
     $purchased_entity_field = $this->assertSession()->waitForElement('css', '[name="order_items[form][0][purchased_entity][0][target_id]"].ui-autocomplete-input');
     $purchased_entity_field->setValue(substr($this->variation->getSku(), 0, 4));
     $this->getSession()->getDriver()->keyDown($purchased_entity_field->getXpath(), ' ');
     $this->assertSession()->waitOnAutocomplete();
     $this->assertSession()->pageTextContains($this->variation->getSku());
-    $this->assertCount(1, $page->findAll('css', '.ui-autocomplete li'));
+    $this->assertCount(1, $this->getSession()->getPage()->findAll('css', '.ui-autocomplete li'));
     $this->getSession()->getPage()->find('css', '.ui-autocomplete li:first-child a')->click();
     $this->assertSession()->fieldValueEquals('order_items[form][0][purchased_entity][0][target_id]', $this->variation->getSku() . ': ' . $this->variation->label() . ' (' . $this->variation->id() . ')');
 
@@ -434,6 +434,9 @@ class OrderAdminTest extends OrderWebDriverTestBase {
     $this->submitForm([], 'Place order');
     $this->assertSession()->buttonNotExists('Place order');
     $this->assertSession()->buttonNotExists('Cancel order');
+
+    // The order was modified and needs to be reloaded.
+    $order = $this->reloadEntity($order);
 
     // Add an order item, confirm that it is displayed.
     $order_item = $this->createEntity('commerce_order_item', [
