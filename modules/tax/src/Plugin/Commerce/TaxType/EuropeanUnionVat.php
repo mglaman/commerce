@@ -514,39 +514,6 @@ class EuropeanUnionVat extends LocalTaxTypeBase {
         ],
       ],
     ]);
-    $zones['gb'] = new TaxZone([
-      'id' => 'gb',
-      'label' => $this->t('United Kingdom'),
-      'display_label' => $labels['vat'],
-      'territories' => [
-        ['country_code' => 'GB'],
-        ['country_code' => 'IM'],
-      ],
-      'rates' => [
-        [
-          'id' => 'standard',
-          'label' => $labels['standard'],
-          'percentages' => [
-            ['number' => '0.2', 'start_date' => '2011-01-04'],
-          ],
-          'default' => TRUE,
-        ],
-        [
-          'id' => 'reduced',
-          'label' => $labels['reduced'],
-          'percentages' => [
-            ['number' => '0.05', 'start_date' => '1997-09-01'],
-          ],
-        ],
-        [
-          'id' => 'zero',
-          'label' => $labels['zero'],
-          'percentages' => [
-            ['number' => '0', 'start_date' => '1973-01-01'],
-          ],
-        ],
-      ],
-    ]);
     $zones['gr'] = new TaxZone([
       'id' => 'gr',
       'label' => $this->t('Greece'),
