@@ -198,6 +198,9 @@ class CartEntityAccessTest extends CartBrowserTestBase {
 
     $this->drupalLogin($customer);
     foreach ($cart->getEntityType()->getLinkTemplates() as $rel => $link_template) {
+      if ($rel === 'state-transition-form') {
+        continue;
+      }
       $this->drupalGet($cart->toUrl($rel));
       $this->assertSession()->statusCodeEquals(403);
     }
@@ -208,6 +211,9 @@ class CartEntityAccessTest extends CartBrowserTestBase {
     $this->submitForm([], 'Add to cart');
     $cart = Order::load(3);
     foreach ($cart->getEntityType()->getLinkTemplates() as $rel => $link_template) {
+      if ($rel === 'state-transition-form') {
+        continue;
+      }
       $this->drupalGet($cart->toUrl($rel));
       $this->assertSession()->statusCodeEquals(403);
     }

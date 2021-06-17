@@ -77,7 +77,8 @@ content:
     label: hidden
     type: state_transition_form
     weight: 8
-    settings: {  }
+    settings:
+      require_confirmation: true
     third_party_settings: {  }
     region: content
   total_price:

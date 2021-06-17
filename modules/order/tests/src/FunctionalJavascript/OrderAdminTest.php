@@ -428,6 +428,10 @@ class OrderAdminTest extends OrderWebDriverTestBase {
       $this->assertSession()->buttonExists($transition->getLabel());
     }
     $this->click('input.js-form-submit#edit-place');
+    $this->assertSession()->pageTextContains('Are you sure you want to place order ?');
+    $this->assertSession()->buttonExists('Place order');
+    $this->assertSession()->linkExists('Cancel');
+    $this->submitForm([], 'Place order');
     $this->assertSession()->buttonNotExists('Place order');
     $this->assertSession()->buttonNotExists('Cancel order');
 

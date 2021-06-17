@@ -79,7 +79,8 @@ use Drupal\profile\Entity\ProfileInterface;
  *     "reassign-form" = "/admin/commerce/orders/{commerce_order}/reassign",
  *     "unlock-form" = "/admin/commerce/orders/{commerce_order}/unlock",
  *     "collection" = "/admin/commerce/orders",
- *     "resend-receipt-form" = "/admin/commerce/orders/{commerce_order}/resend-receipt"
+ *     "resend-receipt-form" = "/admin/commerce/orders/{commerce_order}/resend-receipt",
+ *     "state-transition-form" = "/admin/commerce/orders/{commerce_order}/{field_name}/{transition_id}"
  *   },
  *   bundle_entity_type = "commerce_order_type",
  *   field_ui_base_route = "entity.commerce_order_type.edit_form",
@@ -853,6 +854,9 @@ class Order extends CommerceContentEntityBase implements OrderInterface {
       ->setDisplayOptions('view', [
         'label' => 'hidden',
         'type' => 'state_transition_form',
+        'settings' => [
+          'require_confirmation' => TRUE,
+        ],
         'weight' => 10,
       ])
       ->setDisplayConfigurable('form', TRUE)
