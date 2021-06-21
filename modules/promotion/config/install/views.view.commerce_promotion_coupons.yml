@@ -23,7 +23,7 @@ display:
         options:
           perm: 'administer commerce_promotion'
       cache:
-        type: tag
+        type: none
         options: {  }
       query:
         type: views_query
