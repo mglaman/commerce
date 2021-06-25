@@ -424,3 +424,15 @@ function commerce_order_jsonapi_commerce_order_filter_access(EntityTypeInterface
     JSONAPI_FILTER_AMONG_ALL => AccessResult::allowed(),
   ]);
 }
+
+/**
+ * Implements hook_theme_registry_alter().
+ */
+function commerce_order_theme_registry_alter(&$theme_registry) {
+  $theme_registry['commerce_price_calculated']['path'] = drupal_get_path('module', 'commerce_order') . '/templates';
+  $theme_registry['commerce_price_calculated']['variables'] += [
+    'result' => NULL,
+    'base_price' => NULL,
+    'adjustments' => [],
+  ];
+}

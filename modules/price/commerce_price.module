@@ -23,6 +23,12 @@ function commerce_price_theme() {
       ],
       'template' => 'commerce-price-plain',
     ],
+    'commerce_price_calculated' => [
+      'variables' => [
+        'calculated_price' => NULL,
+        'purchasable_entity' => NULL,
+      ],
+    ],
   ];
 }
 
